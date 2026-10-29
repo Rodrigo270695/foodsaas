@@ -1,24 +1,22 @@
-import { Head } from '@inertiajs/react';
-import { useTranslation } from 'react-i18next';
+import { HttpErrorPage } from '@/components/errors/http-error-page';
 
 type Props = {
     message?: string | null;
+    attempted_path?: string | null;
+    is_authenticated?: boolean;
 };
 
-export default function Forbidden({ message }: Props) {
-    const { t } = useTranslation('common');
-
+export default function Forbidden({
+    message = null,
+    attempted_path = null,
+    is_authenticated = false,
+}: Props) {
     return (
-        <>
-            <Head title={t('errors.forbidden_title')} />
-            <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 p-6 text-center">
-                <h1 className="text-2xl font-semibold">
-                    {t('errors.forbidden_title')}
-                </h1>
-                <p className="max-w-md text-muted-foreground">
-                    {message ?? t('errors.forbidden_body')}
-                </p>
-            </div>
-        </>
+        <HttpErrorPage
+            status={403}
+            message={message}
+            attempted_path={attempted_path}
+            is_authenticated={is_authenticated}
+        />
     );
 }

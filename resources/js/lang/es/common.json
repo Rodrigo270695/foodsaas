@@ -23,6 +23,34 @@
         "forbidden_title": "Acceso denegado",
         "forbidden_body": "No tienes permiso para ver esta página."
     },
+    "http_errors": {
+        "cta_dashboard": "Ir al Dashboard",
+        "cta_login": "Ir al inicio de sesión",
+        "cta_back": "Volver atrás",
+        "attempted_path": "Ruta solicitada",
+        "details_title": "Detalles",
+        "details_hint": "Información útil para entender qué ocurrió.",
+        "forbidden": {
+            "title": "Acceso no permitido",
+            "description": "No tienes permiso para ver esta sección o el contexto actual no permite abrirla.",
+            "helper": "Si crees que deberías tener acceso, pide a un administrador del restaurante que revise tu rol. Si estás en soporte, entra al tenant desde Plataforma › Restaurantes."
+        },
+        "not_found": {
+            "title": "Página no encontrada",
+            "description": "La ruta que intentaste abrir no existe o ya no está disponible.",
+            "helper": "Revisa la dirección o vuelve al panel principal. Si el enlace venía del menú, puede que el módulo aún no esté habilitado para tu restaurante."
+        },
+        "method_not_allowed": {
+            "title": "Método no permitido",
+            "description": "Esta URL no acepta el tipo de solicitud que usaste (por ejemplo GET en lugar de POST).",
+            "helper": "Vuelve atrás o abre la página desde el menú de la aplicación en lugar de un enlace guardado o compartido."
+        },
+        "server_error": {
+            "title": "Error del servidor",
+            "description": "Ocurrió un problema inesperado al procesar tu solicitud.",
+            "helper": "Intenta de nuevo en unos momentos. Si el error persiste, contacta al soporte de tu restaurante o al administrador del sistema."
+        }
+    },
     "pwa": {
         "region_label": "Instalar aplicación",
         "dismiss": "Cerrar aviso de instalación",
