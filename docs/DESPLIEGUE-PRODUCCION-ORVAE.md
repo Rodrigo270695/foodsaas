@@ -82,18 +82,33 @@ php artisan queue:work --queue=default --sleep=1
 
 ## 5. Tenant **demo** (sin checkout Orvae)
 
-Para la primera oferta comercial usás un restaurante fijo `slug=demo`:
+Credenciales públicas de la demo:
 
-1. Entrá a `https://foodsaas.orvae.pe` como superadmin.
-2. **Plataforma → Tenants** → crear:
-   - **Slug:** `demo`
-   - Razón social / admin / distrito (Perú).
-3. **Plataforma → Suscripciones** → plan activo (p. ej. `starter` o `pro`) para ese tenant.
-4. En la fila del tenant → **Crear schema** (o `php artisan foodsaas:tenant-migrate rest_demo`).
-5. Crear usuario admin del restaurante (recover-admin en plataforma cuando esté cableado, o usuario con `tenant_id` del demo).
-6. Probar `https://demo.foodsaas.orvae.pe/login`.
+| Campo | Valor |
+|-------|--------|
+| Subdominio | `demo` → `https://demo.foodsaas.orvae.pe/login` |
+| Usuario | `demo@foodsaas.pe` |
+| Contraseña | `demo1234` |
 
-En `.env` de FoodSaaS dejá `FOODSAAS_DEMO_*` apuntando a ese login para que Orvae Sales Hub lea el knowledge (`GET /api/internal/saas/salesbot-knowledge` firmado).
+En el servidor, después de `migrate` y seeders base:
+
+```bash
+php artisan db:seed --class=DemoRestaurantSeeder
+```
+
+Eso crea el tenant `demo`, schema `rest_demo`, suscripción activa (plan `starter` si existe) y el admin con esas credenciales.
+
+En `.env` de FoodSaaS (producción):
+
+```env
+FOODSAAS_DEMO_URL=https://demo.foodsaas.orvae.pe/login
+FOODSAAS_DEMO_EMAIL=demo@foodsaas.pe
+FOODSAAS_DEMO_PASSWORD=demo1234
+```
+
+Orvae Sales Hub expone esos datos en `GET /api/internal/saas/salesbot-knowledge` (firmado).
+
+Alternativa manual: **Plataforma → Tenants** (slug `demo`, email admin `demo@foodsaas.pe`) → suscripción → **Crear schema** → usuario con la misma contraseña.
 
 ## 6. Orvae PE — variables `.env`
 
