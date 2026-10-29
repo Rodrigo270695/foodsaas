@@ -1,0 +1,48 @@
+{
+    "actions": {
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "create": "Crear",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "close": "Cerrar",
+        "search": "Buscar",
+        "back": "Volver",
+        "loading": "Cargando...",
+        "export_xlsx": "Exportar Excel"
+    },
+    "form": {
+        "unsaved_changes": "Hay cambios que aún no guardaste. Si cierras este formulario, se perderán. ¿Quieres salir sin guardar?"
+    },
+    "language": {
+        "label": "Idioma",
+        "es": "Español",
+        "en": "English"
+    },
+    "errors": {
+        "forbidden_title": "Acceso denegado",
+        "forbidden_body": "No tienes permiso para ver esta página."
+    },
+    "pwa": {
+        "region_label": "Instalar aplicación",
+        "dismiss": "Cerrar aviso de instalación",
+        "header_button": "Instalar app",
+        "header_short": "App",
+        "install_now": "Instalar ahora",
+        "installing": "Instalando…",
+        "chromium_title": "Instalar {{app}} en este celular",
+        "chromium_body": "Un toque y queda el ícono en el inicio, como una app.",
+        "ios_chrome_title": "En iPhone hay que usar Safari",
+        "ios_chrome_body": "Chrome, Instagram o WhatsApp no instalan la app. Copia el enlace, ábrelo en Safari → Compartir → Añadir a pantalla de inicio.",
+        "copy_link": "Copiar enlace del restaurante",
+        "link_copied": "Enlace copiado",
+        "ios_safari_title": "Instala {{app}} en el iPhone",
+        "ios_safari_step1": "Toca Compartir (cuadrado con flecha ↑) abajo en Safari.",
+        "ios_safari_step2": "Baja y toca Añadir a pantalla de inicio.",
+        "ios_safari_step3": "Confirma con Añadir. El ícono queda en el escritorio.",
+        "android_title": "Instala {{app}} en el celular",
+        "android_step1": "En Chrome, toca el menú ⋮ arriba a la derecha.",
+        "android_step2": "Elige Instalar aplicación o «Añadir a la pantalla de inicio».",
+        "menu_install": "Instalar app en el celular"
+    }
+}

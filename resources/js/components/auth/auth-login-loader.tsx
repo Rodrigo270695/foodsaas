@@ -1,0 +1,231 @@
+import { router } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
+import { VETSAAS_DEFAULT_LOGO } from '@/lib/brand';
+import { endSessionEnter, markSessionEnter } from '@/lib/session-enter';
+
+const MIN_VISIBLE_MS = 480;
+const STEP_KEYS = [
+    'login.entering_step_1',
+    'login.entering_step_2',
+    'login.entering_step_3',
+] as const;
+
+const RING = [
+    { x: 50, y: 11 },
+    { x: 83, y: 31 },
+    { x: 83, y: 69 },
+    { x: 50, y: 89 },
+    { x: 17, y: 69 },
+    { x: 17, y: 31 },
+] as const;
+
+function isLoginPost(method: string, url: string | URL): boolean {
+    if (method.toLowerCase() !== 'post') {
+        return false;
+    }
+
+    const path = (typeof url === 'string' ? new URL(url, window.location.origin) : url)
+        .pathname.replace(/\/+$/, '');
+
+    return path === '/login' || path.endsWith('/login');
+}
+
+/**
+ * Overlay de ingreso: mismos rayos/radar en claro y oscuro.
+ * El PNG del logo tiene fondo negro: un filtro SVG lo vuelve transparente
+ * y deja el verde original (no el color primario de la clínica).
+ */
+export default function AuthLoginLoader() {
+    const { t } = useTranslation('auth');
+    const [visible, setVisible] = useState(false);
+    const [step, setStep] = useState(0);
+    const shownAt = useRef(0);
+    const hideTimer = useRef<number>(0);
+    const pending = useRef(false);
+
+    useEffect(() => {
+        const show = () => {
+            window.clearTimeout(hideTimer.current);
+            pending.current = true;
+            shownAt.current = Date.now();
+            setStep(0);
+            markSessionEnter();
+            setVisible(true);
+        };
+
+        const hide = () => {
+            if (!pending.current) {
+                return;
+            }
+            pending.current = false;
+            const wait = Math.max(0, MIN_VISIBLE_MS - (Date.now() - shownAt.current));
+            hideTimer.current = window.setTimeout(() => setVisible(false), wait);
+        };
+
+        const fail = () => {
+            if (!pending.current) {
+                return;
+            }
+            endSessionEnter();
+            hide();
+        };
+
+        const offStart = router.on('start', (event) => {
+            if (isLoginPost(event.detail.visit.method, event.detail.visit.url)) {
+                show();
+            }
+        });
+        const offFinish = router.on('finish', hide);
+        const offCancel = router.on('cancel', fail);
+        const offError = router.on('error', fail);
+        const offSuccess = router.on('success', (event) => {
+            if (String(event.detail.page.component).startsWith('auth/')) {
+                endSessionEnter();
+            }
+        });
+
+        return () => {
+            offStart();
+            offFinish();
+            offCancel();
+            offError();
+            offSuccess();
+            window.clearTimeout(hideTimer.current);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!visible) {
+            return;
+        }
+
+        const id = window.setInterval(() => {
+            setStep((current) => (current + 1) % STEP_KEYS.length);
+        }, 900);
+
+        return () => window.clearInterval(id);
+    }, [visible]);
+
+    if (!visible || typeof document === 'undefined') {
+        return null;
+    }
+
+    return createPortal(
+        <div
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+            className="auth-login-world fixed inset-0 z-[9999] overflow-hidden bg-background/82 backdrop-blur-2xl"
+        >
+            <div aria-hidden className="auth-login-world-veil" />
+            <div aria-hidden className="auth-login-world-grid" />
+            <div aria-hidden className="auth-login-world-glow" />
+            <div aria-hidden className="auth-login-world-scan" />
+
+            <div className="relative z-10 flex flex-col items-center px-6">
+                <div className="relative size-44 sm:size-52">
+                    <svg
+                        className="auth-login-world-accent absolute inset-[-8%] size-[116%]"
+                        viewBox="0 0 100 100"
+                        aria-hidden
+                    >
+                        {RING.map((node, index) => {
+                            const next = RING[(index + 1) % RING.length];
+                            if (!next) {
+                                return null;
+                            }
+
+                            return (
+                                <line
+                                    key={`l-${index}`}
+                                    x1={node.x}
+                                    y1={node.y}
+                                    x2={next.x}
+                                    y2={next.y}
+                                    stroke="currentColor"
+                                    strokeWidth="0.45"
+                                    strokeLinecap="round"
+                                    className="auth-login-world-link"
+                                />
+                            );
+                        })}
+                        {RING.map((node, index) => (
+                            <circle
+                                key={`n-${index}`}
+                                cx={node.x}
+                                cy={node.y}
+                                r="0.85"
+                                fill="currentColor"
+                                className="auth-login-world-node"
+                                style={{ animationDelay: `${index * 0.16}s` }}
+                            />
+                        ))}
+                    </svg>
+
+                    <span className="auth-login-world-ring" />
+
+                    <svg
+                        className="auth-login-world-accent absolute inset-0 size-full -rotate-90"
+                        viewBox="0 0 100 100"
+                        aria-hidden
+                    >
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r="46"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="0.45"
+                            className="opacity-20"
+                        />
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r="46"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.25"
+                            strokeLinecap="round"
+                            className="auth-logo-loader-orbit"
+                        />
+                    </svg>
+
+                    <svg
+                        className="auth-login-world-mark pointer-events-none absolute inset-[14%] size-[72%] overflow-visible"
+                        viewBox="0 0 100 100"
+                        aria-hidden
+                    >
+                        <defs>
+                            <filter
+                                id="auth-logo-knockout"
+                                colorInterpolationFilters="sRGB"
+                            >
+                                <feColorMatrix
+                                    type="matrix"
+                                    values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1.4 1.4 1.4 0 0"
+                                />
+                            </filter>
+                        </defs>
+                        <image
+                            href={VETSAAS_DEFAULT_LOGO}
+                            width="100"
+                            height="100"
+                            preserveAspectRatio="xMidYMid meet"
+                            filter="url(#auth-logo-knockout)"
+                        />
+                    </svg>
+                </div>
+
+                <p className="mt-8 text-center text-base font-medium tracking-wide text-foreground">
+                    {t('login.entering')}
+                </p>
+                <p className="auth-login-world-accent mt-1.5 min-h-5 text-center text-xs tracking-wide opacity-80">
+                    {t(STEP_KEYS[step] ?? STEP_KEYS[0])}
+                </p>
+            </div>
+        </div>,
+        document.body,
+    );
+}

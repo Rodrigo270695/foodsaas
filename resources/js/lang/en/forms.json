@@ -1,0 +1,10 @@
+{
+    "document_type": {
+        "placeholder": "Not specified",
+        "dni": "National ID (DNI)",
+        "ruc": "Tax ID (RUC)",
+        "ce": "Foreign resident ID (CE)",
+        "pas": "Passport",
+        "otr": "Other"
+    }
+}

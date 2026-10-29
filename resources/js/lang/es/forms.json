@@ -1,0 +1,10 @@
+{
+    "document_type": {
+        "placeholder": "Sin especificar",
+        "dni": "DNI",
+        "ruc": "RUC",
+        "ce": "Carné de extranjería",
+        "pas": "Pasaporte",
+        "otr": "Otro"
+    }
+}

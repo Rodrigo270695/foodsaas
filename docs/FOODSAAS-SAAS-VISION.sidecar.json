@@ -1,0 +1,39 @@
+{
+  "document": "FOODSAAS-SAAS-VISION.md",
+  "version": "1.0.0",
+  "locale": "es-PE",
+  "product": "FoodSaaS",
+  "parent_org": "Orvae",
+  "reference_implementation": "VetSaaS",
+  "generated_at": "2026-10-28",
+  "scope": "product-architecture-vision",
+  "not_design_system": true,
+  "ground_truth_repos": [
+    "d:\\Programacion\\Laravel\\LaraReact\\foodsaas",
+    "d:\\Programacion\\Laravel\\LaraReact\\vetsaas",
+    "d:\\Programacion\\Laravel\\LaraReact\\orvaepe"
+  ],
+  "brand_primary_hex": "#660033",
+  "hosting": {
+    "central": "foodsaas.orvae.pe",
+    "tenant_pattern": "{slug}.foodsaas.orvae.pe",
+    "tenancy": "postgresql-schema-per-tenant"
+  },
+  "plans_codigos": ["lite", "basic", "regular", "pro"],
+  "implemented_in_repo": [
+    "rbac-seeders",
+    "spatie-teams-tenant_id",
+    "set-permissions-team-middleware",
+    "i18n-es-en",
+    "pwa",
+    "fortify-auth-passkeys-2fa"
+  ],
+  "pending_from_vetsaas": [
+    "resolve-tenant",
+    "tenant-routes",
+    "platform-panel",
+    "saas-provision-api",
+    "subscription-gates",
+    "impersonation"
+  ]
+}

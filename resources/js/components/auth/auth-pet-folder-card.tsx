@@ -1,0 +1,82 @@
+import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+
+const DEFAULT_MENU_IMAGES = [
+    '/images/auth/pets/dog.svg',
+    '/images/auth/pets/cat.svg',
+    '/images/auth/pets/bunny.svg',
+] as const;
+
+function resolveMenuImages(): string[] {
+    return [...DEFAULT_MENU_IMAGES];
+}
+
+const PHOTO_REST =
+    'absolute bottom-7 left-1/2 z-10 h-9 w-9 rounded-lg object-cover shadow-md ring-2 ring-white/90 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] dark:ring-zinc-900';
+
+/**
+ * Carpeta: las fotos viven detrás de la tapa y, al hover, salen como fichas.
+ */
+export function AuthPetFolderCard({ className }: { className?: string }) {
+    const { t } = useTranslation('auth');
+    const photos = resolveMenuImages();
+
+    return (
+        <div
+            className={cn(
+                'group/folder pointer-events-auto absolute w-64 overflow-hidden rounded-2xl border border-border/60 bg-card/90 p-4 text-left shadow-[0_20px_60px_-30px_rgba(0,40,30,0.35)] backdrop-blur-xl dark:bg-card/60',
+                className,
+            )}
+        >
+            <div className="relative mx-auto h-28 w-[4.5rem]">
+                {/* Dorso + pestaña */}
+                <div className="absolute inset-x-0 bottom-0 z-0 h-[3.15rem] rounded-md bg-amber-400 shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]">
+                    <div className="absolute -top-2 left-1.5 h-2 w-6 rounded-t-[4px] bg-amber-400" />
+                </div>
+
+                {photos[0] ? (
+                    <img
+                        src={photos[0]}
+                        alt=""
+                        className={cn(
+                            PHOTO_REST,
+                            '-translate-x-[70%] translate-y-4 -rotate-6',
+                            'group-hover/folder:-translate-x-[115%] group-hover/folder:-translate-y-12 group-hover/folder:-rotate-[16deg]',
+                        )}
+                    />
+                ) : null}
+                {photos[1] ? (
+                    <img
+                        src={photos[1]}
+                        alt=""
+                        className={cn(
+                            PHOTO_REST,
+                            'z-[11] -translate-x-1/2 translate-y-5 delay-75',
+                            'group-hover/folder:-translate-y-[3.55rem] group-hover/folder:rotate-0',
+                        )}
+                    />
+                ) : null}
+                {photos[2] ? (
+                    <img
+                        src={photos[2]}
+                        alt=""
+                        className={cn(
+                            PHOTO_REST,
+                            '-translate-x-[30%] translate-y-4 rotate-6 delay-150',
+                            'group-hover/folder:translate-x-[15%] group-hover/folder:-translate-y-12 group-hover/folder:rotate-[16deg]',
+                        )}
+                    />
+                ) : null}
+
+                {/* Tapa frontal: cubre las fotos “guardadas” */}
+                <div className="absolute inset-x-0 bottom-0 z-20 h-[2.55rem] rounded-md bg-linear-to-b from-amber-400 to-amber-500 shadow-[0_-4px_12px_-6px_rgb(0_0_0/0.25)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/folder:translate-y-px" />
+            </div>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+                {t('bento.menu_title')}
+            </p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+                {t('bento.menu_body')}
+            </p>
+        </div>
+    );
+}

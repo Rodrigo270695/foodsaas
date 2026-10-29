@@ -1,0 +1,38 @@
+{
+    "section": "Plataforma",
+    "brand_tagline": "Gestión para restaurantes",
+    "plan_kicker": "Plan",
+    "groups": {
+        "configuracion": "Configuración",
+        "plataforma_sistema": "Sistema",
+        "plataforma_reportes": "Reportes",
+        "plataforma_restaurantes": "Restaurantes",
+        "plataforma_cobros": "Cobros",
+        "plataforma_ventas": "Ventas",
+        "plataforma_producto": "Producto"
+    },
+    "items": {
+        "dashboard": "Dashboard",
+        "roles": "Roles",
+        "usuarios": "Usuarios",
+        "platform_settings": "Configuración general",
+        "operaciones": "Operaciones",
+        "esquema_bd": "Esquema de BD",
+        "sesiones_login": "Sesiones de login",
+        "reportes_plataforma": "Reportes",
+        "mapa_restaurantes": "Mapa de restaurantes",
+        "tenants": "Tenants",
+        "planes": "Planes",
+        "suscripciones": "Suscripciones",
+        "uso_planes": "Uso de planes",
+        "cobros": "Cobros",
+        "salesbot_knowledge": "Base de conocimiento",
+        "salesbot_conversations": "Conversaciones",
+        "in_app_assistant_knowledge": "Asistente in-app",
+        "bot_ia_announcements": "Anuncios del bot"
+    },
+    "user_menu": {
+        "settings": "Configuración",
+        "logout": "Cerrar sesión"
+    }
+}

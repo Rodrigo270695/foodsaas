@@ -1,0 +1,48 @@
+{
+    "actions": {
+        "cancel": "Cancel",
+        "save": "Save",
+        "create": "Create",
+        "edit": "Edit",
+        "delete": "Delete",
+        "close": "Close",
+        "search": "Search",
+        "back": "Back",
+        "loading": "Loading...",
+        "export_xlsx": "Export Excel"
+    },
+    "form": {
+        "unsaved_changes": "You have changes that haven't been saved yet. If you close this form, they'll be lost. Leave without saving?"
+    },
+    "language": {
+        "label": "Language",
+        "es": "Español",
+        "en": "English"
+    },
+    "errors": {
+        "forbidden_title": "Access denied",
+        "forbidden_body": "You do not have permission to view this page."
+    },
+    "pwa": {
+        "region_label": "Install application",
+        "dismiss": "Dismiss install notice",
+        "header_button": "Install app",
+        "header_short": "App",
+        "install_now": "Install now",
+        "installing": "Installing…",
+        "chromium_title": "Install {{app}} on this phone",
+        "chromium_body": "One tap adds the icon to your home screen, like a native app.",
+        "ios_chrome_title": "On iPhone you need Safari",
+        "ios_chrome_body": "Chrome, Instagram, or WhatsApp cannot install the app. Copy the link, open it in Safari → Share → Add to Home Screen.",
+        "copy_link": "Copy restaurant link",
+        "link_copied": "Link copied",
+        "ios_safari_title": "Install {{app}} on iPhone",
+        "ios_safari_step1": "Tap Share (square with arrow ↑) at the bottom in Safari.",
+        "ios_safari_step2": "Scroll and tap Add to Home Screen.",
+        "ios_safari_step3": "Confirm with Add. The icon stays on your home screen.",
+        "android_title": "Install {{app}} on your phone",
+        "android_step1": "In Chrome, tap the ⋮ menu at the top right.",
+        "android_step2": "Choose Install app or Add to Home screen.",
+        "menu_install": "Install app on phone"
+    }
+}

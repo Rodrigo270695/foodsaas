@@ -1,0 +1,560 @@
+import { Link, usePage } from '@inertiajs/react';
+import { ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Badge } from '@/components/ui/badge';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarMenuSub,
+    SidebarMenuSubItem,
+    useSidebar,
+} from '@/components/ui/sidebar';
+import { isNavRouteImplemented } from '@/config/nav-implemented';
+import { useCurrentUrl } from '@/hooks/use-current-url';
+import { usePermission } from '@/hooks/use-permission';
+import { moduleKeyForHref } from '@/config/nav-module-keys';
+import { cn } from '@/lib/utils';
+import { markPendingViewEnter } from '@/lib/session-enter';
+import { BounceNavDot } from '@/components/ui/bounce-nav-dot';
+import type { NavContext, NavGroup, NavItem } from '@/types';
+
+function isItemImplemented(item: NavItem): boolean {
+    if (item.implemented === false) {
+        return false;
+    }
+
+    const href = typeof item.href === 'string' ? item.href : '';
+
+    return href === '' || isNavRouteImplemented(href);
+}
+
+type NavMainCollapsibleProps = {
+    /** Label discreta arriba del grupo (e.g. "Módulos"). */
+    label?: string;
+    /** Items que aparecen al inicio sin agrupar (e.g. Dashboard). */
+    singles?: NavItem[];
+    /** Grupos desplegables con sub-items. */
+    groups: NavGroup[];
+};
+
+/**
+ * Navegación principal del sidebar con grupos colapsables premium.
+ *
+ * Mejoras visuales:
+ * - Indicador vertical brand a la izquierda del sub-item activo (barra de 2.5px
+ *   que aparece con fade + slide desde la izquierda).
+ * - Hover sutil con `translate-x` ligero y fondo brand/10.
+ * - Iconos de los sub-items con cambio de color en hover/active.
+ * - Stagger animation de los sub-items al abrir el grupo (cada uno 25ms después).
+ * - Caret (ChevronRight) que rota 90° suavemente.
+ * - Texto del grupo con `font-medium` y mayor jerarquía visual.
+ *
+ * El componente respeta el modo `collapsible="icon"` del sidebar — al colapsar
+ * solo se ven los iconos de los grupos (los sub-items se ocultan).
+ */
+/**
+ * ¿El item/grupo aplica al contexto actual?
+ *
+ * - `both` (o ausente) → siempre.
+ * - `central` → solo en el host central (sin tenant resuelto).
+ * - `tenant` → solo cuando estamos dentro de un subdominio de clínica.
+ *
+ * **El rol `superadmin` recibe bypass total del filtro de contexto**
+ * (consistente con el bypass de permisos en {@see usePermission}). Ver
+ * TODOS los grupos en cualquier host le da una vista mental completa
+ * de la plataforma y los módulos disponibles a sus clínicas, además de
+ * un atajo rápido para inspeccionar cualquier área durante soporte.
+ *
+ * Cuando hace click en un módulo tenant desde el host central, el
+ * middleware {@see \App\Http\Middleware\EnsureTenant} le muestra una
+ * pantalla informativa amigable (`shared/tenant-required.tsx`) con
+ * CTA hacia **Plataforma › Tenants** — no rompe nada. En Fase 5 esta
+ * pantalla quedará reemplazada por impersonation directa.
+ */
+function matchesContext(
+    context: NavContext | undefined,
+    hasTenant: boolean,
+): boolean {
+    // Sin bypass por rol: en panel central no mostrar menús de clínica
+    // (y viceversa). El superadmin también respeta el contexto del host.
+    if (!context || context === 'both') return true;
+    if (context === 'tenant') return hasTenant;
+    if (context === 'central') return !hasTenant;
+    return true;
+}
+
+export function useVisibleNavigation(singles: NavItem[], groups: NavGroup[]): {
+    visibleSingles: NavItem[];
+    visibleGroups: NavGroup[];
+    isBotIaNovedadPromo: (item: NavItem) => boolean;
+} {
+    const { can, permissions, isSuperadmin } = usePermission();
+    const page = usePage();
+    const tenant = page.props.tenant;
+    const botIaActive = page.props.bot_ia_addon?.activo === true;
+    const modoAsesoraActive = page.props.modo_asesora === true;
+    const tenantModulesEnabled = (page.props.tenant_modules as { enabled?: Record<string, boolean> } | null)
+        ?.enabled;
+    const hasTenant = tenant !== null && tenant !== undefined;
+
+    const isModuleEnabled = (moduleKey: string | undefined): boolean => {
+        if (!moduleKey || !hasTenant || !tenantModulesEnabled) {
+            return true;
+        }
+
+        return tenantModulesEnabled[moduleKey] !== false;
+    };
+
+    const hasComunicacionesAccess =
+        can('comunicaciones-cola.view')
+        || can('comunicaciones-historico.view')
+        || can('comunicaciones-cola.manage')
+        || can('comunicaciones-chat.view')
+        || can('config-general.view')
+        || can('config-general.update');
+
+    const isBotIaNovedadPromo = (item: NavItem): boolean =>
+        item.novedadWhenBotIaInactive === true && !botIaActive && hasComunicacionesAccess;
+
+    const itemVisible = (item: NavItem): boolean => {
+        const moduleKey = item.moduleKey ?? moduleKeyForHref(
+            typeof item.href === 'string' ? item.href : '',
+        );
+
+        if (!isModuleEnabled(moduleKey)) {
+            return false;
+        }
+
+        if (!matchesContext(item.context, hasTenant)) {
+            return false;
+        }
+
+        if (!isSuperadmin && !isItemImplemented(item)) {
+            return false;
+        }
+
+        if (isBotIaNovedadPromo(item)) {
+            return true;
+        }
+
+        if (item.requiresBotIa && !botIaActive) {
+            return false;
+        }
+
+        if (item.requiresModoAsesora && !modoAsesoraActive) {
+            return false;
+        }
+
+        return !item.permission || can(item.permission);
+    };
+
+    const visibleSingles = useMemo(
+        () => singles.filter(itemVisible),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [singles, hasTenant, permissions, botIaActive, modoAsesoraActive, hasComunicacionesAccess, isSuperadmin],
+    );
+
+    const visibleGroups = useMemo(() => {
+        return groups
+            .map((group) => ({
+                ...group,
+                items: group.items.filter((item) =>
+                    itemVisible({
+                        ...item,
+                        context: item.context ?? group.context,
+                    }),
+                ),
+            }))
+            .filter((group) => {
+                if (group.permission && !can(group.permission)) return false;
+                if (!matchesContext(group.context, hasTenant)) {
+                    return false;
+                }
+                return group.items.length > 0;
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [groups, hasTenant, permissions, botIaActive, modoAsesoraActive, hasComunicacionesAccess, isSuperadmin]);
+
+    return { visibleSingles, visibleGroups, isBotIaNovedadPromo };
+}
+
+export function NavMainCollapsible({
+    label,
+    singles = [],
+    groups,
+}: NavMainCollapsibleProps) {
+    const { isCurrentUrl, isCurrentOrParentUrl, isNavItemActive, currentUrl } =
+        useCurrentUrl();
+    const { isMobile, setOpenMobile, state } = useSidebar();
+    const iconCollapsed = !isMobile && state === 'collapsed';
+    const closeMobileSidebar = () => {
+        markPendingViewEnter();
+        if (isMobile) {
+            setOpenMobile(false);
+        }
+    };
+    const { t } = useTranslation('nav');
+    const { visibleSingles, visibleGroups, isBotIaNovedadPromo } = useVisibleNavigation(singles, groups);
+
+    const initialOpenMap = useMemo(() => {
+        const map: Record<string, boolean> = {};
+        for (const group of visibleGroups) {
+            const hasActiveChild = group.items.some((item) =>
+                isCurrentOrParentUrl(item.href),
+            );
+            map[group.title] = hasActiveChild || group.defaultOpen === true;
+        }
+        return map;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUrl, visibleGroups]);
+
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+    const isGroupOpen = (title: string, fallback: boolean): boolean =>
+        openGroups[title] ?? fallback;
+
+    if (visibleSingles.length === 0 && visibleGroups.length === 0) {
+        return null;
+    }
+
+    return (
+        <SidebarGroup className="px-2 py-0">
+            {label && (
+                <SidebarGroupLabel className="text-[0.7rem] font-semibold tracking-wider text-muted-foreground uppercase">
+                    {label}
+                </SidebarGroupLabel>
+            )}
+
+            <SidebarMenu className="relative">
+                <BounceNavDot
+                    activeKey={`${currentUrl}:${state}:${JSON.stringify(openGroups)}`}
+                    compact={iconCollapsed}
+                />
+                {visibleSingles.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                            asChild
+                            isActive={isCurrentUrl(item.href)}
+                            data-bounce-active={isCurrentUrl(item.href) ? 'true' : undefined}
+                            tooltip={{ children: item.title }}
+                            className="font-medium transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary group-data-[collapsible=icon]:data-[active=true]:bg-transparent"
+                        >
+                            <Link
+                                href={item.href}
+                                onClick={closeMobileSidebar}
+                            >
+                                {item.icon && <item.icon />}
+                                <span>{item.title}</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                ))}
+
+                {visibleGroups.map((group) => {
+                    const siblingHrefs = group.items.map((i) => i.href);
+                    const hasActiveChild = group.items.some((item) =>
+                        isNavItemActive(item.href, siblingHrefs),
+                    );
+                    const groupOpen = isGroupOpen(
+                        group.title,
+                        initialOpenMap[group.title] === true,
+                    );
+                    const bounceOnGroup =
+                        hasActiveChild && (iconCollapsed || !groupOpen);
+                    const groupBadge = group.items.reduce(
+                        (sum, item) =>
+                            sum
+                            + (typeof item.badgeCount === 'number' && item.badgeCount > 0
+                                ? item.badgeCount
+                                : 0),
+                        0,
+                    );
+
+                    if (iconCollapsed) {
+                        return (
+                            <NavCollapsedGroup
+                                key={group.title}
+                                group={group}
+                                hasActiveChild={hasActiveChild}
+                                siblingHrefs={siblingHrefs}
+                                isNavItemActive={isNavItemActive}
+                                groupBadge={groupBadge}
+                                isBotIaNovedadPromo={isBotIaNovedadPromo}
+                                novedadBadgeLabel={t('items.bot_ia_novedad_badge')}
+                                onNavigate={closeMobileSidebar}
+                            />
+                        );
+                    }
+
+                    return (
+                    <Collapsible
+                        key={group.title}
+                        asChild
+                        open={groupOpen}
+                        onOpenChange={(open) => {
+                            setOpenGroups((current) => ({
+                                ...current,
+                                [group.title]: open,
+                            }));
+                        }}
+                        className="group/collapsible"
+                    >
+                        <SidebarMenuItem className="relative" data-nav-group="">
+                            {groupBadge > 0 ? (
+                                <span
+                                    aria-label={`${groupBadge} sin leer`}
+                                    className="pointer-events-none absolute top-0.5 right-0.5 z-20 hidden h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-0.5 text-[0.6rem] font-bold text-white shadow-sm group-data-[collapsible=icon]:flex"
+                                >
+                                    {groupBadge > 99 ? '99+' : groupBadge}
+                                </span>
+                            ) : null}
+                            <CollapsibleTrigger asChild>
+                                <SidebarMenuButton
+                                    tooltip={{ children: group.title }}
+                                    data-bounce-active={bounceOnGroup ? 'true' : undefined}
+                                    className="group/trigger cursor-pointer font-medium transition-all hover:bg-primary/8"
+                                >
+                                    {group.icon && (
+                                        <group.icon className="transition-colors group-data-[state=open]/collapsible:text-primary" />
+                                    )}
+                                    <span className="min-w-0 flex-1 truncate transition-colors group-data-[state=open]/collapsible:text-foreground">
+                                        {group.title}
+                                    </span>
+                                    {groupBadge > 0 ? (
+                                        <Badge className="h-5 min-w-5 shrink-0 justify-center rounded-full bg-emerald-600 px-1.5 text-[0.65rem] font-semibold text-white hover:bg-emerald-600 group-data-[collapsible=icon]:hidden">
+                                            {groupBadge > 99 ? '99+' : groupBadge}
+                                        </Badge>
+                                    ) : null}
+                                    <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-all duration-300 group-data-[state=open]/collapsible:rotate-90 group-data-[state=open]/collapsible:text-primary group-data-[collapsible=icon]:hidden" />
+                                </SidebarMenuButton>
+                            </CollapsibleTrigger>
+
+                            <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                                <SidebarMenuSub className="relative mt-1 gap-0.5 border-sidebar-border/50">
+                                    {group.items.map((item, index) => (
+                                        <NavSubItem
+                                            key={item.title}
+                                            item={item}
+                                            active={isNavItemActive(item.href, siblingHrefs)}
+                                            bounceActive={
+                                                !iconCollapsed
+                                                && groupOpen
+                                                && isNavItemActive(item.href, siblingHrefs)
+                                            }
+                                            index={index}
+                                            isNovedadPromo={isBotIaNovedadPromo(item)}
+                                            novedadBadgeLabel={t('items.bot_ia_novedad_badge')}
+                                            onNavigate={closeMobileSidebar}
+                                        />
+                                    ))}
+                                </SidebarMenuSub>
+                            </CollapsibleContent>
+                        </SidebarMenuItem>
+                    </Collapsible>
+                    );
+                })}
+            </SidebarMenu>
+        </SidebarGroup>
+    );
+}
+
+type NavCollapsedGroupProps = {
+    group: NavGroup;
+    hasActiveChild: boolean;
+    groupBadge: number;
+    siblingHrefs: NavItem['href'][];
+    isNavItemActive: (href: NavItem['href'], siblingHrefs: NavItem['href'][]) => boolean;
+    isBotIaNovedadPromo: (item: NavItem) => boolean;
+    novedadBadgeLabel: string;
+    onNavigate: () => void;
+};
+
+/**
+ * Grupo del sidebar colapsado: el clic abre un panel a la derecha
+ * con los ítems, al estilo del menú de usuario.
+ */
+function NavCollapsedGroup({
+    group,
+    hasActiveChild,
+    groupBadge,
+    siblingHrefs,
+    isNavItemActive,
+    isBotIaNovedadPromo,
+    novedadBadgeLabel,
+    onNavigate,
+}: NavCollapsedGroupProps) {
+    return (
+        <SidebarMenuItem className="relative">
+            {groupBadge > 0 ? (
+                <span
+                    aria-label={`${groupBadge} sin leer`}
+                    className="pointer-events-none absolute top-0.5 right-0.5 z-20 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-600 px-0.5 text-[0.6rem] font-bold text-white shadow-sm"
+                >
+                    {groupBadge > 99 ? '99+' : groupBadge}
+                </span>
+            ) : null}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton
+                        data-bounce-active={hasActiveChild ? 'true' : undefined}
+                        className={cn(
+                            'cursor-pointer font-medium transition-all hover:bg-primary/8 data-[state=open]:bg-primary/10 data-[state=open]:text-primary',
+                            hasActiveChild && 'text-primary',
+                        )}
+                    >
+                        {group.icon && <group.icon />}
+                        <span>{group.title}</span>
+                    </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    className="max-h-[min(24rem,var(--radix-dropdown-menu-content-available-height))] w-64 overflow-y-auto rounded-lg"
+                    side="right"
+                    align="start"
+                    sideOffset={8}
+                >
+                    <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold text-foreground">
+                        {group.title}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {group.items.map((item) => {
+                        const active = isNavItemActive(item.href, siblingHrefs);
+                        const novedad = isBotIaNovedadPromo(item) && !active;
+
+                        return (
+                            <DropdownMenuItem
+                                key={item.title}
+                                asChild
+                                className={cn(
+                                    'cursor-pointer',
+                                    novedad && 'text-foreground',
+                                    active && 'bg-primary/10 text-primary focus:bg-primary/10 focus:text-primary',
+                                )}
+                            >
+                                <Link href={item.href} onClick={onNavigate}>
+                                    {item.icon ? (
+                                        <item.icon
+                                            className={cn(
+                                                novedad && 'text-violet-600',
+                                                active && 'text-primary',
+                                            )}
+                                        />
+                                    ) : null}
+                                    <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                                    {typeof item.badgeCount === 'number' && item.badgeCount > 0 ? (
+                                        <Badge className="h-5 min-w-5 shrink-0 justify-center rounded-full bg-emerald-600 px-1.5 text-[0.65rem] font-semibold text-white hover:bg-emerald-600">
+                                            {item.badgeCount > 99 ? '99+' : item.badgeCount}
+                                        </Badge>
+                                    ) : novedad ? (
+                                        <Badge
+                                            variant="outline"
+                                            className="h-5 shrink-0 border-violet-500/30 bg-violet-500/15 px-1.5 text-[0.65rem] font-semibold text-violet-700 dark:text-violet-300"
+                                        >
+                                            {novedadBadgeLabel}
+                                        </Badge>
+                                    ) : null}
+                                </Link>
+                            </DropdownMenuItem>
+                        );
+                    })}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </SidebarMenuItem>
+    );
+}
+
+type NavSubItemProps = {
+    item: NavItem;
+    active: boolean;
+    bounceActive?: boolean;
+    /** Posición dentro del grupo, usada para stagger animation. */
+    index: number;
+    isNovedadPromo?: boolean;
+    novedadBadgeLabel?: string;
+    /** Callback al hacer click — útil para cerrar sidebar en móvil. */
+    onNavigate?: () => void;
+};
+
+/**
+ * Sub-item individual del menú desplegable.
+ * Lleva su propia animación de entrada (stagger por índice).
+ */
+function NavSubItem({
+    item,
+    active,
+    bounceActive = false,
+    index,
+    isNovedadPromo = false,
+    novedadBadgeLabel = 'Nuevo',
+    onNavigate,
+}: NavSubItemProps) {
+    const LinkComponent = Link;
+
+    return (
+        <SidebarMenuSubItem
+            style={{ animationDelay: `${index * 30}ms` }}
+            className="animate-in fade-in slide-in-from-left-2 fill-mode-both duration-300"
+        >
+            <LinkComponent
+                href={item.href}
+                onClick={onNavigate}
+                data-active={active}
+                data-bounce-active={bounceActive ? 'true' : undefined}
+                className={cn(
+                    'group/sub relative flex h-9 items-center gap-2.5 overflow-hidden rounded-md pr-2 pl-3 text-sm transition-all duration-200 outline-hidden focus-visible:ring-2 focus-visible:ring-ring',
+                    isNovedadPromo && !active
+                        ? 'border border-violet-500/25 bg-violet-500/8 text-foreground hover:bg-violet-500/12'
+                        : active
+                          ? 'bg-primary/10 font-medium text-primary'
+                          : 'text-sidebar-foreground/85 hover:translate-x-0.5 hover:bg-primary/8 hover:text-foreground',
+                )}
+            >
+                {item.icon && (
+                    <item.icon
+                        strokeWidth={2.25}
+                        className={cn(
+                            'size-4 shrink-0 transition-colors duration-200',
+                            isNovedadPromo && !active
+                                ? 'text-violet-600'
+                                : active
+                                  ? 'text-primary'
+                                  : 'text-muted-foreground group-hover/sub:text-primary',
+                        )}
+                    />
+                )}
+
+                <span className="min-w-0 flex-1 truncate">{item.title}</span>
+
+                {typeof item.badgeCount === 'number' && item.badgeCount > 0 ? (
+                    <Badge className="h-5 min-w-5 shrink-0 justify-center rounded-full bg-emerald-600 px-1.5 text-[0.65rem] font-semibold text-white hover:bg-emerald-600">
+                        {item.badgeCount > 99 ? '99+' : item.badgeCount}
+                    </Badge>
+                ) : isNovedadPromo ? (
+                    <Badge
+                        variant="outline"
+                        className="h-5 shrink-0 border-violet-500/30 bg-violet-500/15 px-1.5 text-[0.65rem] font-semibold text-violet-700 dark:text-violet-300"
+                    >
+                        {novedadBadgeLabel}
+                    </Badge>
+                ) : null}
+            </LinkComponent>
+        </SidebarMenuSubItem>
+    );
+}
+

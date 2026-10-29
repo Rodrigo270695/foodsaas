@@ -1,0 +1,311 @@
+{
+    "title": "Tenants",
+    "description": "Manage clinics subscribed to VetSaaS: manual provisioning, suspension, resumption and cancellation. In production tenants are created via the automatic provisioner; this panel is for internal support and migrations.",
+    "search_placeholder": "Search by slug, business name, tax ID or email…",
+    "filter_label": "Filter by status",
+    "filter_plan_label": "Filter by plan",
+    "filters": {
+        "all": "All",
+        "trial": "Trial",
+        "active": "Active",
+        "suspended": "Suspended",
+        "cancelled": "Cancelled",
+        "plan_all": "All plans",
+        "plan_none": "No plan"
+    },
+    "stats": {
+        "total": "Total",
+        "active": "Active",
+        "trial": "Trial",
+        "suspended": "Suspended",
+        "cancelled": "Cancelled",
+        "filters": "Active filters",
+        "matches": "Matches"
+    },
+    "actions": {
+        "new": "New tenant",
+        "new_short": "New",
+        "create_first": "Create the first tenant",
+        "delete_selected": "Delete selected",
+        "win_back_free_selected": "Win-back Free ({{count}})",
+        "win_back_free_all": "Win-back expired Free",
+        "win_back_history": "Win-back history",
+        "free_onboarding": "Free follow-up"
+    },
+    "columns": {
+        "tenant": "Tenant",
+        "contact": "Contact",
+        "plan": "Plan",
+        "status": "Status",
+        "trial_ends_at": "Trial ends",
+        "created_at": "Created",
+        "acciones": "Actions"
+    },
+    "row": {
+        "actions_for": "Actions for {{name}}",
+        "copy_slug": "Copy slug",
+        "change_slug": "Change subdomain",
+        "modules": "Visible modules",
+        "limits": "Limits (±)",
+        "open_subdomain": "Open subdomain",
+        "enter_support": "Enter as support",
+        "provision_schema": "Create clinic schema",
+        "provision_schema_confirm": "This creates the PostgreSQL schema, tables (patients, cfg_clinic_settings, etc.) and roles. Use it if the tenant was added by hand and views return 500. Continue for «{{name}}»?",
+        "recover_admin": "Recover admin access",
+        "win_back_free": "Win back Free (WA/email)",
+        "whatsapp_restart": "Restart WhatsApp",
+        "whatsapp_stop": "Stop WhatsApp",
+        "whatsapp_status": "WhatsApp: {{status}}",
+        "whatsapp_restart_confirm": "Restart WhatsApp session for «{{name}}»? This runs stop + start on OpenWA. The clinic admin may need to scan the QR in Outbox queue if not connected.",
+        "whatsapp_stop_confirm": "Stop WhatsApp session for «{{name}}»? Automated reminders will not send until reconnected.",
+        "suspend": "Suspend",
+        "resume": "Resume",
+        "trial": "Trial",
+        "active": "Active",
+        "suspended": "Suspended",
+        "cancelled": "Cancelled",
+        "no_phone": "No phone",
+        "logo_preview": "View logo for {{name}}",
+        "no_plan": "No plan",
+        "cancelled_locked": "Tenant cancelled"
+    },
+    "form": {
+        "title_create": "New tenant",
+        "title_edit": "Edit tenant",
+        "description_create": "Register a restaurant on the platform. Creates subdomain {slug}.{domain}, schema rest_<slug>, and the tenant operational tables.",
+        "description_edit": "Update the tenant's business and contact information. State transitions are performed from the row actions.",
+        "section_identity": "Identity",
+        "section_identity_hint": "Subdomain slug and the restaurant's legal information.",
+        "section_contact": "Contact and location",
+        "section_contact_hint": "Initial admin email, phone, address and location (Peru).",
+        "section_platform": "Platform configuration",
+        "section_platform_hint": "Time zone, language and length of the initial trial period.",
+        "fields": {
+            "slug": "Slug (subdomain)",
+            "slug_hint": "Lowercase letters, digits and hyphens only. Will be {slug}.{domain}.",
+            "slug_placeholder": "la-casona",
+            "razon_social": "Business name",
+            "razon_social_placeholder": "La Casona Restaurant LLC",
+            "nombre_comercial": "Trade name",
+            "nombre_comercial_placeholder": "La Casona",
+            "ruc": "Tax ID (RUC)",
+            "ruc_hint": "11 digits (optional at creation).",
+            "email_admin": "Administrator email",
+            "email_admin_hint": "Will receive the initial invite and become the restaurant's first administrator.",
+            "telefono": "Phone",
+            "direccion": "Address",
+            "direccion_placeholder": "123 Palm Ave., Suite 401",
+            "departamento": "Department",
+            "provincia": "Province",
+            "distrito": "District",
+            "timezone": "Time zone",
+            "timezone_hint": "IANA format (America/Lima by default).",
+            "locale": "Locale",
+            "locale_hint": "Format es_PE / en_US.",
+            "canal": "Acquisition channel",
+            "canal_hint": "Optional. Useful for reports (e.g. facebook_ads, referral).",
+            "canal_placeholder": "referral",
+            "trial_days": "Trial days",
+            "trial_days_hint": "How long the initial trial lasts (14 days by default)."
+        },
+        "submit_create": "Create tenant",
+        "submit_edit": "Save changes"
+    },
+    "delete": {
+        "title": "Delete tenant",
+        "description": "You're about to delete <strong>{{name}}</strong>. The tenant will switch to <strong>cancelled</strong> and be hidden from listings. Only the engineering team can reverse this action.",
+        "active_blocked": "This tenant is active. To delete it, suspend or cancel it first.",
+        "confirm": "Yes, delete",
+        "loading": "Deleting…"
+    },
+    "suspend": {
+        "title": "Suspend tenant",
+        "description": "You're about to suspend <strong>{{name}}</strong>. Its users won't be able to access the subdomain until you manually resume. The reason will be stored in the audit log.",
+        "reason_label": "Reason for suspension",
+        "reason_placeholder": "E.g. payment failure confirmed on 05/12 — awaiting resolution.",
+        "reason_hint": "Minimum {{min}} characters. Visible in the panel and audit logs.",
+        "confirm": "Suspend",
+        "loading": "Applying…"
+    },
+    "resume": {
+        "title": "Resume tenant",
+        "description": "You're about to resume <strong>{{name}}</strong>. Its users will be able to access the subdomain again immediately.",
+        "confirm": "Resume"
+    },
+    "change_slug": {
+        "title": "Change subdomain",
+        "description": "You're about to change the subdomain for <strong>{{name}}</strong>. The current one is <code>{{current}}</code>. The administrator will receive an email and WhatsApp message with the new link.",
+        "slug_label": "New subdomain",
+        "slug_placeholder": "vet-pets-clinic",
+        "preview": "Preview: {{host}}",
+        "notify_hint": "The previous subdomain will stop working immediately.",
+        "confirm": "Change subdomain",
+        "loading": "Saving…"
+    },
+    "recover_admin": {
+        "title": "Recover admin access",
+        "description": "Create or fix the admin_clinica user for {{clinic}} (email + password). If the tenant was added by hand and nobody can log in, use this: the user does not exist until you save here.",
+        "current_email": "Current email on the tenant",
+        "fields": {
+            "email": "Valid email (login)",
+            "password": "New password",
+            "password_hint": "At least 8 characters. Share it through a secure channel.",
+            "password_confirmation": "Confirm password",
+            "must_change_password": "Require password change on next login",
+            "notify_client": "Email and WhatsApp the client",
+            "notify_hint": "Email goes to the login address. WhatsApp uses the tenant phone ({{phone}})."
+        },
+        "submit": "Save access",
+        "result": {
+            "title": "Access ready to share",
+            "description": "Copy the link or send it to the client. The toast also has “Copy link”.",
+            "email": "Login email",
+            "login": "Login URL",
+            "welcome": "Welcome link (~48h)",
+            "copy": "Copy",
+            "copied": "Copied",
+            "close": "Close"
+        }
+    },
+    "bulk": {
+        "selected_singular": "tenant selected",
+        "selected_plural": "tenants selected",
+        "delete_title_one": "Delete 1 tenant",
+        "delete_title_other": "Delete {{count}} tenants",
+        "delete_title": "Delete {{count}} tenant(s)",
+        "delete_description_one": "1 tenant will be cancelled and archived. Active tenants are skipped automatically.",
+        "delete_description_other": "{{count}} tenants will be cancelled and archived. Active tenants are skipped automatically.",
+        "delete_description": "{{count}} tenants will be cancelled and archived. Active ones are skipped automatically.",
+        "delete_confirm_singular": "Delete 1 tenant",
+        "delete_confirm_plural": "Delete {{count}} tenants"
+    },
+    "win_back_free": {
+        "title": "Win-back Free ({{count}})",
+        "title_all": "Win-back Free for all expired",
+        "description": "WhatsApp first if they have a phone; if missing or it fails, email. Offers 1 free month. On accept they get credentials.",
+        "description_all": "All expired Free tenants with phone or email (max 500): WhatsApp first, fallback to email. On accept: 1 free month + credentials.",
+        "force_label": "Force resend",
+        "force_hint": "Ignores cooldown for recent offers (72h) or recent acceptances.",
+        "confirm": "Send to {{count}}",
+        "confirm_all": "Send to all expired Free"
+    },
+    "win_back_history": {
+        "title": "Free win-back history",
+        "description": "Latest offer per clinic (WhatsApp or email). Not a full attempt log — shows current offer status.",
+        "empty": "No Free win-back sends recorded yet.",
+        "col_tenant": "Clinic",
+        "col_channel": "Channel",
+        "col_status": "Status",
+        "col_when": "Date",
+        "col_contact": "Contact",
+        "status_pending": "Pending (waiting for Yes)",
+        "status_accepted": "Accepted"
+    },
+    "empty": {
+        "no_records_title": "No tenants yet",
+        "no_records_description": "When a clinic signs up from the site or via Orvae PE, it will appear here.",
+        "no_results_title": "No results",
+        "no_results_description": "Adjust the filters or the search to see more tenants."
+    },
+    "aria": {
+        "results_count_one": "1 tenant matches the current filters.",
+        "results_count_other": "{{count}} tenants match the current filters."
+    },
+    "toast": {
+        "load_error": "We couldn't load the tenants. Retry in a few seconds.",
+        "slug_copied": "Slug copied to clipboard"
+    },
+    "modules": {
+        "page_title": "Modules — {{name}}",
+        "page_description": "Enable or hide sidebar views, rates, dashboard KPIs and checkout flows for this clinic.",
+        "back": "Back to tenants",
+        "hint": "Uncheck a module to hide it on the tenant subdomain. Existing data is kept; only menu items, KPIs and related checkout flows are hidden.",
+        "toggle_group": "Whole group",
+        "hidden_count": "{{count}} hidden",
+        "all_visible": "All modules visible for this clinic.",
+        "disabled_summary": "{{count}} module(s) hidden on the subdomain.",
+        "unsaved": "Unsaved changes",
+        "saved": "Modules updated for this tenant."
+    },
+    "limits": {
+        "page_title": "Limits — {{name}}",
+        "page_description": "Raise or lower quotas for this clinic only, without changing the catalog plan.",
+        "back": "Back to tenants",
+        "hint": "«Adjustment» adds (+) or subtracts (−) from the plan. «Fixed cap» sets the final number (−1 = unlimited). Price / month only for paid positive add-ons.",
+        "plan_label": "Active plan",
+        "plan_none": "No plan / free",
+        "base": "Plan",
+        "effective": "Effective",
+        "extra": "Adjustment (±)",
+        "extra_hint": "E.g. −50 lowers the plan by 50; +2 adds 2. Empty or 0 = no change.",
+        "precio_mensual": "Price / month (S/.)",
+        "precio_placeholder": "0 = courtesy",
+        "override": "Fixed cap",
+        "override_placeholder": "Empty = plan + adjustment",
+        "override_hint": "E.g. 100 locks 100 even if the plan says 200. Clears the adjustment.",
+        "expires_at": "Expires",
+        "motivo": "Reason",
+        "motivo_placeholder": "E.g. commercial 2x1 / −100 vouchers",
+        "unlimited": "Unlimited",
+        "unsaved": "Unsaved changes",
+        "active_extras": "{{count}} with adjustment/cap",
+        "badge_extra": "+{{count}} courtesy",
+        "badge_reduction": "−{{count}} reduction",
+        "badge_paid": "+{{count}} add-on · S/. {{amount}}/mo",
+        "badge_override": "Fixed cap",
+        "features": {
+            "max_sedes": "Sites",
+            "max_usuarios": "Users",
+            "max_pacientes": "Patients",
+            "max_propietarios": "Owners",
+            "max_productos": "Products",
+            "max_comprobantes_mes": "Vouchers / month"
+        },
+        "features_hint": {
+            "max_comprobantes_mes": "Included monthly base quota. In the billing period it is multiplied by cycle months (×1 / ×3 / ×6 / ×12)."
+        }
+    },
+    "free_onboarding": {
+        "title": "Free follow-up",
+        "description": "How each Free clinic is doing: whether they opened the link, logged in, and what they last used. Send a WhatsApp from here to move them to a paid plan.",
+        "filter_label": "Filter by flow",
+        "plan_filter_label": "Filter by plan",
+        "plan_filter": {
+            "todos": "All plans",
+            "free": "Free only",
+            "pago": "Paid only"
+        },
+        "back_to_tenants": "Back to tenants",
+        "send": "WhatsApp",
+        "send_email": "Email",
+        "confirm_send": "Send a follow-up WhatsApp to {{name}}?",
+        "confirm_send_email": "Send a follow-up email to {{name}}?",
+        "send_selected": "Message selected",
+        "selected_one": "clinic selected",
+        "selected_many": "clinics selected",
+        "confirm_send_bulk": "Send follow-up to {{count}} clinics?",
+        "never_opened": "Has not opened the welcome link",
+        "login_count": "{{count}} logins",
+        "empty_title": "No active Free clinics",
+        "empty_description": "When a Free tenant registers, you will see here whether they entered the system.",
+        "toast_load_error": "Could not load Free follow-up.",
+        "columns": {
+            "flujo": "Flow",
+            "login": "Last login",
+            "uso": "Last activity"
+        },
+        "filters": {
+            "all": "All",
+            "nunca_entro": "Never logged in",
+            "activo": "Used (7 days)",
+            "inactivo": "Inactive",
+            "sin_whatsapp": "No phone"
+        },
+        "stage": {
+            "nunca_entro": "Never logged in",
+            "activo": "Using Free",
+            "inactivo": "Inactive",
+            "sin_whatsapp": "No phone"
+        }
+    }
+}
