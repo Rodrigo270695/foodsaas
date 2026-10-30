@@ -143,6 +143,17 @@ final class PlanLimits
         return self::wouldExceed($feature, $tenant, null, 1);
     }
 
+    /**
+     * Multi-sede = el plan permite más de un local (`max_sedes` > 1 o ilimitado).
+     * No hay un feature booleano aparte: el límite ya define el panorama.
+     */
+    public static function allowsMultipleSedes(?Tenant $tenant = null): bool
+    {
+        $limit = self::intLimit($tenant, 'max_sedes');
+
+        return $limit === null || $limit > 1;
+    }
+
     public static function message(string $feature, ?int $limit = null): string
     {
         $limit ??= self::intLimit(self::tenant(), $feature);

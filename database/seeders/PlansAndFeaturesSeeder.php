@@ -10,6 +10,10 @@ class PlansAndFeaturesSeeder extends Seeder
 {
     public function run(): void
     {
+        PlanFeature::query()
+            ->whereIn('feature', ['modulo_inventario', 'modulo_kds', 'multi_sede'])
+            ->delete();
+
         $definitions = [
             'free' => [
                 'nombre' => 'Free',
@@ -26,7 +30,6 @@ class PlansAndFeaturesSeeder extends Seeder
                     'max_productos' => 50,
                     'max_mesas' => 15,
                     'max_pedidos_mes' => 200,
-                    'modulo_kds' => true,
                 ]),
             ],
             'starter' => [
@@ -44,7 +47,6 @@ class PlansAndFeaturesSeeder extends Seeder
                     'max_productos' => 200,
                     'max_mesas' => 40,
                     'max_pedidos_mes' => 1500,
-                    'modulo_kds' => true,
                     'modulo_reportes' => true,
                     'boletas_electronicas' => true,
                     'max_comprobantes_mes' => 100,
@@ -52,7 +54,7 @@ class PlansAndFeaturesSeeder extends Seeder
             ],
             'pro' => [
                 'nombre' => 'Pro',
-                'descripcion' => 'Inventario, delivery y reservas para restaurantes en crecimiento',
+                'descripcion' => 'Delivery, reservas y facturación para restaurantes en crecimiento',
                 'badge' => 'Más popular',
                 'color_hex' => '#1D4ED8',
                 'precio_mensual' => 490,
@@ -65,8 +67,6 @@ class PlansAndFeaturesSeeder extends Seeder
                     'max_productos' => 2000,
                     'max_mesas' => 120,
                     'max_pedidos_mes' => -1,
-                    'modulo_inventario' => true,
-                    'modulo_kds' => true,
                     'modulo_delivery' => true,
                     'modulo_reservas' => true,
                     'modulo_reportes' => true,
@@ -90,12 +90,35 @@ class PlansAndFeaturesSeeder extends Seeder
                     'max_productos' => -1,
                     'max_mesas' => -1,
                     'max_pedidos_mes' => -1,
-                    'modulo_inventario' => true,
-                    'modulo_kds' => true,
                     'modulo_delivery' => true,
                     'modulo_reservas' => true,
                     'modulo_reportes' => true,
-                    'multi_sede' => true,
+                    'boletas_electronicas' => true,
+                    'facturas_electronicas' => true,
+                    'guias_remision' => true,
+                    'notas_credito' => true,
+                    'notas_debito' => true,
+                    'max_comprobantes_mes' => -1,
+                ]),
+            ],
+            Plan::CODIGO_MULTI_SEDE => [
+                'nombre' => 'Multi-sede',
+                'descripcion' => 'Cadenas y franquicias: muchas sedes, equipo amplio y facturación completa. Ajustá los cupos desde el panel.',
+                'badge' => 'Cadenas',
+                'color_hex' => '#0F766E',
+                'precio_mensual' => 890,
+                'trial_days' => 14,
+                'referral_reward_days' => 30,
+                'orden' => 5,
+                'features' => $this->features([
+                    'max_sedes' => -1,
+                    'max_usuarios' => -1,
+                    'max_productos' => -1,
+                    'max_mesas' => -1,
+                    'max_pedidos_mes' => -1,
+                    'modulo_delivery' => true,
+                    'modulo_reservas' => true,
+                    'modulo_reportes' => true,
                     'boletas_electronicas' => true,
                     'facturas_electronicas' => true,
                     'guias_remision' => true,
@@ -146,6 +169,9 @@ class PlansAndFeaturesSeeder extends Seeder
     {
         $rows = [];
         foreach ($values as $feature => $value) {
+            if (! isset(Plan::FEATURE_CATALOG[$feature])) {
+                continue;
+            }
             if (is_bool($value)) {
                 $rows[] = [
                     'feature' => $feature,

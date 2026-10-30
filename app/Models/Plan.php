@@ -13,6 +13,8 @@ class Plan extends Model
 
     public const CODIGO_FREE = 'free';
 
+    public const CODIGO_MULTI_SEDE = 'multi_sede';
+
     /**
      * Catálogo de features vinculables vía `plan_features` (FoodSaaS).
      */
@@ -23,12 +25,9 @@ class Plan extends Model
         'max_mesas' => ['type' => 'int', 'group' => 'limites', 'default' => 30],
         'max_pedidos_mes' => ['type' => 'int', 'group' => 'limites', 'default' => 500],
 
-        'modulo_inventario' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
-        'modulo_kds' => ['type' => 'bool', 'group' => 'modulos', 'default' => true],
         'modulo_delivery' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
         'modulo_reservas' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
         'modulo_reportes' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
-        'multi_sede' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
 
         'boletas_electronicas' => ['type' => 'bool', 'group' => 'facturacion', 'default' => false],
         'facturas_electronicas' => ['type' => 'bool', 'group' => 'facturacion', 'default' => false],

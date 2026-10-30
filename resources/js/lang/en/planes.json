@@ -127,17 +127,14 @@
             "facturacion": "Electronic billing"
         },
         "descriptions": {
-            "max_sedes": "Maximum number of branches (-1 = unlimited).",
+            "max_sedes": "Maximum number of branches (-1 = unlimited). 2 or more already means multi-location.",
             "max_usuarios": "Maximum number of staff users.",
             "max_productos": "Maximum menu/inventory products.",
             "max_mesas": "Maximum configurable tables (-1 = unlimited).",
             "max_pedidos_mes": "Orders recorded per month (-1 = unlimited).",
-            "modulo_inventario": "Supplies, purchases, warehouses and stock movements.",
-            "modulo_kds": "Kitchen display (KDS) and prep statuses.",
             "modulo_delivery": "Own delivery and online menu.",
             "modulo_reservas": "Table reservations and calendar.",
             "modulo_reportes": "Advanced sales and operations reports.",
-            "multi_sede": "Consolidated multi-branch operation.",
             "boletas_electronicas": "Issue electronic sales receipts.",
             "facturas_electronicas": "Issue electronic invoices (RUC).",
             "guias_remision": "Issue electronic dispatch guides.",

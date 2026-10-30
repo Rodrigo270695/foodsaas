@@ -127,17 +127,14 @@
             "facturacion": "Facturación electrónica"
         },
         "descriptions": {
-            "max_sedes": "Cantidad máxima de sedes (-1 = ilimitado).",
+            "max_sedes": "Cantidad máxima de sedes (-1 = ilimitado). Con 2 o más el restaurante ya es multi-sede.",
             "max_usuarios": "Cantidad máxima de usuarios del staff.",
             "max_productos": "Cantidad máxima de productos en carta/inventario.",
             "max_mesas": "Cantidad máxima de mesas configurables (-1 = ilimitado).",
             "max_pedidos_mes": "Pedidos registrados por mes (-1 = ilimitado).",
-            "modulo_inventario": "Insumos, compras, almacenes y movimientos de stock.",
-            "modulo_kds": "Pantalla de cocina (KDS) y estados de preparación.",
             "modulo_delivery": "Delivery propio y menú online.",
             "modulo_reservas": "Reservas de mesas y calendario.",
             "modulo_reportes": "Reportes avanzados de ventas y operación.",
-            "multi_sede": "Operación consolidada en varias sedes.",
             "boletas_electronicas": "Emite boletas de venta electrónicas.",
             "facturas_electronicas": "Emite facturas electrónicas (RUC).",
             "guias_remision": "Emite guías de remisión electrónicas.",
