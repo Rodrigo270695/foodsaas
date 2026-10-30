@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Support\Restaurante;
 
 use App\Models\RestaurantSetting;
+use App\Models\Tenant;
+use App\Tenancy\TenantManager;
+use Throwable;
 
 /**
  * URLs de logo del restaurante con fallback al branding FoodSaaS.
@@ -25,6 +28,43 @@ final class RestaurantBrandingUrls
         }
 
         return self::withCacheBuster($logoUrl, $setting->updated_at?->timestamp);
+    }
+
+    /**
+     * @return array{logo_url: string, has_custom_logo: bool}
+     */
+    public static function resolveForTenant(TenantManager $manager, Tenant $tenant): array
+    {
+        if (! is_string($tenant->slug) || $tenant->slug === '') {
+            return [
+                'logo_url' => self::default(),
+                'has_custom_logo' => false,
+            ];
+        }
+
+        try {
+            return $manager->runForTenant($tenant, function (): array {
+                if (! RestaurantSetting::tableReady()) {
+                    return [
+                        'logo_url' => self::default(),
+                        'has_custom_logo' => false,
+                    ];
+                }
+
+                $setting = RestaurantSetting::query()->first();
+                $hasCustom = is_string($setting?->logo_path) && $setting->logo_path !== '';
+
+                return [
+                    'logo_url' => self::fromSetting($setting),
+                    'has_custom_logo' => $hasCustom,
+                ];
+            }, false);
+        } catch (Throwable) {
+            return [
+                'logo_url' => self::default(),
+                'has_custom_logo' => false,
+            ];
+        }
     }
 
     /**

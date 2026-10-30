@@ -8,11 +8,11 @@ use App\Models\Departamento;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantProvisioner;
+use App\Support\Restaurante\RestaurantBrandingUrls;
 use App\Tenancy\TenantManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -35,7 +35,7 @@ class TenantController extends Controller
 
     private const PLAN_FILTER_NONE = 'sin_plan';
 
-    public function index(Request $request): Response
+    public function index(Request $request, TenantManager $manager): Response
     {
         $search = trim((string) $request->string('search', ''));
         $perPageRequested = (int) $request->integer('per_page', 10);
@@ -76,7 +76,14 @@ class TenantController extends Controller
                 'distritoModel.provincia.departamento:id,name,pais_id',
             ])
             ->paginate($perPage)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(function (Tenant $tenant) use ($manager): Tenant {
+                $branding = RestaurantBrandingUrls::resolveForTenant($manager, $tenant);
+                $tenant->setAttribute('logo_url', $branding['logo_url']);
+                $tenant->setAttribute('has_custom_logo', $branding['has_custom_logo']);
+
+                return $tenant;
+            });
 
         $plansCatalog = Plan::query()
             ->where('activo', true)

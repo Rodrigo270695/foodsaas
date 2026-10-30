@@ -7,7 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { VETSAAS_DEFAULT_LOGO } from '@/lib/brand';
+import { FOODSAAS_DEFAULT_LOGO } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 
 export type TenantLogoPreviewProps = {
@@ -26,10 +26,10 @@ export function TenantLogoPreview({
     const { t } = useTranslation('tenants');
     const [open, setOpen] = useState(false);
 
-    const src = logoUrl || VETSAAS_DEFAULT_LOGO;
+    const src = logoUrl || FOODSAAS_DEFAULT_LOGO;
     const canPreview =
         hasCustomLogo &&
-        src !== VETSAAS_DEFAULT_LOGO &&
+        src !== FOODSAAS_DEFAULT_LOGO &&
         !src.endsWith('/logo.png');
 
     if (!canPreview) {
