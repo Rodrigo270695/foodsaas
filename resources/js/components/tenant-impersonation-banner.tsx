@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import tenantImpersonation from '@/routes/impersonate';
+
+const LEAVE_IMPERSONATION_URL = '/impersonate/leave';
 
 const DISMISS_KEY = 'foodsaas:impersonation-banner-minimized';
 
@@ -36,7 +37,7 @@ export function TenantImpersonationBanner() {
         } catch {
             // ignore
         }
-        router.post(tenantImpersonation.leave.url());
+        router.post(LEAVE_IMPERSONATION_URL);
     };
 
     const onMinimize = (): void => {

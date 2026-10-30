@@ -28,7 +28,6 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -92,7 +91,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return $message;
         };
 
-        $supportFacingErrorMessage = static function (Throwable $e) use ($userFacingHttpMessage): ?string {
+        $supportFacingErrorMessage = static function (\Throwable $e) use ($userFacingHttpMessage): ?string {
             $user = Auth::guard('web')->user();
             $isSupport = $user instanceof User && $user->isPlatformSuperadmin();
 
@@ -211,7 +210,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return null;
         });
 
-        $exceptions->renderable(function (Throwable $e, Request $request) use ($renderInertiaHttpError, $supportFacingErrorMessage) {
+        $exceptions->renderable(function (\Throwable $e, Request $request) use ($renderInertiaHttpError, $supportFacingErrorMessage) {
             if ($e instanceof TenantNotFoundException || $e instanceof TenantSuspendedException) {
                 return null;
             }
