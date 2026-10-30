@@ -10,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import sedes from '@/routes/configuracion/sedes';
+import sedes from '../sede-routes';
 import type { GeoOption, Sede } from '../types';
 
 export type SedeFormModalProps = {

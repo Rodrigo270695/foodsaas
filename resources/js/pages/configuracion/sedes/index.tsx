@@ -41,7 +41,7 @@ import { usePlanLimitReached } from '@/hooks/use-plan-limits';
 import { usePermission } from '@/hooks/use-permission';
 import { useRowSelection } from '@/hooks/use-row-selection';
 import AppLayout from '@/layouts/app-layout';
-import sedes from '@/routes/configuracion/sedes';
+import sedes from './sede-routes';
 import type { Paginated } from '@/types';
 import { SedeBulkDeleteDialog } from './components/sede-bulk-delete-dialog';
 import { SedeDeleteDialog } from './components/sede-delete-dialog';

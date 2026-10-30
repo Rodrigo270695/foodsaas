@@ -11,7 +11,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import sedes from '@/routes/configuracion/sedes';
+import sedes from '../sede-routes';
 
 export type SedeBulkDeleteDialogProps = {
     open: boolean;
