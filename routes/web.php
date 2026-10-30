@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\BootstrapLoginController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\TenantImpersonationController;
@@ -14,6 +15,20 @@ Route::get('/', function () {
 Route::middleware(['throttle:12,1'])->group(function (): void {
     Route::get('impersonate/accept', [TenantImpersonationController::class, 'accept'])
         ->name('impersonate.accept');
+});
+
+/*
+| Espejo de bienvenida (como VetSaaS): la canónica vive en routes/tenant.php
+| (subdominio). Este grupo cubre hosts donde el match por domain falle.
+*/
+Route::middleware(['tenant.required', 'throttle:20,1'])->group(function (): void {
+    Route::get('auth/bienvenida/{token}', [BootstrapLoginController::class, 'show'])
+        ->where('token', '[A-Za-z0-9]{40,128}')
+        ->name('tenant.auth.bootstrap.web');
+
+    Route::post('auth/bienvenida/{token}', [BootstrapLoginController::class, 'store'])
+        ->where('token', '[A-Za-z0-9]{40,128}')
+        ->name('tenant.auth.bootstrap.store.web');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

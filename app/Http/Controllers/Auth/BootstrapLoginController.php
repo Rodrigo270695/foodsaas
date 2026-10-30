@@ -89,7 +89,9 @@ class BootstrapLoginController extends Controller
 
     private function restaurantName(): ?string
     {
-        $ctx = current_tenant();
+        // `tenant()` → TenantContext (tiene nombreComercial/razonSocial).
+        // `current_tenant()` → modelo Tenant (atributos snake_case).
+        $ctx = tenant();
         if ($ctx === null) {
             return null;
         }

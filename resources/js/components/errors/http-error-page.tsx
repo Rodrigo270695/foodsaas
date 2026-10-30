@@ -102,9 +102,9 @@ export function HttpErrorPage({
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-muted-foreground">
                             {attempted_path ? (
-                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <span>{t('http_errors.attempted_path')}:</span>
-                                    <code className="rounded bg-muted/60 px-1.5 py-0.5 font-mono text-foreground">
+                                <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-2">
+                                    <span className="shrink-0">{t('http_errors.attempted_path')}:</span>
+                                    <code className="max-w-full break-all rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground sm:text-sm">
                                         {attempted_path}
                                     </code>
                                 </div>

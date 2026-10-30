@@ -33,7 +33,7 @@ final class PlatformSecurityAuditLogger
             /** @var User|null $user */
             $user = Auth::user();
             $req = $request ?? request();
-            $ctx = current_tenant();
+            $ctx = tenant();
 
             $tenantLabel = null;
             if ($ctx !== null) {
