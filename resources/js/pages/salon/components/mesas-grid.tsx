@@ -1,4 +1,3 @@
-import { Unlink2 } from 'lucide-react';
 import {
     useCallback,
     useEffect,
@@ -9,16 +8,11 @@ import {
     type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { toastManager } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import type { MesaSalon } from '../types';
 import { MesaFloorCard } from './mesa-floor-card';
+import { MesaUnionCard } from './mesa-union-card';
 
 type MesasGridProps = {
     mesas: MesaSalon[];
@@ -32,9 +26,20 @@ type MesasGridProps = {
     onDelete: (mesa: MesaSalon) => void;
     onUnir: (mesaIds: [string, string]) => void;
     onSeparar: (mesa: MesaSalon) => void;
+    onDissolveUnion: (mesas: MesaSalon[]) => void;
 };
 
 type Point = { x: number; y: number };
+
+type GridItem =
+    | { kind: 'solo'; mesa: MesaSalon; key: string }
+    | {
+          kind: 'union';
+          unionId: string;
+          mesas: MesaSalon[];
+          key: string;
+          capacidad: number;
+      };
 
 export function MesasGrid({
     mesas,
@@ -48,6 +53,7 @@ export function MesasGrid({
     onDelete,
     onUnir,
     onSeparar,
+    onDissolveUnion,
 }: MesasGridProps) {
     const { t } = useTranslation('salon');
     const wrapRef = useRef<HTMLDivElement>(null);
@@ -69,41 +75,31 @@ export function MesasGrid({
         return map;
     }, [mesas]);
 
-    const unionCapacidad = useMemo(() => {
-        const map = new Map<string, number>();
-        for (const mesa of mesas) {
-            if (!mesa.union_id) {
-                continue;
-            }
-            map.set(
-                mesa.union_id,
-                (map.get(mesa.union_id) ?? 0) + mesa.capacidad,
-            );
-        }
-        return map;
-    }, [mesas]);
+    const gridItems = useMemo<GridItem[]>(() => {
+        const seenUnions = new Set<string>();
+        const items: GridItem[] = [];
 
-    const unionPairs = useMemo(() => {
-        const byUnion = new Map<string, string[]>();
         for (const mesa of mesas) {
             if (!mesa.union_id) {
+                items.push({ kind: 'solo', mesa, key: mesa.id });
                 continue;
             }
-            const list = byUnion.get(mesa.union_id) ?? [];
-            list.push(mesa.id);
-            byUnion.set(mesa.union_id, list);
-        }
-        const pairs: Array<{ key: string; a: string; b: string }> = [];
-        for (const [unionId, ids] of byUnion) {
-            for (let i = 0; i < ids.length - 1; i += 1) {
-                pairs.push({
-                    key: `${unionId}-${ids[i]}-${ids[i + 1]}`,
-                    a: ids[i]!,
-                    b: ids[i + 1]!,
-                });
+            if (seenUnions.has(mesa.union_id)) {
+                continue;
             }
+            seenUnions.add(mesa.union_id);
+            const group = mesas.filter((m) => m.union_id === mesa.union_id);
+            const capacidad = group.reduce((sum, m) => sum + m.capacidad, 0);
+            items.push({
+                kind: 'union',
+                unionId: mesa.union_id,
+                mesas: group,
+                key: `union-${mesa.union_id}`,
+                capacidad,
+            });
         }
-        return pairs;
+
+        return items;
     }, [mesas]);
 
     const measure = useCallback(() => {
@@ -125,7 +121,7 @@ export function MesasGrid({
 
     useLayoutEffect(() => {
         measure();
-    }, [measure, mesas]);
+    }, [measure, mesas, gridItems]);
 
     useEffect(() => {
         const onResize = () => measure();
@@ -158,6 +154,16 @@ export function MesasGrid({
 
     const sameZona = (a: MesaSalon, b: MesaSalon) => a.zona_id === b.zona_id;
 
+    /** Representante estable de un grupo (o la mesa misma). */
+    const joinRepId = (mesaId: string): string => {
+        const mesa = mesaById.get(mesaId);
+        if (!mesa?.union_id) {
+            return mesaId;
+        }
+        const group = mesas.filter((m) => m.union_id === mesa.union_id);
+        return group[0]?.id ?? mesaId;
+    };
+
     const finishJoin = (fromId: string, toId: string) => {
         if (fromId === toId) {
             return;
@@ -165,6 +171,17 @@ export function MesasGrid({
         const from = mesaById.get(fromId);
         const to = mesaById.get(toId);
         if (!from?.activa || !to?.activa) {
+            return;
+        }
+        // Misma unión ya: no-op
+        if (
+            from.union_id &&
+            to.union_id &&
+            from.union_id === to.union_id
+        ) {
+            resetDrag();
+            setJoinSourceId(null);
+            onJoinModeChange(false);
             return;
         }
         if (!sameZona(from, to)) {
@@ -191,7 +208,7 @@ export function MesasGrid({
             return;
         }
         const root = wrapRef.current.getBoundingClientRect();
-        const from = centers.get(dragFromId);
+        const from = centers.get(joinRepId(dragFromId));
         if (!from) {
             return;
         }
@@ -210,7 +227,12 @@ export function MesasGrid({
             fromMesa &&
             overMesa &&
             overMesa.activa &&
-            sameZona(fromMesa, overMesa)
+            sameZona(fromMesa, overMesa) &&
+            !(
+                fromMesa.union_id &&
+                overMesa.union_id &&
+                fromMesa.union_id === overMesa.union_id
+            )
         ) {
             setHoverTargetId(overId);
         } else {
@@ -245,6 +267,60 @@ export function MesasGrid({
         ? mesaById.get(joinSourceId)
         : undefined;
 
+    const startDrag = (
+        mesa: MesaSalon,
+        e: ReactPointerEvent<HTMLButtonElement>,
+    ) => {
+        e.preventDefault();
+        e.stopPropagation();
+        wrapRef.current?.setPointerCapture?.(e.pointerId);
+        onJoinModeChange(false);
+        setJoinSourceId(null);
+        setDragFromId(mesa.id);
+        const c = centers.get(joinRepId(mesa.id));
+        if (c) {
+            setDragLine({ from: c, to: c });
+        }
+    };
+
+    const itemIsHighlighted = (
+        item: GridItem,
+    ): 'source' | 'target' | null => {
+        const memberIds =
+            item.kind === 'solo'
+                ? [item.mesa.id]
+                : item.mesas.map((m) => m.id);
+
+        if (
+            (joinSourceId && memberIds.includes(joinSourceId)) ||
+            (dragFromId && memberIds.includes(dragFromId))
+        ) {
+            return 'source';
+        }
+
+        if (
+            (hoverTargetId && memberIds.includes(hoverTargetId)) ||
+            (joinMode &&
+                joinSourceId !== null &&
+                !memberIds.includes(joinSourceId) &&
+                item.kind === 'solo' &&
+                item.mesa.activa &&
+                joinSource &&
+                sameZona(joinSource, item.mesa)) ||
+            (joinMode &&
+                joinSourceId !== null &&
+                !memberIds.includes(joinSourceId) &&
+                item.kind === 'union' &&
+                item.mesas.every((m) => m.activa) &&
+                joinSource &&
+                sameZona(joinSource, item.mesas[0]!))
+        ) {
+            return 'target';
+        }
+
+        return null;
+    };
+
     return (
         <div
             ref={wrapRef}
@@ -264,72 +340,11 @@ export function MesasGrid({
                 </p>
             ) : null}
 
+            {/* Solo línea temporal de drag (sin uniones permanentes). */}
             <svg
                 className="pointer-events-none absolute inset-0 z-10 h-full w-full overflow-visible"
                 aria-hidden
             >
-                <defs>
-                    <linearGradient
-                        id="mesa-union-stroke"
-                        x1="0%"
-                        y1="0%"
-                        x2="100%"
-                        y2="0%"
-                    >
-                        <stop offset="0%" stopColor="#660033" />
-                        <stop offset="50%" stopColor="#9d174d" />
-                        <stop offset="100%" stopColor="#0d9488" />
-                    </linearGradient>
-                    <filter
-                        id="mesa-union-glow"
-                        x="-40%"
-                        y="-40%"
-                        width="180%"
-                        height="180%"
-                    >
-                        <feGaussianBlur stdDeviation="2.8" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
-
-                {unionPairs.map((pair) => {
-                    const a = centers.get(pair.a);
-                    const b = centers.get(pair.b);
-                    if (!a || !b) {
-                        return null;
-                    }
-                    const mx = (a.x + b.x) / 2;
-                    const my = (a.y + b.y) / 2 - 18;
-                    return (
-                        <g key={pair.key} filter="url(#mesa-union-glow)">
-                            <path
-                                d={`M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`}
-                                fill="none"
-                                stroke="url(#mesa-union-stroke)"
-                                strokeWidth="3.5"
-                                strokeLinecap="round"
-                                className="mesa-union-path"
-                                strokeDasharray="10 7"
-                            />
-                            <circle
-                                cx={a.x}
-                                cy={a.y}
-                                r="5.5"
-                                className="fill-[#660033]"
-                            />
-                            <circle
-                                cx={b.x}
-                                cy={b.y}
-                                r="5.5"
-                                className="fill-teal-600"
-                            />
-                        </g>
-                    );
-                })}
-
                 {dragLine ? (
                     <g>
                         <line
@@ -360,59 +375,6 @@ export function MesasGrid({
                 ) : null}
             </svg>
 
-            {/* Botones Separar sobre el centro de cada enlace */}
-            {canUpdate
-                ? unionPairs.map((pair) => {
-                      const a = centers.get(pair.a);
-                      const b = centers.get(pair.b);
-                      if (!a || !b) {
-                          return null;
-                      }
-                      const mx = (a.x + b.x) / 2;
-                      const my = (a.y + b.y) / 2 - 18;
-                      const mesaA = mesaById.get(pair.a);
-                      if (!mesaA) {
-                          return null;
-                      }
-
-                      return (
-                          <Tooltip key={`cut-${pair.key}`}>
-                              <TooltipTrigger asChild>
-                                  <Button
-                                      type="button"
-                                      size="icon"
-                                      variant="outline"
-                                      aria-label={t('union.separar')}
-                                      className="absolute z-20 size-8 -translate-x-1/2 -translate-y-1/2 cursor-pointer border-[#660033]/40 bg-background text-[#660033] shadow-md hover:bg-[#660033]/10"
-                                      style={{ left: mx, top: my }}
-                                      onClick={(e) => {
-                                          e.stopPropagation();
-                                          onSeparar(mesaA);
-                                      }}
-                                  >
-                                      <Unlink2 className="size-3.5" />
-                                  </Button>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">
-                                  {t('union.separar')}
-                              </TooltipContent>
-                          </Tooltip>
-                      );
-                  })
-                : null}
-
-            <style>{`
-                @keyframes mesa-union-dash {
-                    to { stroke-dashoffset: -34; }
-                }
-                .mesa-union-path {
-                    animation: mesa-union-dash 1.4s linear infinite;
-                }
-                @media (prefers-reduced-motion: reduce) {
-                    .mesa-union-path { animation: none; }
-                }
-            `}</style>
-
             <div
                 className={cn(
                     'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6',
@@ -423,31 +385,70 @@ export function MesasGrid({
                 aria-live="polite"
                 aria-label={ariaLabel}
             >
-                {mesas.map((mesa, index) => {
-                    const joinedCap = mesa.union_id
-                        ? unionCapacidad.get(mesa.union_id)
-                        : undefined;
+                {gridItems.map((item, index) => {
+                    const joinHighlight = itemIsHighlighted(item);
 
-                    const sameZoneAsSource =
-                        !joinSource || sameZona(joinSource, mesa);
-
-                    let joinHighlight: 'source' | 'target' | null = null;
-                    if (joinSourceId === mesa.id || dragFromId === mesa.id) {
-                        joinHighlight = 'source';
-                    } else if (
-                        hoverTargetId === mesa.id ||
-                        (joinMode &&
-                            joinSourceId !== null &&
-                            joinSourceId !== mesa.id &&
-                            mesa.activa &&
-                            sameZoneAsSource)
-                    ) {
-                        joinHighlight = 'target';
+                    if (item.kind === 'union') {
+                        const rep = item.mesas[0]!;
+                        return (
+                            <div
+                                key={item.key}
+                                data-mesa-id={rep.id}
+                                data-union-id={item.unionId}
+                                ref={(el) => {
+                                    if (el) {
+                                        cardRefs.current.set(rep.id, el);
+                                        for (const m of item.mesas) {
+                                            if (m.id !== rep.id) {
+                                                cardRefs.current.set(m.id, el);
+                                            }
+                                        }
+                                    } else {
+                                        for (const m of item.mesas) {
+                                            cardRefs.current.delete(m.id);
+                                        }
+                                    }
+                                }}
+                                className="relative z-0 col-span-2 animate-in fade-in zoom-in-95 fill-mode-both duration-300"
+                                style={{
+                                    animationDelay: `${Math.min(index, 12) * 40}ms`,
+                                }}
+                            >
+                                <MesaUnionCard
+                                    mesas={item.mesas}
+                                    capacidadTotal={item.capacidad}
+                                    canUpdate={canUpdate}
+                                    canDelete={canDelete}
+                                    joinHighlight={joinHighlight}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
+                                    onDissolve={() =>
+                                        onDissolveUnion(item.mesas)
+                                    }
+                                    onSepararOne={onSeparar}
+                                    onJoinTap={
+                                        joinMode &&
+                                        canUpdate &&
+                                        item.mesas.every((m) => m.activa)
+                                            ? () => handleJoinTap(rep)
+                                            : undefined
+                                    }
+                                    onJoinDragStart={
+                                        canUpdate &&
+                                        item.mesas.every((m) => m.activa)
+                                            ? (e) => startDrag(rep, e)
+                                            : undefined
+                                    }
+                                />
+                            </div>
+                        );
                     }
+
+                    const mesa = item.mesa;
 
                     return (
                         <div
-                            key={mesa.id}
+                            key={item.key}
                             data-mesa-id={mesa.id}
                             ref={(el) => {
                                 if (el) {
@@ -465,15 +466,9 @@ export function MesasGrid({
                                 mesa={mesa}
                                 canUpdate={canUpdate}
                                 canDelete={canDelete}
-                                joinedCapacidad={joinedCap}
                                 joinHighlight={joinHighlight}
                                 onEdit={onEdit}
                                 onDelete={onDelete}
-                                onSeparar={
-                                    mesa.union_id
-                                        ? () => onSeparar(mesa)
-                                        : undefined
-                                }
                                 onJoinTap={
                                     joinMode && canUpdate && mesa.activa
                                         ? () => handleJoinTap(mesa)
@@ -481,23 +476,7 @@ export function MesasGrid({
                                 }
                                 onJoinDragStart={
                                     canUpdate && mesa.activa
-                                        ? (e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              wrapRef.current?.setPointerCapture?.(
-                                                  e.pointerId,
-                                              );
-                                              onJoinModeChange(false);
-                                              setJoinSourceId(null);
-                                              setDragFromId(mesa.id);
-                                              const c = centers.get(mesa.id);
-                                              if (c) {
-                                                  setDragLine({
-                                                      from: c,
-                                                      to: c,
-                                                  });
-                                              }
-                                          }
+                                        ? (e) => startDrag(mesa, e)
                                         : undefined
                                 }
                             />

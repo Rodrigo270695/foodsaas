@@ -71,7 +71,7 @@
         "load_error": "Could not load the dining room."
     },
     "floor": {
-        "subtitle": "Tap a table to edit it. Join only within the same zone (link icon above). Inactive tables stay out of operations.",
+        "subtitle": "Tap a table to edit it. Joining (same zone) merges into one card. Inactive tables stay out of operations.",
         "search": "Search table...",
         "refresh": "Refresh floor",
         "available": "Available",
@@ -87,10 +87,16 @@
         "mode_on": "Tap the first table…",
         "mode_pick_second": "Now tap another table in the same zone.",
         "info_label": "How to join tables",
-        "hint": "Same zone only. Drag the link icon onto another table, or turn on Join (icon above) and tap them. To split: use the unlink button on the card or at the center of the line.",
+        "hint": "Same zone only. Drag the link icon onto another table, or turn on Join above and tap them. Joined tables show as one card. To split: use Unlink on the group card.",
         "drag": "Drag onto another table in the same zone",
         "badge": "Joined",
         "separar": "Split join",
+        "separar_grupo": "Split group",
+        "separar_one": "Remove {{code}}",
+        "edit_member": "Edit {{code}}",
+        "group_actions": "Group actions",
+        "group_title": "Group · {{count}} tables",
+        "capacity_total": "{{total}} guests",
         "same_zone_error": "Tables from different zones cannot be joined.",
         "capacity_group": "{{solo}} → group {{total}}"
     },

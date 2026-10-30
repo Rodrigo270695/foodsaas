@@ -155,6 +155,34 @@ export default function Index({
         router.post(salon.mesas.separar(mesa.id).url, {}, { preserveScroll: true });
     }, []);
 
+    /**
+     * Disuelve el grupo con la API actual:
+     * 2 mesas → un separar limpia ambas; 3+ → dos llamadas (deja 2, luego disuelve).
+     */
+    const dissolveUnion = useCallback((members: MesaSalon[]) => {
+        const first = members[0];
+        if (!first) {
+            return;
+        }
+        const postSeparar = (mesa: MesaSalon, onSuccess?: () => void) => {
+            router.post(
+                salon.mesas.separar(mesa.id).url,
+                {},
+                { preserveScroll: true, onSuccess },
+            );
+        };
+        if (members.length <= 2) {
+            postSeparar(first);
+            return;
+        }
+        const second = members[1];
+        postSeparar(first, () => {
+            if (second) {
+                postSeparar(second);
+            }
+        });
+    }, []);
+
     const visibleMesas = useMemo(() => {
         const q = query.trim().toLowerCase();
         if (q === '') {
@@ -359,6 +387,7 @@ export default function Index({
                                 onDelete={deleteMesa}
                                 onUnir={unirMesas}
                                 onSeparar={separarMesa}
+                                onDissolveUnion={dissolveUnion}
                             />
                         )}
                     </>

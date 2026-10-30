@@ -11,14 +11,15 @@ A veces solo hay mesas chicas libres (ej. dos de 4) y llega un grupo grande (fam
 | Campo | `cfg_mesas.union_id` (UUID nullable). Mismo valor = mismo grupo. |
 | API | `POST /salon/mesas/unir` con `mesa_ids[]` (2–8). `POST /salon/mesas/{mesa}/separar`. |
 | Permiso | `salon.update` |
-| UI | Arrastre desde el ícono de enlace + línea SVG con glow; modo “Unir mesas” (tap-tap) como alternativa accesible (WCAG 2.2). Badge **Unida** + capacidad de grupo. Menú ⋯ → Separar. |
+| UI | Arrastre / modo Unir (tap-tap). Las unidas se renderizan como **un solo card** (`MesaUnionCard`) con tablero alargado y códigos. Línea SVG solo durante el drag. |
 
 Reglas actuales:
 
 - Solo mesas **activas** de la **sede activa**.
 - Solo mesas de la **misma zona** (no se une Principal con Terraza).
 - Si una mesa ya pertenece a un grupo, unir con otra **absorbe / fusiona** grupos (misma zona).
-- Separar manualmente: botón Unlink en la tarjeta, en el centro de la línea, o menú ⋯. Si quedan &lt; 2, se disuelve el grupo.
+- En el plano: un card de grupo (`col-span-2`) en lugar de N cards + líneas.
+- Separar grupo: Unlink en el card (disuelve vía API `separar` en cadena). Menú ⋯: editar / sacar una mesa / borrar.
 - Tras cobro (futuro): separación automática (ver abajo).
 
 ## Futuro: separación automática al cobrar / liberar
@@ -74,7 +75,7 @@ public function afterAccountClosed(Account $account): void
 ### UI futura
 
 - En el plano: grupo unido + indicador “cuenta abierta”.
-- Tras cobro: animación de disolución de la línea SVG (salida más rápida que la entrada).
+- Tras cobro: animación de disolución del card de grupo a cards individuales.
 - KDS / cocina: una sola comanda agrupada.
 
 ## Fuera de alcance ahora
