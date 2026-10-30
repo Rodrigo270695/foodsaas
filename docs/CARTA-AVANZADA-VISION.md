@@ -87,9 +87,9 @@ men_carta_bloques  id, pagina_id, tipo(section|producto|texto), producto_id?, la
 
 | Fase | Entrega |
 |------|---------|
-| **A (ahora)** | Áreas creatables, imagen de producto, vista tabla, CTA “Armar carta” |
-| **B** | CRUD cartas + canvas DnD + fondos |
-| **C** | QR público + PDF + watermark logo |
+| **A** | Áreas creatables, imagen de producto, vista tabla, CTA “Armar carta” |
+| **B (ahora)** | CRUD cartas + canvas DnD + fondos + QR + print/PDF watermark |
+| **C** | Ruta pública `/m/{slug}` sin auth + PDF server-side |
 | **D** | Horarios por carta + deep link mesero |
 
 ---

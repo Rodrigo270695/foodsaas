@@ -112,16 +112,6 @@ class CartaController extends Controller
         ]);
     }
 
-    public function builder(): Response
-    {
-        $this->tenantIdOrAbort();
-
-        return Inertia::render('carta/builder', [
-            'productos_count' => ProductoCarta::query()->where('activo', true)->count(),
-            'areas_count' => AreaCarta::query()->where('activa', true)->count(),
-        ]);
-    }
-
     public function storeArea(AreaCartaRequest $request): RedirectResponse
     {
         $this->tenantIdOrAbort();

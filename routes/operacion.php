@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CartaController;
+use App\Http\Controllers\CartaMenuController;
 use App\Http\Controllers\SalonController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,8 +15,26 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->name('index');
 
                 Route::middleware('permission:carta.view')
-                    ->get('armar', [CartaController::class, 'builder'])
-                    ->name('builder');
+                    ->get('armar', [CartaMenuController::class, 'index'])
+                    ->name('menus.index');
+                Route::middleware('permission:carta.create')
+                    ->post('armar', [CartaMenuController::class, 'store'])
+                    ->name('menus.store');
+                Route::middleware('permission:carta.view')
+                    ->get('armar/{menuCarta}', [CartaMenuController::class, 'edit'])
+                    ->name('menus.edit');
+                Route::middleware('permission:carta.view')
+                    ->get('armar/{menuCarta}/vista', [CartaMenuController::class, 'preview'])
+                    ->name('menus.preview');
+                Route::middleware('permission:carta.update')
+                    ->patch('armar/{menuCarta}', [CartaMenuController::class, 'update'])
+                    ->name('menus.update');
+                Route::middleware('permission:carta.update')
+                    ->put('armar/{menuCarta}/items', [CartaMenuController::class, 'syncItems'])
+                    ->name('menus.items.sync');
+                Route::middleware('permission:carta.delete')
+                    ->delete('armar/{menuCarta}', [CartaMenuController::class, 'destroy'])
+                    ->name('menus.destroy');
 
                 Route::middleware('permission:carta.create')
                     ->post('areas', [CartaController::class, 'storeArea'])
