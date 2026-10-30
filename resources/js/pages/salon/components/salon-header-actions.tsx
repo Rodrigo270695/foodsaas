@@ -82,7 +82,7 @@ export function SalonHeaderActions({
 
             {canUpdate && onToggleJoinMode ? (
                 <Can permission="salon.update">
-                    <div className="flex items-center gap-0.5">
+                    <div className="relative inline-flex">
                         <ActionTip
                             label={
                                 joinMode
@@ -107,10 +107,12 @@ export function SalonHeaderActions({
                             </Button>
                         </ActionTip>
                         <InfoHint
+                            variant="badge"
                             label={t('union.info_label')}
                             side="bottom"
                             align="end"
                             contentClassName="max-w-72"
+                            className="absolute -top-1.5 -right-1.5 z-10"
                         >
                             {t('union.hint')}
                         </InfoHint>

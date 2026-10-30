@@ -30,12 +30,9 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    FilterSelect,
+    type FilterSelectOption,
+} from '@/components/ui/filter-select';
 import {
     Tooltip,
     TooltipContent,
@@ -88,6 +85,36 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
             storageKey: 'foodsaas.almacen.prefs',
             defaults: { per_page: 15 },
         });
+
+    const controlOptions = useMemo<
+        readonly FilterSelectOption<AlmacenFilters['control']>[]
+    >(
+        () => [
+            { value: 'todos', label: t('filters.control_all') },
+            { value: 'sku', label: t('filters.control_sku'), tone: 'warning' },
+            {
+                value: 'recipe',
+                label: t('filters.control_recipe'),
+                tone: 'info',
+            },
+        ],
+        [t],
+    );
+
+    const alertaOptions = useMemo<
+        readonly FilterSelectOption<AlmacenFilters['alerta']>[]
+    >(
+        () => [
+            { value: 'todos', label: t('filters.alerta_all') },
+            {
+                value: 'bajo',
+                label: t('filters.alerta_bajo'),
+                tone: 'warning',
+            },
+            { value: 'ok', label: t('filters.alerta_ok'), tone: 'success' },
+        ],
+        [t],
+    );
 
     const columns = useMemo<DataTableColumn<AlmacenProducto>[]>(() => {
         return [
@@ -325,54 +352,21 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
                 />
 
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-wrap gap-2">
-                        <Select
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <FilterSelect
+                            ariaLabel={t('filters.control_label')}
                             value={filters.control}
-                            onValueChange={(control) =>
-                                applyFilter({
-                                    control:
-                                        control as AlmacenFilters['control'],
-                                })
-                            }
-                        >
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="sku">
-                                    {t('filters.control_sku')}
-                                </SelectItem>
-                                <SelectItem value="recipe">
-                                    {t('filters.control_recipe')}
-                                </SelectItem>
-                                <SelectItem value="todos">
-                                    {t('filters.control_all')}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Select
+                            onChange={(control) => applyFilter({ control })}
+                            options={controlOptions}
+                            disabled={isLoading}
+                        />
+                        <FilterSelect
+                            ariaLabel={t('filters.alerta_label')}
                             value={filters.alerta}
-                            onValueChange={(alerta) =>
-                                applyFilter({
-                                    alerta: alerta as AlmacenFilters['alerta'],
-                                })
-                            }
-                        >
-                            <SelectTrigger className="w-[180px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="todos">
-                                    {t('filters.alerta_all')}
-                                </SelectItem>
-                                <SelectItem value="bajo">
-                                    {t('filters.alerta_bajo')}
-                                </SelectItem>
-                                <SelectItem value="ok">
-                                    {t('filters.alerta_ok')}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                            onChange={(alerta) => applyFilter({ alerta })}
+                            options={alertaOptions}
+                            disabled={isLoading}
+                        />
                     </div>
                     <SearchField
                         value={search}

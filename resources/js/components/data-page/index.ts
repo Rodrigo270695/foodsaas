@@ -18,10 +18,15 @@ export { DataToolbar, type DataToolbarProps } from './data-toolbar';
 export { EmptyState, type EmptyStateProps } from './empty-state';
 export {
     FilterChips,
+    FilterSelect,
     filterChipIcons,
+    filterSelectIcons,
     type FilterChip,
+    type FilterSelectOption,
     type FilterChipTone,
+    type FilterSelectTone,
     type FilterChipsProps,
+    type FilterSelectProps,
 } from './filter-chips';
 export {
     InlineStats,

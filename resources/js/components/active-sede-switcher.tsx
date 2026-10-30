@@ -17,6 +17,28 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
+/** Iniciales cortas para el trigger en pantallas pequeñas (ej. "Pruebas FoodSaaS" → "PF"). */
+export function sedeInitials(nombre: string): string {
+    const parts = nombre
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+    if (parts.length === 0) {
+        return '?';
+    }
+
+    if (parts.length === 1) {
+        const word = parts[0];
+        return word.slice(0, Math.min(2, word.length)).toUpperCase();
+    }
+
+    const first = parts[0][0] ?? '';
+    const last = parts[parts.length - 1][0] ?? '';
+
+    return `${first}${last}`.toUpperCase();
+}
+
 export type ActiveSedeOption = {
     id: string;
     nombre: string;
@@ -81,16 +103,25 @@ export function ActiveSedeSwitcher({
             <SelectTrigger
                 size="sm"
                 className={cn(
-                    'h-9 min-w-[10.5rem] max-w-[18rem] cursor-pointer gap-1.5 border-[#660033]/25 bg-background shadow-none',
+                    'h-9 w-auto min-w-0 cursor-pointer gap-1 border-[#660033]/25 bg-background px-2 shadow-none',
+                    // Móvil: solo iniciales. sm+: nombre + código.
+                    'sm:min-w-[10.5rem] sm:max-w-[18rem] sm:gap-1.5 sm:px-2.5',
+                    '[&_svg:last-child]:size-3.5 sm:[&_svg:last-child]:size-4',
                     'hover:border-[#660033]/45 focus-visible:border-[#660033]/50 focus-visible:ring-[#660033]/20',
                     !canSwitch &&
                         'cursor-default opacity-100 disabled:opacity-100',
                 )}
-                aria-label={t('sede_switcher.label', {
-                    defaultValue: 'Sede activa',
-                })}
+                aria-label={
+                    current
+                        ? `${t('sede_switcher.label', {
+                              defaultValue: 'Sede activa',
+                          })}: ${current.nombre}`
+                        : t('sede_switcher.label', {
+                              defaultValue: 'Sede activa',
+                          })
+                }
             >
-                <Building2 className="size-3.5 shrink-0 text-[#660033]" />
+                <Building2 className="hidden size-3.5 shrink-0 text-[#660033] sm:block" />
                 <SelectValue
                     placeholder={t('sede_switcher.placeholder', {
                         defaultValue: 'Elige sede',
@@ -98,7 +129,13 @@ export function ActiveSedeSwitcher({
                 >
                     {current ? (
                         <span className="flex min-w-0 items-center gap-1.5">
-                            <span className="truncate font-medium">
+                            <span
+                                className="text-xs font-semibold tracking-wide sm:hidden"
+                                aria-hidden
+                            >
+                                {sedeInitials(current.nombre)}
+                            </span>
+                            <span className="hidden min-w-0 truncate font-medium sm:inline">
                                 {current.nombre}
                             </span>
                             <span className="hidden shrink-0 text-[11px] text-muted-foreground sm:inline">
@@ -125,33 +162,27 @@ export function ActiveSedeSwitcher({
         </Select>
     );
 
+    const tooltipBody = canSwitch
+        ? (current?.nombre ??
+          t('sede_switcher.label', { defaultValue: 'Sede activa' }))
+        : t('sede_switcher.only_one', {
+              defaultValue:
+                  'Solo tienes una sede; crea otra en Configuración → Sedes para poder cambiar.',
+          });
+
     return (
         <div
             className={cn(
-                'flex min-w-0 max-w-[min(100%,20rem)] items-center gap-1.5',
+                'flex min-w-0 items-center gap-1.5 sm:max-w-[min(100%,20rem)]',
                 className,
             )}
         >
-            {canSwitch ? (
-                <Tooltip>
-                    <TooltipTrigger asChild>{control}</TooltipTrigger>
-                    <TooltipContent side="bottom">
-                        {t('sede_switcher.label', {
-                            defaultValue: 'Sede activa',
-                        })}
-                    </TooltipContent>
-                </Tooltip>
-            ) : (
-                <Tooltip>
-                    <TooltipTrigger asChild>{control}</TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs">
-                        {t('sede_switcher.only_one', {
-                            defaultValue:
-                                'Solo tienes una sede; crea otra en Configuración → Sedes para poder cambiar.',
-                        })}
-                    </TooltipContent>
-                </Tooltip>
-            )}
+            <Tooltip>
+                <TooltipTrigger asChild>{control}</TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                    {tooltipBody}
+                </TooltipContent>
+            </Tooltip>
 
             {showCopy && onCopyToSede && canSwitch ? (
                 <Tooltip>

@@ -23,9 +23,11 @@
     },
     "search_placeholder": "Buscar producto o código…",
     "filters": {
+        "control_label": "Filtrar por tipo de control",
         "control_all": "Todos controlados",
         "control_sku": "SKU",
         "control_recipe": "Por receta",
+        "alerta_label": "Filtrar por alerta de stock",
         "alerta_all": "Todas las alertas",
         "alerta_bajo": "Stock bajo",
         "alerta_ok": "Sin alerta"

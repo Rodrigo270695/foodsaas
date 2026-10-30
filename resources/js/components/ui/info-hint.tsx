@@ -17,6 +17,11 @@ type InfoHintProps = {
     className?: string;
     /** Clases del panel. */
     contentClassName?: string;
+    /**
+     * `inline`: botón (?) junto al label (default).
+     * `badge`: chip flotante pequeño (p. ej. esquina de un botón de acción).
+     */
+    variant?: 'inline' | 'badge';
 };
 
 /**
@@ -31,7 +36,10 @@ export function InfoHint({
     align = 'start',
     className,
     contentClassName,
+    variant = 'inline',
 }: InfoHintProps) {
+    const isBadge = variant === 'badge';
+
     return (
         <Popover modal>
             <PopoverTrigger asChild>
@@ -39,14 +47,17 @@ export function InfoHint({
                     type="button"
                     aria-label={label}
                     className={cn(
-                        'inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors',
+                        'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors',
                         'hover:bg-muted hover:text-foreground',
                         'focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none',
+                        isBadge
+                            ? 'size-4 border border-border/80 bg-background text-foreground shadow-sm hover:bg-background'
+                            : 'size-7 hover:bg-muted',
                         className,
                     )}
                 >
                     <CircleHelp
-                        className="size-3.5"
+                        className={cn(isBadge ? 'size-2.5' : 'size-3.5')}
                         strokeWidth={2.25}
                         aria-hidden
                     />

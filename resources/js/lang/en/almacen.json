@@ -16,9 +16,11 @@
     },
     "search_placeholder": "Search product or code…",
     "filters": {
+        "control_label": "Filter by inventory control",
         "control_all": "All controlled",
         "control_sku": "SKU",
         "control_recipe": "Recipe",
+        "alerta_label": "Filter by stock alert",
         "alerta_all": "All alerts",
         "alerta_bajo": "Low stock",
         "alerta_ok": "No alert"
