@@ -14,6 +14,13 @@
         "recipe": "Por receta",
         "matches": "Coincidencias"
     },
+    "stats_badges": {
+        "sku": "Con SKU",
+        "bajo": "Stock bajo",
+        "recipe": "Receta",
+        "ok": "OK",
+        "matches": "Coincidencias"
+    },
     "search_placeholder": "Buscar producto o código…",
     "filters": {
         "control_all": "Todos controlados",

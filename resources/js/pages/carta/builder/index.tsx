@@ -1,13 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
+    CheckCircle2,
+    FilePenLine,
     MoreHorizontal,
     Pencil,
     Plus,
     Sparkles,
     Trash2,
+    UtensilsCrossed,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import {
@@ -43,6 +46,11 @@ export default function BuilderIndex({
     const { t } = useTranslation(['carta', 'common']);
     const { can } = usePermission();
     const [createOpen, setCreateOpen] = useState(false);
+
+    const published = useMemo(
+        () => cartas.filter((c) => c.publicada).length,
+        [cartas],
+    );
 
     const columns: DataTableColumn<MenuCartaRow>[] = [
         {
@@ -156,6 +164,40 @@ export default function BuilderIndex({
                 <PageHeader
                     title={t('builder.title')}
                     description={t('builder.subtitle')}
+                    stats={[
+                        {
+                            label: t('stats_badges.menus', {
+                                defaultValue: 'Cartas',
+                            }),
+                            value: cartas.length,
+                            variant: 'info',
+                            icon: Sparkles,
+                        },
+                        {
+                            label: t('stats_badges.published', {
+                                defaultValue: 'Publicadas',
+                            }),
+                            value: published,
+                            variant: 'success',
+                            icon: CheckCircle2,
+                        },
+                        {
+                            label: t('stats_badges.drafts', {
+                                defaultValue: 'Borradores',
+                            }),
+                            value: Math.max(0, cartas.length - published),
+                            variant: 'muted',
+                            icon: FilePenLine,
+                        },
+                        {
+                            label: t('stats_badges.products_ready', {
+                                defaultValue: 'Productos listos',
+                            }),
+                            value: productos_activos,
+                            variant: 'primary',
+                            icon: UtensilsCrossed,
+                        },
+                    ]}
                     action={
                         <div className="flex flex-wrap justify-end gap-2">
                             <Button

@@ -301,6 +301,44 @@ export default function Index({
                               ? t('description_for', { name: restaurantName })
                               : t('description')
                     }
+                    stats={[
+                        {
+                            label: t('stats_badges.identity', {
+                                defaultValue: 'Identidad',
+                            }),
+                            value: data.ruc.trim() ? 'OK' : '—',
+                            variant: data.ruc.trim() ? 'success' : 'warning',
+                            icon: Store,
+                        },
+                        {
+                            label: t('stats_badges.logo', {
+                                defaultValue: 'Logo',
+                            }),
+                            value: setting.logo_url ? 'OK' : '—',
+                            variant: setting.logo_url ? 'success' : 'muted',
+                            icon: Palette,
+                        },
+                        {
+                            label: t('stats_badges.sunat', {
+                                defaultValue: 'SUNAT',
+                            }),
+                            value: data.emite_comprobantes_sunat
+                                ? 'Activo'
+                                : 'Off',
+                            variant: data.emite_comprobantes_sunat
+                                ? 'info'
+                                : 'muted',
+                            icon: Receipt,
+                        },
+                        {
+                            label: t('stats_badges.currency', {
+                                defaultValue: 'Moneda',
+                            }),
+                            value: data.moneda,
+                            variant: 'primary',
+                            icon: Building2,
+                        },
+                    ]}
                 />
 
                 {mutations_locked ? (

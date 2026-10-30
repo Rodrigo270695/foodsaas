@@ -2,6 +2,12 @@
     "title": "Configuración general",
     "description": "Identidad fiscal, logo y facturación de tu restaurante. El horario se configura en cada sede.",
     "description_for": "Datos generales de {{name}}: identidad, logo y facturación.",
+    "stats_badges": {
+        "identity": "Identidad",
+        "logo": "Logo",
+        "sunat": "SUNAT",
+        "currency": "Moneda"
+    },
     "actions": {
         "save": "Guardar cambios",
         "saved": "Guardado"

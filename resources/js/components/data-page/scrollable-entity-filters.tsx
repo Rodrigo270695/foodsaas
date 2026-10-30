@@ -1,7 +1,12 @@
-import { ChevronsUpDown, MoreHorizontal, Pencil, Search, Trash2 } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import {
+    ChevronsUpDown,
+    MoreHorizontal,
+    Pencil,
+    Search,
+    Trash2,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -16,13 +21,10 @@ import {
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { accentForEntityId } from './entity-accent';
-import { PillFilters, type PillFilterItem } from './pill-filters';
+import { accentForEntityId, ENTITY_ACCENT_NEUTRAL } from './entity-accent';
 
-/** En móvil, a partir de esto → combobox (pantalla estrecha). */
-const MOBILE_COMBO_THRESHOLD = 4;
-/** En desktop, pills visibles antes del “+N más”. */
-const DESKTOP_VISIBLE = 7;
+/** A partir de aquí no listamos todas las pills: selector + búsqueda. */
+const MANY_THRESHOLD = 5;
 
 export type EntityFilterItem = {
     id: string;
@@ -40,7 +42,7 @@ type ScrollableEntityFiltersProps = {
     onChange: (id: string | null) => void;
     'aria-label'?: string;
     searchPlaceholder?: string;
-    moreLabel?: (hidden: number) => string;
+    browseLabel?: string;
     canManage?: boolean;
     manageLabel?: (name: string) => string;
     onEdit?: (id: string) => void;
@@ -49,6 +51,68 @@ type ScrollableEntityFiltersProps = {
     deleteLabel?: string;
     className?: string;
 };
+
+function EntityChip({
+    label,
+    count,
+    selected,
+    muted,
+    accentId,
+    onClick,
+    className,
+}: {
+    label: string;
+    count?: number;
+    selected: boolean;
+    muted?: boolean;
+    accentId?: string | null;
+    onClick: () => void;
+    className?: string;
+}) {
+    const accent =
+        accentId && accentId.length > 0
+            ? accentForEntityId(accentId)
+            : ENTITY_ACCENT_NEUTRAL;
+
+    return (
+        <button
+            type="button"
+            aria-pressed={selected}
+            title={label}
+            onClick={onClick}
+            className={cn(
+                'inline-flex h-10 max-w-[11rem] shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors sm:h-9',
+                'focus-visible:ring-2 focus-visible:ring-[#660033]/30 focus-visible:outline-none',
+                selected ? accent.selected : accent.idle,
+                muted && !selected && 'opacity-55',
+                className,
+            )}
+        >
+            {accentId ? (
+                <span
+                    className={cn(
+                        'size-2 shrink-0 rounded-full',
+                        selected ? 'bg-white/90' : accent.dot,
+                    )}
+                    aria-hidden
+                />
+            ) : null}
+            <span className="min-w-0 truncate whitespace-nowrap">{label}</span>
+            {typeof count === 'number' ? (
+                <span
+                    className={cn(
+                        'shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums leading-none',
+                        selected
+                            ? 'bg-white/20 text-white'
+                            : 'bg-black/5 text-foreground/70',
+                    )}
+                >
+                    {count}
+                </span>
+            ) : null}
+        </button>
+    );
+}
 
 function ManageMenu({
     label,
@@ -74,10 +138,10 @@ function ManageMenu({
             <DropdownMenuTrigger asChild>
                 <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
                     aria-label={manageLabel?.(label) ?? label}
-                    className="size-9 shrink-0 cursor-pointer sm:size-8"
+                    className="size-10 shrink-0 cursor-pointer rounded-full sm:size-9"
                 >
                     <MoreHorizontal className="size-4" />
                 </Button>
@@ -106,10 +170,165 @@ function ManageMenu({
     );
 }
 
+function EntityPickerList({
+    items,
+    value,
+    allValue,
+    allLabel,
+    allCount,
+    query,
+    onQueryChange,
+    searchPlaceholder,
+    onPick,
+    canManage,
+    manageLabel,
+    onEdit,
+    onDelete,
+    editLabel,
+    deleteLabel,
+}: {
+    items: readonly EntityFilterItem[];
+    value: string | null;
+    allValue: string;
+    allLabel: string;
+    allCount?: number;
+    query: string;
+    onQueryChange: (q: string) => void;
+    searchPlaceholder: string;
+    onPick: (id: string | null) => void;
+    canManage: boolean;
+    manageLabel?: (name: string) => string;
+    onEdit?: (id: string) => void;
+    onDelete?: (id: string) => void;
+    editLabel: string;
+    deleteLabel: string;
+}) {
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? items.filter((i) => i.label.toLowerCase().includes(q))
+        : items;
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                    value={query}
+                    onChange={(e) => onQueryChange(e.target.value)}
+                    placeholder={searchPlaceholder}
+                    className="h-9 pl-8"
+                    autoFocus
+                />
+            </div>
+
+            <ul
+                className="max-h-72 space-y-0.5 overflow-y-auto overscroll-contain"
+                role="listbox"
+            >
+                {!q ? (
+                    <li>
+                        <button
+                            type="button"
+                            role="option"
+                            aria-selected={value === null}
+                            onClick={() => onPick(null)}
+                            className={cn(
+                                'flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm transition-colors',
+                                value === null
+                                    ? 'bg-[#660033]/10 font-medium text-[#660033]'
+                                    : 'hover:bg-muted/70',
+                            )}
+                        >
+                            <span
+                                className="size-2.5 shrink-0 rounded-full bg-muted-foreground/50"
+                                aria-hidden
+                            />
+                            <span className="min-w-0 flex-1 truncate">
+                                {allLabel}
+                            </span>
+                            {typeof allCount === 'number' ? (
+                                <span className="text-xs tabular-nums text-muted-foreground">
+                                    {allCount}
+                                </span>
+                            ) : null}
+                        </button>
+                    </li>
+                ) : null}
+
+                {filtered.length === 0 ? (
+                    <li className="px-2 py-4 text-center text-xs text-muted-foreground">
+                        Sin coincidencias
+                    </li>
+                ) : (
+                    filtered.map((item) => {
+                        const accent = accentForEntityId(item.id);
+                        const selected = value === item.id;
+                        return (
+                            <li key={item.id}>
+                                <div className="flex items-center gap-0.5">
+                                    <button
+                                        type="button"
+                                        role="option"
+                                        aria-selected={selected}
+                                        title={item.label}
+                                        onClick={() => onPick(item.id)}
+                                        className={cn(
+                                            'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm transition-colors',
+                                            selected
+                                                ? 'bg-[#660033]/10 font-medium text-[#660033]'
+                                                : 'hover:bg-muted/70',
+                                            item.muted && 'opacity-60',
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                'size-2.5 shrink-0 rounded-full',
+                                                accent.dot,
+                                            )}
+                                            aria-hidden
+                                        />
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {item.label}
+                                        </span>
+                                        {typeof item.count === 'number' ? (
+                                            <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                                                {item.count}
+                                            </span>
+                                        ) : null}
+                                    </button>
+                                    {canManage ? (
+                                        <ManageMenu
+                                            label={item.label}
+                                            manageLabel={manageLabel}
+                                            onEdit={
+                                                onEdit
+                                                    ? () => onEdit(item.id)
+                                                    : undefined
+                                            }
+                                            onDelete={
+                                                onDelete
+                                                    ? () => onDelete(item.id)
+                                                    : undefined
+                                            }
+                                            editLabel={editLabel}
+                                            deleteLabel={deleteLabel}
+                                        />
+                                    ) : null}
+                                </div>
+                            </li>
+                        );
+                    })
+                )}
+            </ul>
+        </div>
+    );
+}
+
 /**
- * Filtro por entidad (zonas, categorías):
- * - Pocas: pills de color con scroll horizontal / wrap.
- * - Muchas: pills visibles + “+N más” con búsqueda; en móvil → combobox.
+ * Filtro por categorías / zonas que no se rompe con muchas:
+ * - Pocas: una sola fila con scroll horizontal (sin ⋯ entre pills).
+ * - Muchas o móvil: “Todos” + seleccionada + “Ver todas” con búsqueda.
+ * - Editar/eliminar solo sobre la entidad activa (o dentro del listado).
  */
 export function ScrollableEntityFilters({
     items,
@@ -120,7 +339,7 @@ export function ScrollableEntityFilters({
     onChange,
     'aria-label': ariaLabel,
     searchPlaceholder = 'Buscar…',
-    moreLabel = (n) => `+${n} más`,
+    browseLabel = 'Ver todas',
     canManage = false,
     manageLabel,
     onEdit,
@@ -130,307 +349,152 @@ export function ScrollableEntityFilters({
     className,
 }: ScrollableEntityFiltersProps) {
     const isMobile = useIsMobile();
-    const [moreOpen, setMoreOpen] = useState(false);
+    const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
 
-    const useMobileCombo = isMobile && items.length > MOBILE_COMBO_THRESHOLD;
+    const selected = useMemo(
+        () => items.find((i) => i.id === value) ?? null,
+        [items, value],
+    );
 
-    const makeTrailing = (item: EntityFilterItem): ReactNode => {
-        if (!canManage || (!onEdit && !onDelete)) {
-            return null;
-        }
-        return (
+    const useCompact = isMobile || items.length > MANY_THRESHOLD;
+
+    const pick = (id: string | null) => {
+        onChange(id);
+        setOpen(false);
+        setQuery('');
+    };
+
+    const manageSelected =
+        canManage && selected && (onEdit || onDelete) ? (
             <ManageMenu
-                label={item.label}
+                label={selected.label}
                 manageLabel={manageLabel}
-                onEdit={onEdit ? () => onEdit(item.id) : undefined}
-                onDelete={onDelete ? () => onDelete(item.id) : undefined}
+                onEdit={onEdit ? () => onEdit(selected.id) : undefined}
+                onDelete={onDelete ? () => onDelete(selected.id) : undefined}
                 editLabel={editLabel}
                 deleteLabel={deleteLabel}
             />
-        );
-    };
+        ) : null;
 
-    const allPill: PillFilterItem<string> = useMemo(
-        () => ({
-            value: allValue,
-            label: allLabel,
-            count: allCount,
-            colored: false,
-        }),
-        [allValue, allLabel, allCount],
+    const browseButton = (
+        <Popover
+            open={open}
+            onOpenChange={(next) => {
+                setOpen(next);
+                if (!next) {
+                    setQuery('');
+                }
+            }}
+        >
+            <PopoverTrigger asChild>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 shrink-0 cursor-pointer gap-1.5 rounded-full px-3 sm:h-9"
+                    aria-expanded={open}
+                    aria-haspopup="listbox"
+                >
+                    <span className="max-w-[9rem] truncate">
+                        {useCompact
+                            ? `${browseLabel} (${items.length})`
+                            : browseLabel}
+                    </span>
+                    <ChevronsUpDown className="size-3.5 opacity-60" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                align="start"
+                className="w-[min(100vw-2rem,22rem)] p-2"
+            >
+                <EntityPickerList
+                    items={items}
+                    value={value}
+                    allValue={allValue}
+                    allLabel={allLabel}
+                    allCount={allCount}
+                    query={query}
+                    onQueryChange={setQuery}
+                    searchPlaceholder={searchPlaceholder}
+                    onPick={pick}
+                    canManage={canManage}
+                    manageLabel={manageLabel}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    editLabel={editLabel}
+                    deleteLabel={deleteLabel}
+                />
+            </PopoverContent>
+        </Popover>
     );
 
-    /** Selected always stays in the visible strip. */
-    const { visibleItems, hiddenItems } = useMemo(() => {
-        if (useMobileCombo || items.length <= DESKTOP_VISIBLE) {
-            return { visibleItems: items, hiddenItems: [] as EntityFilterItem[] };
-        }
-
-        const selected = items.find((i) => i.id === value) ?? null;
-        const rest = items.filter((i) => i.id !== value);
-        const slots = selected ? DESKTOP_VISIBLE - 1 : DESKTOP_VISIBLE;
-        const head = rest.slice(0, Math.max(0, slots));
-        const visible = selected ? [selected, ...head] : head;
-        const visibleIds = new Set(visible.map((i) => i.id));
-        const hidden = items.filter((i) => !visibleIds.has(i.id));
-
-        return { visibleItems: visible, hiddenItems: hidden };
-    }, [items, value, useMobileCombo]);
-
-    const visiblePills = useMemo<PillFilterItem<string>[]>(
-        () => [
-            allPill,
-            ...visibleItems.map((item) => ({
-                value: item.id,
-                label: item.label,
-                count: item.count,
-                muted: item.muted,
-                colored: true,
-                trailing: makeTrailing(item),
-            })),
-        ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [
-            allPill,
-            visibleItems,
-            canManage,
-            manageLabel,
-            onEdit,
-            onDelete,
-            editLabel,
-            deleteLabel,
-        ],
-    );
-
-    const comboboxOptions = useMemo<ComboboxOption[]>(
-        () => [
-            {
-                value: allValue,
-                label: allCount != null ? `${allLabel} (${allCount})` : allLabel,
-            },
-            ...items.map((item) => ({
-                value: item.id,
-                label:
-                    item.count != null
-                        ? `${item.label} (${item.count})`
-                        : item.label,
-            })),
-        ],
-        [items, allValue, allLabel, allCount],
-    );
-
-    const filteredHidden = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        if (!q) {
-            return hiddenItems;
-        }
-        return hiddenItems.filter((i) => i.label.toLowerCase().includes(q));
-    }, [hiddenItems, query]);
-
-    const selectedItem = items.find((i) => i.id === value);
-
-    if (useMobileCombo) {
+    if (useCompact) {
         return (
             <div
                 className={cn(
-                    'flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center',
+                    'flex min-w-0 max-w-full flex-wrap items-center gap-2',
                     className,
                 )}
                 role="group"
                 aria-label={ariaLabel}
             >
-                <Combobox
-                    options={comboboxOptions}
-                    value={value ?? allValue}
-                    onChange={(next) => {
-                        if (!next || next === allValue) {
-                            onChange(null);
-                            return;
-                        }
-                        onChange(next);
-                    }}
-                    placeholder={allLabel}
-                    searchPlaceholder={searchPlaceholder}
-                    className="w-full min-w-0"
+                <EntityChip
+                    label={allLabel}
+                    count={allCount}
+                    selected={value === null}
+                    onClick={() => pick(null)}
                 />
-                {canManage && selectedItem && (onEdit || onDelete) ? (
-                    <ManageMenu
-                        label={selectedItem.label}
-                        manageLabel={manageLabel}
-                        onEdit={onEdit ? () => onEdit(selectedItem.id) : undefined}
-                        onDelete={
-                            onDelete ? () => onDelete(selectedItem.id) : undefined
-                        }
-                        editLabel={editLabel}
-                        deleteLabel={deleteLabel}
+                {selected ? (
+                    <EntityChip
+                        label={selected.label}
+                        count={selected.count}
+                        selected
+                        muted={selected.muted}
+                        accentId={selected.id}
+                        onClick={() => pick(selected.id)}
                     />
                 ) : null}
+                {browseButton}
+                {manageSelected}
             </div>
         );
     }
 
     return (
         <div
-            className={cn('flex min-w-0 max-w-full flex-col gap-2', className)}
+            className={cn(
+                'flex min-w-0 max-w-full items-center gap-2',
+                className,
+            )}
             role="group"
             aria-label={ariaLabel}
         >
-            <div className="relative min-w-0">
-                <div
-                    className={cn(
-                        'flex max-w-full items-center gap-2 pb-0.5',
-                        hiddenItems.length > 0 &&
-                            'overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-                    )}
-                >
-                    <PillFilters
-                        items={visiblePills}
-                        value={value ?? allValue}
-                        clearValue={allValue}
-                        toggleOff
-                        colored
-                        onChange={(next) =>
-                            onChange(next === allValue ? null : next)
-                        }
-                        className={
-                            hiddenItems.length > 0
-                                ? 'flex-nowrap'
-                                : 'flex-wrap'
-                        }
+            <div
+                className={cn(
+                    'flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-0.5',
+                    '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+                )}
+            >
+                <EntityChip
+                    label={allLabel}
+                    count={allCount}
+                    selected={value === null}
+                    onClick={() => pick(null)}
+                />
+                {items.map((item) => (
+                    <EntityChip
+                        key={item.id}
+                        label={item.label}
+                        count={item.count}
+                        selected={value === item.id}
+                        muted={item.muted}
+                        accentId={item.id}
+                        onClick={() => pick(item.id)}
                     />
-
-                    {hiddenItems.length > 0 ? (
-                        <Popover
-                            open={moreOpen}
-                            onOpenChange={(open) => {
-                                setMoreOpen(open);
-                                if (!open) {
-                                    setQuery('');
-                                }
-                            }}
-                        >
-                            <PopoverTrigger asChild>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-10 shrink-0 cursor-pointer gap-1.5 rounded-full border-dashed px-3 sm:h-9"
-                                    aria-expanded={moreOpen}
-                                >
-                                    {moreLabel(hiddenItems.length)}
-                                    <ChevronsUpDown className="size-3.5 opacity-60" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                                align="start"
-                                className="w-[min(100vw-2rem,20rem)] p-2"
-                            >
-                                <div className="relative mb-2">
-                                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        value={query}
-                                        onChange={(e) => setQuery(e.target.value)}
-                                        placeholder={searchPlaceholder}
-                                        className="h-9 pl-8"
-                                        autoFocus
-                                    />
-                                </div>
-                                <ul
-                                    className="max-h-64 space-y-0.5 overflow-y-auto"
-                                    role="listbox"
-                                    aria-label={ariaLabel}
-                                >
-                                    {filteredHidden.length === 0 ? (
-                                        <li className="px-2 py-3 text-center text-xs text-muted-foreground">
-                                            Sin coincidencias
-                                        </li>
-                                    ) : (
-                                        filteredHidden.map((item) => {
-                                            const accent = accentForEntityId(
-                                                item.id,
-                                            );
-                                            const selected = value === item.id;
-                                            return (
-                                                <li key={item.id}>
-                                                    <div className="flex items-center gap-0.5">
-                                                        <button
-                                                            type="button"
-                                                            role="option"
-                                                            aria-selected={selected}
-                                                            title={item.label}
-                                                            onClick={() => {
-                                                                onChange(item.id);
-                                                                setMoreOpen(false);
-                                                                setQuery('');
-                                                            }}
-                                                            className={cn(
-                                                                'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors',
-                                                                selected
-                                                                    ? 'bg-[#660033]/10 font-medium text-[#660033]'
-                                                                    : 'hover:bg-muted/70',
-                                                                item.muted &&
-                                                                    'opacity-60',
-                                                            )}
-                                                        >
-                                                            <span
-                                                                className={cn(
-                                                                    'size-2.5 shrink-0 rounded-full',
-                                                                    accent.dot,
-                                                                )}
-                                                                aria-hidden
-                                                            />
-                                                            <span className="min-w-0 flex-1 truncate">
-                                                                {item.label}
-                                                            </span>
-                                                            {typeof item.count ===
-                                                            'number' ? (
-                                                                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                                                                    {item.count}
-                                                                </span>
-                                                            ) : null}
-                                                        </button>
-                                                        {canManage ? (
-                                                            <ManageMenu
-                                                                label={item.label}
-                                                                manageLabel={
-                                                                    manageLabel
-                                                                }
-                                                                onEdit={
-                                                                    onEdit
-                                                                        ? () =>
-                                                                              onEdit(
-                                                                                  item.id,
-                                                                              )
-                                                                        : undefined
-                                                                }
-                                                                onDelete={
-                                                                    onDelete
-                                                                        ? () =>
-                                                                              onDelete(
-                                                                                  item.id,
-                                                                              )
-                                                                        : undefined
-                                                                }
-                                                                editLabel={
-                                                                    editLabel
-                                                                }
-                                                                deleteLabel={
-                                                                    deleteLabel
-                                                                }
-                                                            />
-                                                        ) : null}
-                                                    </div>
-                                                </li>
-                                            );
-                                        })
-                                    )}
-                                </ul>
-                            </PopoverContent>
-                        </Popover>
-                    ) : null}
-                </div>
+                ))}
             </div>
+            {manageSelected}
         </div>
     );
 }

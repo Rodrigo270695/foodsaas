@@ -1,11 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     AlertTriangle,
+    CheckCircle2,
     Download,
     MoreHorizontal,
     Package,
     RefreshCw,
     ScrollText,
+    Tag,
     Warehouse,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -14,7 +16,6 @@ import {
     DataPagination,
     DataTable,
     EmptyState,
-    InlineStats,
     PageHeader,
     SearchField,
     StatBadge,
@@ -35,6 +36,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
@@ -220,38 +226,99 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
                 <PageHeader
                     title={t('title')}
                     description={t('subtitle')}
+                    stats={[
+                        {
+                            label: t('stats_badges.sku', {
+                                defaultValue: 'Con SKU',
+                            }),
+                            value: stats.sku,
+                            variant: 'info',
+                            icon: Package,
+                        },
+                        {
+                            label: t('stats_badges.bajo', {
+                                defaultValue: 'Stock bajo',
+                            }),
+                            value: stats.bajo,
+                            variant: stats.bajo > 0 ? 'warning' : 'success',
+                            icon: AlertTriangle,
+                        },
+                        {
+                            label: t('stats_badges.recipe', {
+                                defaultValue: 'Receta',
+                            }),
+                            value: stats.recipe,
+                            variant: 'primary',
+                            icon: Warehouse,
+                        },
+                        {
+                            label: t('stats_badges.ok', {
+                                defaultValue: 'OK',
+                            }),
+                            value: Math.max(0, stats.sku - stats.bajo),
+                            variant: 'success',
+                            icon: CheckCircle2,
+                        },
+                        {
+                            label: t('stats_badges.matches', {
+                                defaultValue: 'Coincidencias',
+                            }),
+                            value: stats.coincidencias,
+                            variant: 'primary',
+                            icon: Tag,
+                        },
+                    ]}
                     action={
                         <div className="flex flex-wrap justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => fetch()}
-                                disabled={isLoading}
-                                className="cursor-pointer"
-                                aria-label={t('common:actions.reload', {
-                                    defaultValue: 'Actualizar',
-                                })}
-                            >
-                                <RefreshCw
-                                    className={cn(
-                                        'size-4',
-                                        isLoading && 'animate-spin',
-                                    )}
-                                />
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => fetch()}
+                                        disabled={isLoading}
+                                        className="cursor-pointer"
+                                        aria-label={t(
+                                            'common:actions.reload',
+                                            {
+                                                defaultValue: 'Actualizar',
+                                            },
+                                        )}
+                                    >
+                                        <RefreshCw
+                                            className={cn(
+                                                'size-4',
+                                                isLoading && 'animate-spin',
+                                            )}
+                                        />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    {t('common:actions.reload', {
+                                        defaultValue: 'Actualizar',
+                                    })}
+                                </TooltipContent>
+                            </Tooltip>
                             <Can permission="almacen.export">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={exportStock}
-                                    className="cursor-pointer gap-2"
-                                >
-                                    <Download className="size-4" />
-                                    <span className="hidden sm:inline">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={exportStock}
+                                            className="cursor-pointer gap-2"
+                                        >
+                                            <Download className="size-4" />
+                                            <span className="hidden sm:inline">
+                                                {t('actions.export')}
+                                            </span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom">
                                         {t('actions.export')}
-                                    </span>
-                                </Button>
+                                    </TooltipContent>
+                                </Tooltip>
                             </Can>
                         </div>
                     }
@@ -307,34 +374,13 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <SearchField
-                            value={search}
-                            onValueChange={setSearch}
-                            placeholder={t('search_placeholder')}
-                            isSearching={isLoading}
-                            className="w-full sm:w-72"
-                        />
-                        <InlineStats
-                            items={[
-                                {
-                                    key: 'sku',
-                                    icon: Package,
-                                    label: `${t('stats.sku')} ${stats.sku}`,
-                                },
-                                {
-                                    key: 'bajo',
-                                    icon: AlertTriangle,
-                                    tone: 'warning',
-                                    label: `${t('stats.bajo')} ${stats.bajo}`,
-                                },
-                                {
-                                    key: 'matches',
-                                    label: `${t('stats.matches')} ${stats.coincidencias}`,
-                                },
-                            ]}
-                        />
-                    </div>
+                    <SearchField
+                        value={search}
+                        onValueChange={setSearch}
+                        placeholder={t('search_placeholder')}
+                        isSearching={isLoading}
+                        className="w-full sm:w-72"
+                    />
                 </div>
 
                 <DataTable

@@ -92,6 +92,18 @@
         "stat_areas": "Áreas {{count}}",
         "stat_matches": "Coincidencias {{count}}"
     },
+    "stats_badges": {
+        "total": "Total",
+        "active": "Activos",
+        "inactive": "Inactivos",
+        "categories": "Categorías",
+        "areas": "Áreas",
+        "matches": "Coincidencias",
+        "menus": "Cartas",
+        "published": "Publicadas",
+        "drafts": "Borradores",
+        "products_ready": "Productos listos"
+    },
     "builder": {
         "title": "Armar carta",
         "subtitle": "Diseña menús publicables con arrastre, fondo, páginas, QR y PDF.",

@@ -1,14 +1,6 @@
-import {
-    CheckCircle2,
-    FolderOpen,
-    LayoutGrid,
-    Tag,
-    UtensilsCrossed,
-} from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    InlineStats,
     ScrollableEntityFilters,
     SearchField,
     StatusPills,
@@ -49,8 +41,6 @@ export function CartaToolbar({
     onDeleteCategoria,
 }: CartaToolbarProps) {
     const { t } = useTranslation(['carta', 'common']);
-    const inactivos = Math.max(0, stats.productos - stats.productos_activos);
-    const areasCount = stats.areas ?? 0;
 
     const entityItems = useMemo(
         () =>
@@ -86,6 +76,9 @@ export function CartaToolbar({
                     searchPlaceholder={t('category_search', {
                         defaultValue: 'Buscar categoría…',
                     })}
+                    browseLabel={t('category_browse', {
+                        defaultValue: 'Ver todas',
+                    })}
                     canManage={canManageCategorias}
                     manageLabel={(name) =>
                         t('row.actions_for_category', { name })
@@ -107,61 +100,13 @@ export function CartaToolbar({
                     className="min-w-0 flex-1"
                 />
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <SearchField
-                        value={search}
-                        onValueChange={onSearchChange}
-                        placeholder={t('search_placeholder')}
-                        isSearching={isSearching}
-                        className="flex-1 sm:max-w-xs"
-                    />
-                    <InlineStats
-                        items={[
-                            {
-                                key: 'total',
-                                icon: UtensilsCrossed,
-                                label: t('catalog.stat_total', {
-                                    count: stats.productos,
-                                }),
-                            },
-                            {
-                                key: 'active',
-                                icon: CheckCircle2,
-                                tone: 'success',
-                                label: t('catalog.stat_active', {
-                                    count: stats.productos_activos,
-                                }),
-                            },
-                            {
-                                key: 'inactive',
-                                label: t('catalog.stat_inactive', {
-                                    count: inactivos,
-                                }),
-                            },
-                            {
-                                key: 'categories',
-                                icon: FolderOpen,
-                                label: t('catalog.stat_categories', {
-                                    count: stats.categorias,
-                                }),
-                            },
-                            {
-                                key: 'areas',
-                                icon: LayoutGrid,
-                                label: t('catalog.stat_areas', {
-                                    count: areasCount,
-                                }),
-                            },
-                            {
-                                key: 'matches',
-                                icon: Tag,
-                                label: t('catalog.stat_matches', {
-                                    count: stats.coincidencias,
-                                }),
-                            },
-                        ]}
-                    />
-                </div>
+                <SearchField
+                    value={search}
+                    onValueChange={onSearchChange}
+                    placeholder={t('search_placeholder')}
+                    isSearching={isSearching}
+                    className="w-full sm:max-w-xs lg:shrink-0"
+                />
             </div>
 
             <StatusPills

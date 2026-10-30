@@ -1,9 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import {
+    CheckCircle2,
     FolderOpen,
+    LayoutGrid,
     MoreHorizontal,
     Pencil,
     Plus,
+    Tag,
     Trash2,
     UtensilsCrossed,
 } from 'lucide-react';
@@ -337,6 +340,58 @@ export default function Index({
                 <PageHeader
                     title={t('title')}
                     description={t('catalog.subtitle')}
+                    stats={[
+                        {
+                            label: t('stats_badges.total', {
+                                defaultValue: 'Total',
+                            }),
+                            value: stats.productos,
+                            variant: 'info',
+                            icon: UtensilsCrossed,
+                        },
+                        {
+                            label: t('stats_badges.active', {
+                                defaultValue: 'Activos',
+                            }),
+                            value: stats.productos_activos,
+                            variant: 'success',
+                            icon: CheckCircle2,
+                        },
+                        {
+                            label: t('stats_badges.inactive', {
+                                defaultValue: 'Inactivos',
+                            }),
+                            value: Math.max(
+                                0,
+                                stats.productos - stats.productos_activos,
+                            ),
+                            variant: 'muted',
+                        },
+                        {
+                            label: t('stats_badges.categories', {
+                                defaultValue: 'Categorías',
+                            }),
+                            value: stats.categorias,
+                            variant: 'warning',
+                            icon: FolderOpen,
+                        },
+                        {
+                            label: t('stats_badges.areas', {
+                                defaultValue: 'Áreas',
+                            }),
+                            value: stats.areas ?? 0,
+                            variant: 'primary',
+                            icon: LayoutGrid,
+                        },
+                        {
+                            label: t('stats_badges.matches', {
+                                defaultValue: 'Coincidencias',
+                            }),
+                            value: stats.coincidencias,
+                            variant: 'primary',
+                            icon: Tag,
+                        },
+                    ]}
                     action={
                         <CartaHeaderActions
                             isLoading={isLoading}

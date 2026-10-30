@@ -1,8 +1,6 @@
-import { Armchair, CheckCircle2, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    InlineStats,
     ScrollableEntityFilters,
     SearchField,
     StatusPills,
@@ -39,7 +37,6 @@ export function SalonToolbar({
     onDeleteZona,
 }: SalonToolbarProps) {
     const { t } = useTranslation(['salon', 'common']);
-    const inactivas = Math.max(0, stats.mesas - stats.mesas_activas);
     const canManage = canUpdate || canDelete;
 
     const entityItems = useMemo(
@@ -76,6 +73,9 @@ export function SalonToolbar({
                     searchPlaceholder={t('zona_search', {
                         defaultValue: 'Buscar zona…',
                     })}
+                    browseLabel={t('zona_browse', {
+                        defaultValue: 'Ver todas',
+                    })}
                     canManage={canManage}
                     manageLabel={(name) =>
                         t('row.actions_for_zona', { name })
@@ -105,46 +105,12 @@ export function SalonToolbar({
                     className="min-w-0 flex-1"
                 />
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <SearchField
-                        value={query}
-                        onValueChange={onQueryChange}
-                        placeholder={t('floor.search')}
-                        className="flex-1 sm:max-w-xs"
-                    />
-                    <InlineStats
-                        items={[
-                            {
-                                key: 'total',
-                                icon: Armchair,
-                                label: t('floor.stat_total', {
-                                    count: stats.mesas,
-                                }),
-                            },
-                            {
-                                key: 'available',
-                                icon: CheckCircle2,
-                                tone: 'success',
-                                label: t('floor.stat_available', {
-                                    count: stats.mesas_activas,
-                                }),
-                            },
-                            {
-                                key: 'inactive',
-                                label: t('floor.stat_inactive', {
-                                    count: inactivas,
-                                }),
-                            },
-                            {
-                                key: 'capacity',
-                                icon: Users,
-                                label: t('floor.stat_capacity', {
-                                    count: stats.capacidad,
-                                }),
-                            },
-                        ]}
-                    />
-                </div>
+                <SearchField
+                    value={query}
+                    onValueChange={onQueryChange}
+                    placeholder={t('floor.search')}
+                    className="w-full sm:max-w-xs lg:shrink-0"
+                />
             </div>
 
             <StatusPills

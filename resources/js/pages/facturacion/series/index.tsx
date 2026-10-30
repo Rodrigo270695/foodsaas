@@ -405,15 +405,26 @@ export default function Index({
                     stats={[
                         {
                             label: 'Total',
-                            value: String(series.length),
-                            variant: 'muted',
+                            value: series.length,
+                            variant: 'info',
                             icon: Layers,
                         },
                         {
                             label: 'Activas',
-                            value: String(activas),
+                            value: activas,
                             variant: activas > 0 ? 'success' : 'warning',
                             icon: CheckCircle2,
+                        },
+                        {
+                            label: 'Inactivas',
+                            value: Math.max(0, series.length - activas),
+                            variant: 'muted',
+                        },
+                        {
+                            label: 'Sedes',
+                            value: sedesOpciones.length,
+                            variant: 'primary',
+                            icon: Building2,
                         },
                     ]}
                     action={

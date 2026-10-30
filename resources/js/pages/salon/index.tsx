@@ -1,5 +1,11 @@
 import { Head, router } from '@inertiajs/react';
-import { Armchair, LayoutGrid, Plus } from 'lucide-react';
+import {
+    Armchair,
+    CheckCircle2,
+    LayoutGrid,
+    Plus,
+    Users,
+} from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CopyToSedeModal } from '@/components/copy-to-sede-modal';
@@ -176,6 +182,50 @@ export default function Index({
                 <PageHeader
                     title={t('title')}
                     description={t('floor.subtitle')}
+                    stats={[
+                        {
+                            label: t('stats_badges.total', {
+                                defaultValue: 'Total',
+                            }),
+                            value: stats.mesas,
+                            variant: 'info',
+                            icon: Armchair,
+                        },
+                        {
+                            label: t('stats_badges.available', {
+                                defaultValue: 'Disponibles',
+                            }),
+                            value: stats.mesas_activas,
+                            variant: 'success',
+                            icon: CheckCircle2,
+                        },
+                        {
+                            label: t('stats_badges.inactive', {
+                                defaultValue: 'Inactivas',
+                            }),
+                            value: Math.max(
+                                0,
+                                stats.mesas - stats.mesas_activas,
+                            ),
+                            variant: 'muted',
+                        },
+                        {
+                            label: t('stats_badges.zones', {
+                                defaultValue: 'Zonas',
+                            }),
+                            value: stats.zonas,
+                            variant: 'warning',
+                            icon: LayoutGrid,
+                        },
+                        {
+                            label: t('stats_badges.capacity', {
+                                defaultValue: 'Capacidad',
+                            }),
+                            value: stats.capacidad,
+                            variant: 'primary',
+                            icon: Users,
+                        },
+                    ]}
                     action={
                         sedeId ? (
                             <SalonHeaderActions

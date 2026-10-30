@@ -82,6 +82,13 @@
         "stat_inactive": "Inactivas {{count}}",
         "stat_capacity": "Capacidad {{count}}"
     },
+    "stats_badges": {
+        "total": "Total",
+        "available": "Disponibles",
+        "inactive": "Inactivas",
+        "zones": "Zonas",
+        "capacity": "Capacidad"
+    },
     "zona_form": {
         "title_create": "Nueva zona",
         "title_edit": "Editar zona",
