@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { Building2, Copy } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,8 +55,10 @@ export function ActiveSedeSwitcher({
         return null;
     }
 
+    const canSwitch = active.can_switch && active.sedes.length > 1;
+
     const switchSede = (sedeId: string) => {
-        if (sedeId === active.id || switching) {
+        if (sedeId === active.id || switching || !canSwitch) {
             return;
         }
         setSwitching(true);
@@ -70,63 +72,93 @@ export function ActiveSedeSwitcher({
         );
     };
 
+    const control: ReactNode = (
+        <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="hidden text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:block">
+                {t('sede_switcher.label', { defaultValue: 'Sede activa' })}
+            </span>
+            <Select
+                value={active.id ?? undefined}
+                onValueChange={switchSede}
+                disabled={switching || !canSwitch}
+            >
+                <SelectTrigger
+                    size="sm"
+                    className={cn(
+                        'h-9 min-w-[10.5rem] max-w-[18rem] cursor-pointer gap-1.5 border-[#660033]/25 bg-background shadow-none',
+                        'hover:border-[#660033]/45 focus-visible:border-[#660033]/50 focus-visible:ring-[#660033]/20',
+                        !canSwitch &&
+                            'cursor-default opacity-100 disabled:opacity-100',
+                    )}
+                    aria-label={t('sede_switcher.label', {
+                        defaultValue: 'Sede activa',
+                    })}
+                >
+                    <Building2 className="size-3.5 shrink-0 text-[#660033]" />
+                    <SelectValue
+                        placeholder={t('sede_switcher.placeholder', {
+                            defaultValue: 'Elige sede',
+                        })}
+                    >
+                        {current ? (
+                            <span className="flex min-w-0 items-center gap-1.5">
+                                <span className="truncate font-medium">
+                                    {current.nombre}
+                                </span>
+                                <span className="hidden shrink-0 text-[11px] text-muted-foreground sm:inline">
+                                    {current.codigo}
+                                </span>
+                            </span>
+                        ) : null}
+                    </SelectValue>
+                </SelectTrigger>
+                <SelectContent align="end" className="min-w-[14rem]">
+                    {active.sedes.map((sede) => (
+                        <SelectItem key={sede.id} value={sede.id}>
+                            <span className="flex min-w-0 flex-col gap-0.5 py-0.5">
+                                <span className="truncate font-medium">
+                                    {sede.nombre}
+                                </span>
+                                <span className="text-[11px] text-muted-foreground">
+                                    {sede.codigo}
+                                </span>
+                            </span>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    );
+
     return (
         <div
             className={cn(
-                'flex min-w-0 max-w-[min(100%,18rem)] items-center gap-1.5',
+                'flex min-w-0 max-w-[min(100%,20rem)] items-center gap-1.5',
                 className,
             )}
         >
-            {active.can_switch ? (
-                <Select
-                    value={active.id ?? undefined}
-                    onValueChange={switchSede}
-                    disabled={switching}
-                >
-                    <SelectTrigger
-                        size="sm"
-                        className="h-9 min-w-0 cursor-pointer gap-1.5 border-border/70 bg-background"
-                        aria-label={t('sede_switcher.label', {
-                            defaultValue: 'Sede activa',
-                        })}
-                    >
-                        <Building2 className="size-3.5 shrink-0 opacity-70" />
-                        <SelectValue
-                            placeholder={t('sede_switcher.placeholder', {
-                                defaultValue: 'Sede',
-                            })}
-                        />
-                    </SelectTrigger>
-                    <SelectContent align="end">
-                        {active.sedes.map((sede) => (
-                            <SelectItem key={sede.id} value={sede.id}>
-                                <span className="truncate">
-                                    {sede.nombre}
-                                    <span className="ml-1 text-muted-foreground">
-                                        ({sede.codigo})
-                                    </span>
-                                </span>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            {canSwitch ? (
+                control
             ) : (
-                <div className="inline-flex h-9 max-w-full items-center gap-1.5 truncate rounded-md border border-border/70 bg-muted/30 px-2.5 text-xs font-medium text-foreground">
-                    <Building2 className="size-3.5 shrink-0 opacity-70" />
-                    <span className="truncate">
-                        {current?.nombre ?? '—'}
-                    </span>
-                </div>
+                <Tooltip>
+                    <TooltipTrigger asChild>{control}</TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                        {t('sede_switcher.only_one', {
+                            defaultValue:
+                                'Solo tienes una sede; crea otra en Configuración → Sedes para poder cambiar.',
+                        })}
+                    </TooltipContent>
+                </Tooltip>
             )}
 
-            {showCopy && onCopyToSede && active.can_switch ? (
+            {showCopy && onCopyToSede && canSwitch ? (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="size-9 shrink-0 cursor-pointer"
+                            className="mt-auto size-9 shrink-0 cursor-pointer"
                             onClick={onCopyToSede}
                             aria-label={t('sede_switcher.copy', {
                                 defaultValue: 'Copiar a otra sede',

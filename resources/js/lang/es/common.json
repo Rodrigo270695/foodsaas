@@ -15,7 +15,8 @@
     },
     "sede_switcher": {
         "label": "Sede activa",
-        "placeholder": "Sede",
+        "placeholder": "Elige sede",
+        "only_one": "Solo tienes una sede; crea otra en Configuración → Sedes para poder cambiar.",
         "copy": "Copiar a otra sede",
         "copy_confirm": "Copiar",
         "target": "Sede destino",

@@ -2,11 +2,17 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesUniqueNombreInSede;
+use App\Models\MenuCarta;
+use App\Support\Sedes\ActiveSedeContext;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class MenuCartaRequest extends FormRequest
 {
+    use ValidatesUniqueNombreInSede;
+
     public function authorize(): bool
     {
         return true;
@@ -40,6 +46,24 @@ class MenuCartaRequest extends FormRequest
             'vigente_desde' => 'vigente desde',
             'vigente_hasta' => 'vigente hasta',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $menu = $this->route('menuCarta');
+        $ignoreId = $menu instanceof MenuCarta ? (string) $menu->id : null;
+        $sedeId = $menu instanceof MenuCarta && is_string($menu->sede_id)
+            ? (string) $menu->sede_id
+            : ActiveSedeContext::id();
+
+        $this->assertUniqueNombreInActiveSede(
+            $validator,
+            MenuCarta::class,
+            'nombre',
+            'Ya existe una carta con ese nombre en esta sede.',
+            $ignoreId,
+            $sedeId,
+        );
     }
 
     protected function prepareForValidation(): void

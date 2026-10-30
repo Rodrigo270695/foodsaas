@@ -2,10 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesUniqueNombreInSede;
+use App\Models\CategoriaCarta;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CategoriaCartaRequest extends FormRequest
 {
+    use ValidatesUniqueNombreInSede;
+
     public function authorize(): bool
     {
         return true;
@@ -29,6 +34,19 @@ class CategoriaCartaRequest extends FormRequest
             'orden' => 'orden',
             'activa' => 'estado',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $ignoreId = $this->route('categoriaCarta')?->id;
+
+        $this->assertUniqueNombreInActiveSede(
+            $validator,
+            CategoriaCarta::class,
+            'nombre',
+            'Ya existe una categoría con ese nombre en esta sede.',
+            is_string($ignoreId) ? $ignoreId : null,
+        );
     }
 
     protected function prepareForValidation(): void

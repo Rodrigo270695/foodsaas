@@ -3,9 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesPlanIntLimits;
+use App\Http\Requests\Concerns\ValidatesUniqueNombreInSede;
 use App\Models\AreaCarta;
 use App\Models\CategoriaCarta;
 use App\Models\ProductoCarta;
+use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -13,6 +15,7 @@ use Illuminate\Validation\Rule;
 class ProductoCartaRequest extends FormRequest
 {
     use ValidatesPlanIntLimits;
+    use ValidatesUniqueNombreInSede;
 
     public function authorize(): bool
     {
@@ -123,15 +126,79 @@ class ProductoCartaRequest extends FormRequest
     {
         $this->enforcePlanIntLimitsOnCreate($validator, ['max_productos']);
 
-        $validator->after(function (Validator $v): void {
+        $ignoreId = $this->route('productoCarta')?->id;
+        $sedeId = ActiveSedeContext::id();
+
+        // En edición la sede del producto manda; en alta, la sede activa.
+        if ($this->isMethod('PATCH') || $this->isMethod('PUT')) {
+            $producto = $this->route('productoCarta');
+            if ($producto instanceof ProductoCarta && is_string($producto->sede_id)) {
+                $sedeId = (string) $producto->sede_id;
+            }
+        }
+
+        $this->assertUniqueNombreInActiveSede(
+            $validator,
+            ProductoCarta::class,
+            'nombre',
+            'Ya existe un producto con ese nombre en esta sede.',
+            is_string($ignoreId) ? $ignoreId : null,
+            $sedeId,
+        );
+
+        $validator->after(function (Validator $v) use ($sedeId): void {
+            if ($sedeId === null || $sedeId === '') {
+                return;
+            }
+
             $categoriaId = (string) $this->input('categoria_id', '');
-            if ($categoriaId !== '' && ! CategoriaCarta::query()->whereKey($categoriaId)->exists()) {
-                $v->errors()->add('categoria_id', 'La categoría seleccionada no existe.');
+            if ($categoriaId !== '') {
+                $ok = CategoriaCarta::query()
+                    ->whereKey($categoriaId)
+                    ->where('sede_id', $sedeId)
+                    ->exists();
+                if (! $ok) {
+                    $v->errors()->add(
+                        'categoria_id',
+                        'La categoría no pertenece a la sede activa.',
+                    );
+                }
             }
 
             $areaId = (string) $this->input('area_id', '');
-            if ($areaId !== '' && ! AreaCarta::query()->whereKey($areaId)->exists()) {
-                $v->errors()->add('area_id', 'El área seleccionada no existe.');
+            if ($areaId !== '') {
+                $ok = AreaCarta::query()
+                    ->whereKey($areaId)
+                    ->where('sede_id', $sedeId)
+                    ->exists();
+                if (! $ok) {
+                    $v->errors()->add(
+                        'area_id',
+                        'El área no pertenece a la sede activa.',
+                    );
+                }
+            }
+
+            $codigo = trim((string) $this->input('codigo', ''));
+            if ($codigo === '' || $v->errors()->has('codigo')) {
+                return;
+            }
+
+            $ignoreId = $this->route('productoCarta')?->id;
+            $dup = ProductoCarta::query()
+                ->where('sede_id', $sedeId)
+                ->whereRaw('lower(codigo) = ?', [mb_strtolower($codigo)])
+                ->when(
+                    is_string($ignoreId) && $ignoreId !== '',
+                    fn ($q) => $q->whereKeyNot($ignoreId),
+                )
+                ->exists();
+
+            if ($dup) {
+                $v->errors()->add(
+                    'codigo',
+                    'Ya existe un producto con ese código en esta sede.',
+                );
             }
         });
     }

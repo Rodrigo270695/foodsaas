@@ -13,6 +13,16 @@
         "remove": "Remove",
         "undo": "Undo"
     },
+    "sede_switcher": {
+        "label": "Active branch",
+        "placeholder": "Choose branch",
+        "only_one": "You only have one branch; create another in Settings → Branches to switch.",
+        "copy": "Copy to another branch",
+        "copy_confirm": "Copy",
+        "target": "Target branch",
+        "target_placeholder": "Choose branch",
+        "no_targets": "No other branch available to copy to."
+    },
     "form": {
         "unsaved_changes": "You have changes that haven't been saved yet. If you close this form, they'll be lost. Leave without saving?"
     },

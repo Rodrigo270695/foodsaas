@@ -2,11 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesUniqueNombreInSede;
+use App\Models\AreaCarta;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class AreaCartaRequest extends FormRequest
 {
+    use ValidatesUniqueNombreInSede;
+
     public function authorize(): bool
     {
         return true;
@@ -14,15 +18,8 @@ class AreaCartaRequest extends FormRequest
 
     public function rules(): array
     {
-        $areaId = $this->route('areaCarta')?->id;
-
         return [
-            'nombre' => [
-                'required',
-                'string',
-                'max:120',
-                Rule::unique('cat_areas', 'nombre')->ignore($areaId),
-            ],
+            'nombre' => ['required', 'string', 'max:120'],
             'orden' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'activa' => ['sometimes', 'boolean'],
         ];
@@ -35,6 +32,19 @@ class AreaCartaRequest extends FormRequest
             'orden' => 'orden',
             'activa' => 'estado',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $ignoreId = $this->route('areaCarta')?->id;
+
+        $this->assertUniqueNombreInActiveSede(
+            $validator,
+            AreaCarta::class,
+            'nombre',
+            'Ya existe un área con ese nombre en esta sede.',
+            is_string($ignoreId) ? $ignoreId : null,
+        );
     }
 
     protected function prepareForValidation(): void
