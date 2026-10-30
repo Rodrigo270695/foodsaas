@@ -1,12 +1,13 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     Activity,
-    Banknote,
+    Armchair,
     BarChart3,
     BookOpenCheck,
     Bot,
     Building2,
     Cog,
+    CreditCard,
     Database,
     Gauge,
     Hash,
@@ -14,9 +15,6 @@ import {
     LayoutGrid,
     LineChart,
     MapPin,
-    UtensilsCrossed,
-    Armchair,
-    Warehouse,
     Megaphone,
     MessageCircle,
     Receipt,
@@ -26,14 +24,17 @@ import {
     Sparkles,
     Store,
     UserCog,
+    UtensilsCrossed,
     Wallet,
+    Warehouse,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import AppLogo from '@/components/app-logo';
+import { NavUser } from '@/components/nav-user';
 import { NavMainCollapsible } from '@/components/sidebar/nav-main-collapsible';
 import { SidebarAppVersion } from '@/components/sidebar/sidebar-app-version';
-import { NavUser } from '@/components/nav-user';
+import { SidebarPlanBadge } from '@/components/sidebar/sidebar-plan-badge';
 import {
     Sidebar,
     SidebarContent,
@@ -117,6 +118,13 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             title: t('items.general'),
                             href: '/configuracion/general',
                             icon: Store,
+                            permission: 'config-general.view',
+                            context: 'tenant',
+                        },
+                        {
+                            title: t('items.mi_suscripcion'),
+                            href: '/configuracion/suscripcion',
+                            icon: CreditCard,
                             permission: 'config-general.view',
                             context: 'tenant',
                         },
@@ -297,10 +305,11 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
 export function AppSidebar() {
     const { t } = useTranslation('nav');
     const { singles, groups } = useNavConfig();
+    const hasTenant = usePage().props.tenant != null;
 
     return (
         <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader className="shrink-0">
+            <SidebarHeader className="shrink-0 gap-2">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
@@ -313,6 +322,7 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+                {hasTenant ? <SidebarPlanBadge /> : null}
             </SidebarHeader>
 
             <SidebarContent>

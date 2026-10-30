@@ -173,6 +173,30 @@ class HandleInertiaRequests extends Middleware
                 }
             },
             'plan_limits' => static fn () => PlanLimits::snapshot(),
+            'tenant_plan' => static function () {
+                if (tenant() === null) {
+                    return null;
+                }
+
+                try {
+                    $plan = PlanLimits::activePlan();
+
+                    if ($plan === null) {
+                        return null;
+                    }
+
+                    return [
+                        'nombre' => (string) $plan->nombre,
+                        'codigo' => (string) $plan->codigo,
+                        'badge' => $plan->badge !== null ? (string) $plan->badge : null,
+                        'color_hex' => $plan->color_hex !== null ? (string) $plan->color_hex : null,
+                    ];
+                } catch (Throwable $e) {
+                    report($e);
+
+                    return null;
+                }
+            },
             'active_sede' => static fn () => ActiveSedeContext::sharedPayload(),
         ];
     }

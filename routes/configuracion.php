@@ -3,6 +3,7 @@
 use App\Http\Controllers\RestaurantSettingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SedeController;
+use App\Http\Controllers\TenantSubscriptionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,10 @@ Route::middleware(['auth', 'verified', 'force-password-change'])->prefix('config
     Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.update'])
         ->match(['put', 'patch'], 'general', [RestaurantSettingController::class, 'update'])
         ->name('general.update');
+
+    Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.view'])
+        ->get('suscripcion', [TenantSubscriptionController::class, 'show'])
+        ->name('suscripcion.show');
 
     Route::middleware('permission:sedes.view')
         ->get('sedes', [SedeController::class, 'index'])

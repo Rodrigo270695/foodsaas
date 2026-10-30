@@ -1,0 +1,87 @@
+{
+    "title": "Mi suscripción",
+    "description": "Plan activo, fechas de cobro y uso de los límites de tu restaurante.",
+    "breadcrumb_config": "Configuración",
+    "hero": {
+        "badge_active": "Suscripción FoodSaaS · Activa",
+        "badge_trial": "Suscripción FoodSaaS · Prueba",
+        "badge_grace": "Suscripción FoodSaaS · Gracia",
+        "badge_none": "Sin suscripción activa",
+        "days_until": "{{count}} días para el próximo cobro",
+        "days_until_one": "1 día para el próximo cobro",
+        "days_overdue": "Periodo vencido hace {{count}} días",
+        "days_today": "El cobro es hoy",
+        "no_date": "Sin fecha de cobro programada",
+        "renew_hint": "La renovación la gestiona la plataforma. Contacta a soporte si necesitas cambiar de plan."
+    },
+    "cards": {
+        "your_plan": "Tu plan",
+        "plan": "Plan",
+        "cycle": "Ciclo",
+        "base_price": "Precio pactado",
+        "discount": "Descuento",
+        "list_monthly": "Lista mensual",
+        "list_annual": "Lista anual",
+        "dates": "Fechas importantes",
+        "period_start": "Inicio del periodo",
+        "period_end": "Fin del periodo",
+        "next_charge": "Próximo cobro",
+        "trial_ends": "Fin de prueba",
+        "grace_ends": "Fin de gracia",
+        "renew": "Renovar servicio",
+        "renew_body": "Al renovar se mantiene el plan y los límites actuales. Los cambios de plan los aplica el equipo de plataforma.",
+        "next_payment": "Próximo pago",
+        "modules": "Módulos incluidos"
+    },
+    "usage": {
+        "title": "Uso de tu plan",
+        "subtitle": "Consumo actual frente a los límites de tu plan.",
+        "of": "{{used}} de {{limit}}",
+        "unlimited": "Ilimitado",
+        "remaining": "Restan {{count}}",
+        "remaining_zero": "Sin cupo",
+        "pct": "{{pct}}%",
+        "coming_soon": "El conteo de pedidos estará disponible con el módulo de ventas."
+    },
+    "semaphore": {
+        "green": "Normal",
+        "yellow": "Atención",
+        "red": "Límite alcanzado"
+    },
+    "estados": {
+        "trial": "Prueba",
+        "active": "Activa",
+        "grace": "Gracia",
+        "suspended": "Suspendida",
+        "cancelled": "Cancelada"
+    },
+    "ciclos": {
+        "mensual": "Mensual",
+        "anual": "Anual",
+        "trimestral": "Trimestral"
+    },
+    "features": {
+        "max_sedes": "Sedes",
+        "max_usuarios": "Usuarios",
+        "max_productos": "Productos",
+        "max_mesas": "Mesas",
+        "max_pedidos_mes": "Pedidos / mes"
+    },
+    "modules": {
+        "modulo_delivery": "Delivery",
+        "modulo_reservas": "Reservas",
+        "modulo_reportes": "Reportes avanzados",
+        "modulo_whatsapp": "WhatsApp",
+        "boletas_electronicas": "Boletas electrónicas",
+        "facturas_electronicas": "Facturas electrónicas",
+        "guias_remision": "Guías de remisión",
+        "notas_credito": "Notas de crédito",
+        "notas_debito": "Notas de débito",
+        "included": "Incluido",
+        "not_included": "No incluido"
+    },
+    "empty": {
+        "title": "Sin plan asignado",
+        "description": "Tu restaurante aún no tiene una suscripción activa. Contacta a la plataforma para activar un plan."
+    }
+}

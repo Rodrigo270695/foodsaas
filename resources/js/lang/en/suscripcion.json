@@ -1,0 +1,87 @@
+{
+    "title": "My subscription",
+    "description": "Active plan, billing dates, and usage of your restaurant limits.",
+    "breadcrumb_config": "Settings",
+    "hero": {
+        "badge_active": "FoodSaaS subscription · Active",
+        "badge_trial": "FoodSaaS subscription · Trial",
+        "badge_grace": "FoodSaaS subscription · Grace",
+        "badge_none": "No active subscription",
+        "days_until": "{{count}} days until next charge",
+        "days_until_one": "1 day until next charge",
+        "days_overdue": "Period ended {{count}} days ago",
+        "days_today": "Charge is today",
+        "no_date": "No charge date scheduled",
+        "renew_hint": "Renewals are managed by the platform. Contact support to change plans."
+    },
+    "cards": {
+        "your_plan": "Your plan",
+        "plan": "Plan",
+        "cycle": "Cycle",
+        "base_price": "Contracted price",
+        "discount": "Discount",
+        "list_monthly": "Monthly list price",
+        "list_annual": "Annual list price",
+        "dates": "Important dates",
+        "period_start": "Period start",
+        "period_end": "Period end",
+        "next_charge": "Next charge",
+        "trial_ends": "Trial ends",
+        "grace_ends": "Grace ends",
+        "renew": "Renew service",
+        "renew_body": "Renewing keeps your current plan and limits. Plan changes are applied by the platform team.",
+        "next_payment": "Next payment",
+        "modules": "Included modules"
+    },
+    "usage": {
+        "title": "Plan usage",
+        "subtitle": "Current consumption against your plan limits.",
+        "of": "{{used}} of {{limit}}",
+        "unlimited": "Unlimited",
+        "remaining": "{{count}} remaining",
+        "remaining_zero": "No quota left",
+        "pct": "{{pct}}%",
+        "coming_soon": "Order counting will be available with the sales module."
+    },
+    "semaphore": {
+        "green": "Normal",
+        "yellow": "Watch",
+        "red": "Limit reached"
+    },
+    "estados": {
+        "trial": "Trial",
+        "active": "Active",
+        "grace": "Grace",
+        "suspended": "Suspended",
+        "cancelled": "Cancelled"
+    },
+    "ciclos": {
+        "mensual": "Monthly",
+        "anual": "Annual",
+        "trimestral": "Quarterly"
+    },
+    "features": {
+        "max_sedes": "Branches",
+        "max_usuarios": "Users",
+        "max_productos": "Products",
+        "max_mesas": "Tables",
+        "max_pedidos_mes": "Orders / month"
+    },
+    "modules": {
+        "modulo_delivery": "Delivery",
+        "modulo_reservas": "Reservations",
+        "modulo_reportes": "Advanced reports",
+        "modulo_whatsapp": "WhatsApp",
+        "boletas_electronicas": "Electronic receipts",
+        "facturas_electronicas": "Electronic invoices",
+        "guias_remision": "Dispatch guides",
+        "notas_credito": "Credit notes",
+        "notas_debito": "Debit notes",
+        "included": "Included",
+        "not_included": "Not included"
+    },
+    "empty": {
+        "title": "No plan assigned",
+        "description": "Your restaurant has no active subscription yet. Contact the platform to activate a plan."
+    }
+}

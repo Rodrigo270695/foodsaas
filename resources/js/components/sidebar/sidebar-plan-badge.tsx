@@ -88,19 +88,33 @@ export function SidebarPlanBadge() {
     const kicker = t('plan_kicker');
 
     if (collapsed) {
+        const mark = (
+            <span
+                className="mx-auto flex size-8 items-center justify-center rounded-full text-[10px] font-semibold tracking-tight"
+                style={{
+                    color,
+                    backgroundColor: rgba(color, 0.14),
+                    boxShadow: `inset 0 0 0 1px ${rgba(color, 0.35)}`,
+                }}
+            >
+                {collapsedMark(name)}
+            </span>
+        );
+
         return (
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <span
-                        className="mx-auto mb-2 flex size-8 items-center justify-center rounded-full text-[10px] font-semibold tracking-tight"
-                        style={{
-                            color,
-                            backgroundColor: rgba(color, 0.14),
-                            boxShadow: `inset 0 0 0 1px ${rgba(color, 0.35)}`,
-                        }}
-                    >
-                        {collapsedMark(name)}
-                    </span>
+                    {href ? (
+                        <Link
+                            href={href}
+                            className="mb-2 block"
+                            title={name}
+                        >
+                            {mark}
+                        </Link>
+                    ) : (
+                        <span className="mb-2 block">{mark}</span>
+                    )}
                 </TooltipTrigger>
                 <TooltipContent side="right">{name}</TooltipContent>
             </Tooltip>
