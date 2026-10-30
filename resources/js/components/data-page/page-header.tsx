@@ -2,7 +2,10 @@ import type { ReactNode } from 'react';
 import { StatBadge, type StatBadgeProps } from './stat-badge';
 import { cn } from '@/lib/utils';
 
-export type PageHeaderStat = Omit<StatBadgeProps, 'className'>;
+export type PageHeaderStat = Omit<StatBadgeProps, 'className'> & {
+    /** Oculta el badge en móvil para no saturar la cabecera. */
+    hideOnMobile?: boolean;
+};
 
 export type PageHeaderProps = {
     title: string;
@@ -56,8 +59,14 @@ export function PageHeader({
 
             {stats.length > 0 ? (
                 <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                    {stats.map((stat) => (
-                        <StatBadge key={stat.label} {...stat} />
+                    {stats.map(({ hideOnMobile, ...stat }) => (
+                        <StatBadge
+                            key={stat.label}
+                            {...stat}
+                            className={
+                                hideOnMobile ? 'hidden sm:inline-flex' : undefined
+                            }
+                        />
                     ))}
                 </div>
             ) : null}

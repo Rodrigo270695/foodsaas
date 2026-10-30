@@ -1,8 +1,14 @@
-import { Copy, LayoutGrid, Link2, Plus, RefreshCw } from 'lucide-react';
+import { Copy, LayoutGrid, Link2, MoreHorizontal, Plus, RefreshCw } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { InfoHint } from '@/components/ui/info-hint';
 import {
     Tooltip,
@@ -53,7 +59,7 @@ export function SalonHeaderActions({
     onNewZona,
     onNewMesa,
 }: SalonHeaderActionsProps) {
-    const { t } = useTranslation('salon');
+    const { t } = useTranslation(['salon', 'common']);
 
     const newMesaTip = mesasLimitReached
         ? t('plan_limit.max_mesas')
@@ -61,25 +67,135 @@ export function SalonHeaderActions({
           ? t('mesa_form.no_zonas')
           : t('actions.new_mesa');
 
-    return (
-        <div className="flex flex-row flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-            <ActionTip label={t('floor.refresh')}>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={onRefresh}
-                    disabled={isLoading}
-                    aria-label={t('floor.refresh')}
-                    className="cursor-pointer"
-                >
-                    <RefreshCw
-                        className={cn('size-4', isLoading && 'animate-spin')}
-                        strokeWidth={2.5}
-                    />
-                </Button>
-            </ActionTip>
+    const moreLabel = t('common:actions.more', {
+        defaultValue: 'Más acciones',
+    });
 
+    return (
+        <div className="flex flex-nowrap items-center justify-end gap-1.5 sm:gap-2">
+            {/* Móvil: secundarias en ⋯ */}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="cursor-pointer sm:hidden"
+                        aria-label={moreLabel}
+                    >
+                        <MoreHorizontal className="size-4" strokeWidth={2.5} />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-48">
+                    <DropdownMenuItem
+                        disabled={isLoading}
+                        onSelect={() => onRefresh()}
+                        className="cursor-pointer gap-2"
+                    >
+                        <RefreshCw
+                            className={cn(
+                                'size-4',
+                                isLoading && 'animate-spin',
+                            )}
+                            strokeWidth={2.5}
+                        />
+                        {t('floor.refresh')}
+                    </DropdownMenuItem>
+
+                    {canCopy && onCopy ? (
+                        <Can permission="salon.create">
+                            <DropdownMenuItem
+                                onSelect={() => onCopy()}
+                                className="cursor-pointer gap-2"
+                            >
+                                <Copy className="size-4" strokeWidth={2.5} />
+                                {t('actions.copy_sede', {
+                                    defaultValue: 'Copiar a sede',
+                                })}
+                            </DropdownMenuItem>
+                        </Can>
+                    ) : null}
+
+                    <Can permission="salon.create">
+                        <DropdownMenuItem
+                            onSelect={() => onNewZona()}
+                            className="cursor-pointer gap-2"
+                        >
+                            <LayoutGrid
+                                className="size-4"
+                                strokeWidth={2.5}
+                            />
+                            {t('actions.new_zona')}
+                        </DropdownMenuItem>
+                    </Can>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Desktop: secundarias visibles */}
+            <div className="hidden items-center gap-2 sm:flex">
+                <ActionTip label={t('floor.refresh')}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={onRefresh}
+                        disabled={isLoading}
+                        aria-label={t('floor.refresh')}
+                        className="cursor-pointer"
+                    >
+                        <RefreshCw
+                            className={cn(
+                                'size-4',
+                                isLoading && 'animate-spin',
+                            )}
+                            strokeWidth={2.5}
+                        />
+                    </Button>
+                </ActionTip>
+
+                {canCopy && onCopy ? (
+                    <Can permission="salon.create">
+                        <ActionTip
+                            label={t('actions.copy_sede', {
+                                defaultValue: 'Copiar a sede',
+                            })}
+                        >
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onCopy}
+                                className="cursor-pointer gap-2"
+                            >
+                                <Copy className="size-4" strokeWidth={2.5} />
+                                <span>
+                                    {t('actions.copy_sede', {
+                                        defaultValue: 'Copiar a sede',
+                                    })}
+                                </span>
+                            </Button>
+                        </ActionTip>
+                    </Can>
+                ) : null}
+
+                <Can permission="salon.create">
+                    <ActionTip label={t('actions.new_zona')}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onNewZona}
+                            className="cursor-pointer gap-2"
+                        >
+                            <LayoutGrid
+                                className="size-4"
+                                strokeWidth={2.5}
+                            />
+                            <span>{t('actions.new_zona')}</span>
+                        </Button>
+                    </ActionTip>
+                </Can>
+            </div>
+
+            {/* Siempre: Unir (modo) + Nueva mesa */}
             {canUpdate && onToggleJoinMode ? (
                 <Can permission="salon.update">
                     <div className="relative inline-flex">
@@ -119,46 +235,6 @@ export function SalonHeaderActions({
                     </div>
                 </Can>
             ) : null}
-
-            {canCopy && onCopy ? (
-                <Can permission="salon.create">
-                    <ActionTip
-                        label={t('actions.copy_sede', {
-                            defaultValue: 'Copiar a sede',
-                        })}
-                    >
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={onCopy}
-                            className="cursor-pointer gap-2"
-                        >
-                            <Copy className="size-4" strokeWidth={2.5} />
-                            <span className="hidden sm:inline">
-                                {t('actions.copy_sede', {
-                                    defaultValue: 'Copiar a sede',
-                                })}
-                            </span>
-                        </Button>
-                    </ActionTip>
-                </Can>
-            ) : null}
-
-            <Can permission="salon.create">
-                <ActionTip label={t('actions.new_zona')}>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onNewZona}
-                        className="cursor-pointer gap-2"
-                    >
-                        <LayoutGrid className="size-4" strokeWidth={2.5} />
-                        <span className="hidden sm:inline">
-                            {t('actions.new_zona')}
-                        </span>
-                    </Button>
-                </ActionTip>
-            </Can>
 
             <Can permission="salon.create">
                 <ActionTip label={newMesaTip}>

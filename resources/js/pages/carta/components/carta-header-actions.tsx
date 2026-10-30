@@ -3,6 +3,7 @@ import {
     Copy,
     Download,
     FolderOpen,
+    MoreHorizontal,
     Plus,
     RefreshCw,
     Sparkles,
@@ -11,6 +12,12 @@ import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
     Tooltip,
     TooltipContent,
@@ -57,7 +64,7 @@ export function CartaHeaderActions({
     onNewCategory,
     onNewProduct,
 }: CartaHeaderActionsProps) {
-    const { t } = useTranslation('carta');
+    const { t } = useTranslation(['carta', 'common']);
 
     const newProductTip = productosLimitReached
         ? t('plan_limit.max_productos')
@@ -65,66 +72,170 @@ export function CartaHeaderActions({
           ? t('producto_form.no_categories')
           : t('actions.new_product');
 
-    return (
-        <div className="flex flex-row flex-wrap items-center justify-end gap-2">
-            <ActionTip label={t('catalog.refresh')}>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={onRefresh}
-                    disabled={isLoading}
-                    aria-label={t('catalog.refresh')}
-                    className="cursor-pointer"
-                >
-                    <RefreshCw
-                        className={cn('size-4', isLoading && 'animate-spin')}
-                        strokeWidth={2.5}
-                    />
-                </Button>
-            </ActionTip>
+    const moreLabel = t('common:actions.more', {
+        defaultValue: 'Más acciones',
+    });
 
-            <Can permission="carta.export">
-                <ActionTip label={t('actions.export')}>
+    return (
+        <div className="flex flex-nowrap items-center justify-end gap-2">
+            {/* Móvil: secundarias en ⋯ */}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                     <Button
                         type="button"
                         variant="outline"
                         size="icon"
-                        asChild
-                        className="cursor-pointer"
-                        aria-label={t('actions.export')}
+                        className="cursor-pointer sm:hidden"
+                        aria-label={moreLabel}
                     >
-                        <a href={exportHref}>
-                            <Download className="size-4" strokeWidth={2.5} />
-                        </a>
+                        <MoreHorizontal className="size-4" strokeWidth={2.5} />
                     </Button>
-                </ActionTip>
-            </Can>
-
-            {canCopy && onCopy ? (
-                <Can permission="carta.manage-productos">
-                    <ActionTip
-                        label={t('actions.copy_sede', {
-                            defaultValue: 'Copiar a sede',
-                        })}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-48">
+                    <DropdownMenuItem
+                        disabled={isLoading}
+                        onSelect={() => onRefresh()}
+                        className="cursor-pointer gap-2"
                     >
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={onCopy}
-                            className="cursor-pointer gap-2"
-                        >
-                            <Copy className="size-4" strokeWidth={2.5} />
-                            <span className="hidden sm:inline">
+                        <RefreshCw
+                            className={cn(
+                                'size-4',
+                                isLoading && 'animate-spin',
+                            )}
+                            strokeWidth={2.5}
+                        />
+                        {t('catalog.refresh')}
+                    </DropdownMenuItem>
+
+                    <Can permission="carta.export">
+                        <DropdownMenuItem asChild>
+                            <a
+                                href={exportHref}
+                                className="cursor-pointer gap-2"
+                            >
+                                <Download
+                                    className="size-4"
+                                    strokeWidth={2.5}
+                                />
+                                {t('actions.export')}
+                            </a>
+                        </DropdownMenuItem>
+                    </Can>
+
+                    {canCopy && onCopy ? (
+                        <Can permission="carta.manage-productos">
+                            <DropdownMenuItem
+                                onSelect={() => onCopy()}
+                                className="cursor-pointer gap-2"
+                            >
+                                <Copy className="size-4" strokeWidth={2.5} />
                                 {t('actions.copy_sede', {
                                     defaultValue: 'Copiar a sede',
                                 })}
-                            </span>
+                            </DropdownMenuItem>
+                        </Can>
+                    ) : null}
+
+                    <Can permission="carta.manage-categorias">
+                        <DropdownMenuItem
+                            onSelect={() => onNewCategory()}
+                            className="cursor-pointer gap-2"
+                        >
+                            <FolderOpen
+                                className="size-4"
+                                strokeWidth={2.5}
+                            />
+                            {t('actions.new_category')}
+                        </DropdownMenuItem>
+                    </Can>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Desktop: todas las secundarias visibles */}
+            <div className="hidden items-center gap-2 sm:flex">
+                <ActionTip label={t('catalog.refresh')}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={onRefresh}
+                        disabled={isLoading}
+                        aria-label={t('catalog.refresh')}
+                        className="cursor-pointer"
+                    >
+                        <RefreshCw
+                            className={cn(
+                                'size-4',
+                                isLoading && 'animate-spin',
+                            )}
+                            strokeWidth={2.5}
+                        />
+                    </Button>
+                </ActionTip>
+
+                <Can permission="carta.export">
+                    <ActionTip label={t('actions.export')}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            asChild
+                            className="cursor-pointer"
+                            aria-label={t('actions.export')}
+                        >
+                            <a href={exportHref}>
+                                <Download
+                                    className="size-4"
+                                    strokeWidth={2.5}
+                                />
+                            </a>
                         </Button>
                     </ActionTip>
                 </Can>
-            ) : null}
 
+                {canCopy && onCopy ? (
+                    <Can permission="carta.manage-productos">
+                        <ActionTip
+                            label={t('actions.copy_sede', {
+                                defaultValue: 'Copiar a sede',
+                            })}
+                        >
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onCopy}
+                                className="cursor-pointer gap-2"
+                            >
+                                <Copy className="size-4" strokeWidth={2.5} />
+                                <span>
+                                    {t('actions.copy_sede', {
+                                        defaultValue: 'Copiar a sede',
+                                    })}
+                                </span>
+                            </Button>
+                        </ActionTip>
+                    </Can>
+                ) : null}
+
+                <Can permission="carta.manage-categorias">
+                    <ActionTip label={t('actions.new_category')}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onNewCategory}
+                            className="cursor-pointer gap-2"
+                        >
+                            <FolderOpen
+                                className="size-4"
+                                strokeWidth={2.5}
+                            />
+                            <span>{t('actions.new_category')}</span>
+                        </Button>
+                    </ActionTip>
+                </Can>
+            </div>
+
+            {/* Siempre visibles: Armar + Producto */}
             <Can permission="carta.view">
                 <ActionTip label={t('actions.build_menu')}>
                     <Button
@@ -146,29 +257,15 @@ export function CartaHeaderActions({
                 </ActionTip>
             </Can>
 
-            <Can permission="carta.manage-categorias">
-                <ActionTip label={t('actions.new_category')}>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onNewCategory}
-                        className="cursor-pointer gap-2"
-                    >
-                        <FolderOpen className="size-4" strokeWidth={2.5} />
-                        <span className="hidden sm:inline">
-                            {t('actions.new_category')}
-                        </span>
-                    </Button>
-                </ActionTip>
-            </Can>
-
             <Can permission="carta.manage-productos">
                 <ActionTip label={newProductTip}>
                     <span className="inline-flex">
                         <Button
                             type="button"
                             onClick={onNewProduct}
-                            disabled={productosLimitReached || !hasCategorias}
+                            disabled={
+                                productosLimitReached || !hasCategorias
+                            }
                             className="cursor-pointer gap-2"
                         >
                             <Plus className="size-4" strokeWidth={2.5} />

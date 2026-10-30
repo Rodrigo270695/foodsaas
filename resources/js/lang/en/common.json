@@ -11,7 +11,9 @@
         "loading": "Loading...",
         "export_xlsx": "Export Excel",
         "remove": "Remove",
-        "undo": "Undo"
+        "undo": "Undo",
+        "reload": "Refresh",
+        "more": "More actions"
     },
     "sede_switcher": {
         "label": "Active branch",

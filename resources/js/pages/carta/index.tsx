@@ -374,6 +374,7 @@ export default function Index({
                                 stats.productos - stats.productos_activos,
                             ),
                             variant: 'muted',
+                            hideOnMobile: true,
                         },
                         {
                             label: t('stats_badges.categories', {
@@ -382,6 +383,7 @@ export default function Index({
                             value: stats.categorias,
                             variant: 'warning',
                             icon: FolderOpen,
+                            hideOnMobile: true,
                         },
                         {
                             label: t('stats_badges.areas', {
@@ -390,6 +392,7 @@ export default function Index({
                             value: stats.areas ?? 0,
                             variant: 'primary',
                             icon: LayoutGrid,
+                            hideOnMobile: true,
                         },
                         {
                             label: t('stats_badges.matches', {

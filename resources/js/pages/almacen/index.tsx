@@ -277,6 +277,7 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
                             value: stats.recipe,
                             variant: 'primary',
                             icon: Warehouse,
+                            hideOnMobile: true,
                         },
                         {
                             label: t('stats_badges.ok', {
@@ -285,6 +286,7 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
                             value: Math.max(0, stats.sku - stats.bajo),
                             variant: 'success',
                             icon: CheckCircle2,
+                            hideOnMobile: true,
                         },
                         {
                             label: t('stats_badges.matches', {

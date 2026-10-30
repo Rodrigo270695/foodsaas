@@ -11,7 +11,9 @@
         "loading": "Cargando...",
         "export_xlsx": "Exportar Excel",
         "remove": "Quitar",
-        "undo": "Deshacer"
+        "undo": "Deshacer",
+        "reload": "Actualizar",
+        "more": "Más acciones"
     },
     "sede_switcher": {
         "label": "Sede activa",
