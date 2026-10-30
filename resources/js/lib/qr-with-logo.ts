@@ -1,5 +1,3 @@
-import QRCode from 'qrcode';
-
 export type QrWithLogoOptions = {
     /** URL o texto a codificar. */
     data: string;
@@ -11,14 +9,35 @@ export type QrWithLogoOptions = {
     logoRatio?: number;
 };
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+function loadImage(src: string, crossOrigin?: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.crossOrigin = 'anonymous';
+        if (crossOrigin) {
+            img.crossOrigin = crossOrigin;
+        }
         img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('No se pudo cargar el logo'));
+        img.onerror = () => reject(new Error('No se pudo cargar la imagen'));
         img.src = src;
     });
+}
+
+/**
+ * Genera el QR vía API pública y lo carga como blob (evita canvas «tainted»).
+ * Sin dependencia npm `qrcode`.
+ */
+async function loadQrImage(data: string, size: number): Promise<HTMLImageElement> {
+    const api = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=12&ecc=H&data=${encodeURIComponent(data)}`;
+    const res = await fetch(api);
+    if (!res.ok) {
+        throw new Error(`QR HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+        return await loadImage(objectUrl);
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
 }
 
 function drawRoundedRect(
@@ -40,7 +59,7 @@ function drawRoundedRect(
 }
 
 /**
- * Genera un QR en canvas (error correction H) con logo centrado opcional.
+ * Genera un QR en canvas (ECC H) con logo centrado opcional.
  * Devuelve data URL PNG listo para `<img>` o descarga.
  */
 export async function buildQrWithLogoDataUrl(
@@ -52,16 +71,15 @@ export async function buildQrWithLogoDataUrl(
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        throw new Error('Canvas no disponible');
+    }
 
-    await QRCode.toCanvas(canvas, options.data, {
-        width: size,
-        margin: 2,
-        errorCorrectionLevel: 'H',
-        color: {
-            dark: '#111111',
-            light: '#ffffff',
-        },
-    });
+    const qr = await loadQrImage(options.data, size);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(qr, 0, 0, size, size);
 
     const logoUrl = options.logoUrl?.trim();
     if (!logoUrl) {
@@ -69,24 +87,17 @@ export async function buildQrWithLogoDataUrl(
     }
 
     try {
-        const logo = await loadImage(logoUrl);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-            return canvas.toDataURL('image/png');
-        }
-
+        const logo = await loadImage(logoUrl, 'anonymous');
         const logoBox = size * logoRatio;
         const pad = logoBox * 0.18;
         const box = logoBox + pad * 2;
         const x = (size - box) / 2;
         const y = (size - box) / 2;
 
-        // Fondo blanco redondeado para no tapar el QR de golpe.
         ctx.fillStyle = '#ffffff';
         drawRoundedRect(ctx, x, y, box, box, box * 0.18);
         ctx.fill();
 
-        // Logo centrado (contain).
         const maxInner = logoBox;
         const scale = Math.min(maxInner / logo.width, maxInner / logo.height);
         const dw = logo.width * scale;
@@ -101,10 +112,7 @@ export async function buildQrWithLogoDataUrl(
     return canvas.toDataURL('image/png');
 }
 
-export function downloadDataUrl(
-    dataUrl: string,
-    filename: string,
-): void {
+export function downloadDataUrl(dataUrl: string, filename: string): void {
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = filename;
