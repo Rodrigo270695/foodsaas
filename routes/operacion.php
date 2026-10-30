@@ -13,6 +13,14 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->get('/', [CartaController::class, 'index'])
                     ->name('index');
 
+                Route::middleware('permission:carta.view')
+                    ->get('armar', [CartaController::class, 'builder'])
+                    ->name('builder');
+
+                Route::middleware('permission:carta.create')
+                    ->post('areas', [CartaController::class, 'storeArea'])
+                    ->name('areas.store');
+
                 Route::middleware('permission:carta.create')
                     ->post('categorias', [CartaController::class, 'storeCategoria'])
                     ->name('categorias.store');

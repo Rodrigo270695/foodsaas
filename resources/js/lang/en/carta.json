@@ -1,6 +1,6 @@
 {
     "title": "Menu",
-    "description": "Menu products organized by categories. Set prices, codes, and visibility for sales and kitchen tickets.",
+    "description": "Product catalog: register items, assign prep areas and photos. Then build publishable menus.",
     "plan_limit": {
         "max_productos": "You reached your plan's product limit. Upgrade to add more."
     },
@@ -10,12 +10,15 @@
         "new_category": "New category",
         "new_category_short": "Category",
         "create_first_product": "Create first product",
-        "create_first_category": "Create first category"
+        "create_first_category": "Create first category",
+        "build_menu": "Build menu",
+        "build_menu_short": "Build"
     },
     "stats": {
         "productos": "Products",
         "activos": "Active",
         "categorias": "Categories",
+        "areas": "Areas",
         "matches": "Matches"
     },
     "search_placeholder": "Search by name, code, or description...",
@@ -35,6 +38,7 @@
     "columns": {
         "nombre": "Product",
         "categoria": "Category",
+        "area": "Area",
         "codigo": "Code",
         "precio": "Price",
         "orden": "Order",
@@ -45,6 +49,7 @@
         "active": "Active",
         "inactive": "Inactive",
         "no_code": "No code",
+        "no_area": "No area",
         "actions_for_product": "Actions for {{name}}",
         "actions_for_category": "Actions for {{name}}",
         "products_count": "{{count}} products",
@@ -70,13 +75,28 @@
         "load_error": "Could not load the menu."
     },
     "catalog": {
-        "subtitle": "Visual catalog by category. Filter, search, and edit products without leaving the menu board.",
-        "refresh": "Refresh menu",
+        "subtitle": "Product registry. Assign prep areas (kitchen, bar…) and photos; then build menus with QR and PDF.",
+        "refresh": "Refresh catalog",
         "stat_total": "Total {{count}}",
         "stat_active": "Active {{count}}",
         "stat_inactive": "Inactive {{count}}",
         "stat_categories": "Categories {{count}}",
+        "stat_areas": "Areas {{count}}",
         "stat_matches": "Matches {{count}}"
+    },
+    "builder": {
+        "title": "Build menu",
+        "subtitle": "Design publishable menus with drag-and-drop, backgrounds, pages, QR and PDF.",
+        "back": "Back to catalog",
+        "hero_title": "Menu canvas",
+        "hero_body": "Drag catalog products, pick a background, and publish with QR. PDFs use your Settings logo as watermark.",
+        "feature_drag": "Drag & drop + keyboard reorder",
+        "feature_motion": "Soft crossfade, Flip and blur",
+        "feature_pdf": "Multi-page PDF + watermark",
+        "feature_schedule": "Menus by schedule (lunch / night)",
+        "cta_soon": "Coming soon on this screen",
+        "stats_products": "{{count}} active products ready",
+        "stats_areas": "{{count}} prep areas"
     },
     "categoria_form": {
         "title_create": "New category",
@@ -101,8 +121,8 @@
     "producto_form": {
         "title_create": "New product",
         "title_edit": "Edit product",
-        "description_create": "Add a menu item with price and category.",
-        "description_edit": "Update details, price, or visibility.",
+        "description_create": "Add a menu item with price, prep area and photo.",
+        "description_edit": "Update details, price, area or visibility.",
         "submit_create": "Create product",
         "submit_edit": "Save changes",
         "no_categories": "Create at least one category before adding products.",
@@ -111,6 +131,12 @@
         "fields": {
             "categoria": "Category",
             "categoria_placeholder": "Select a category",
+            "area": "Area",
+            "area_placeholder": "Search or create an area…",
+            "area_search": "Search area…",
+            "area_empty": "No areas. Type to create one.",
+            "area_create": "Use «{{name}}»",
+            "area_hint": "Prep station (kitchen, bar, desserts…). Create on the fly.",
             "nombre": "Name",
             "nombre_placeholder": "E.g. Grilled steak",
             "codigo": "Code",
@@ -118,6 +144,10 @@
             "precio": "Price",
             "descripcion": "Description",
             "descripcion_placeholder": "Ingredients or customer notes",
+            "imagen": "Image",
+            "imagen_drop": "Drop the dish photo here",
+            "imagen_hint": "JPG, PNG or WebP · max 2 MB",
+            "imagen_pick": "Choose image",
             "orden": "Order",
             "orden_hint": "Within the category, lower numbers appear first.",
             "activo": "Active product",

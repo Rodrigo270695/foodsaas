@@ -1,6 +1,6 @@
 {
     "title": "Carta",
-    "description": "Productos del menú organizados por categorías. Define precios, códigos y visibilidad para ventas y comandas.",
+    "description": "Catálogo de productos: registra, asigna área de preparación e imagen. Luego arma cartas publicables.",
     "plan_limit": {
         "max_productos": "Alcanzaste el límite de productos de tu plan. Actualiza el plan para agregar más."
     },
@@ -10,12 +10,15 @@
         "new_category": "Nueva categoría",
         "new_category_short": "Categoría",
         "create_first_product": "Crear primer producto",
-        "create_first_category": "Crear primera categoría"
+        "create_first_category": "Crear primera categoría",
+        "build_menu": "Armar carta",
+        "build_menu_short": "Armar"
     },
     "stats": {
         "productos": "Productos",
         "activos": "Activos",
         "categorias": "Categorías",
+        "areas": "Áreas",
         "matches": "Coincidencias"
     },
     "search_placeholder": "Buscar por nombre, código o descripción...",
@@ -35,6 +38,7 @@
     "columns": {
         "nombre": "Producto",
         "categoria": "Categoría",
+        "area": "Área",
         "codigo": "Código",
         "precio": "Precio",
         "orden": "Orden",
@@ -45,6 +49,7 @@
         "active": "Activo",
         "inactive": "Inactivo",
         "no_code": "Sin código",
+        "no_area": "Sin área",
         "actions_for_product": "Acciones para {{name}}",
         "actions_for_category": "Acciones para {{name}}",
         "products_count": "{{count}} productos",
@@ -70,13 +75,28 @@
         "load_error": "No se pudo cargar la carta."
     },
     "catalog": {
-        "subtitle": "Catálogo visual por categorías. Filtra, busca y edita productos sin salir del plano de carta.",
-        "refresh": "Actualizar carta",
+        "subtitle": "Registro de productos del catálogo. Asigna área (cocina, bar…) e imagen; después arma cartas con QR y PDF.",
+        "refresh": "Actualizar catálogo",
         "stat_total": "Total {{count}}",
         "stat_active": "Activos {{count}}",
         "stat_inactive": "Inactivos {{count}}",
         "stat_categories": "Categorías {{count}}",
+        "stat_areas": "Áreas {{count}}",
         "stat_matches": "Coincidencias {{count}}"
+    },
+    "builder": {
+        "title": "Armar carta",
+        "subtitle": "Diseña menús publicables con arrastre, fondo, páginas, QR y PDF.",
+        "back": "Volver al catálogo",
+        "hero_title": "Canvas de carta",
+        "hero_body": "Arrastra productos del catálogo, elige fondo y publica con QR. El PDF usará el logo de Configuración como marca de agua.",
+        "feature_drag": "Drag & drop + reordenar con teclado",
+        "feature_motion": "Crossfade, Flip y blur suaves",
+        "feature_pdf": "PDF multipágina + watermark",
+        "feature_schedule": "Cartas por horario (almuerzo / noche)",
+        "cta_soon": "Próximamente en esta pantalla",
+        "stats_products": "{{count}} productos activos listos",
+        "stats_areas": "{{count}} áreas de preparación"
     },
     "categoria_form": {
         "title_create": "Nueva categoría",
@@ -111,6 +131,12 @@
         "fields": {
             "categoria": "Categoría",
             "categoria_placeholder": "Selecciona una categoría",
+            "area": "Área",
+            "area_placeholder": "Busca o crea un área…",
+            "area_search": "Buscar área…",
+            "area_empty": "Sin áreas. Escribe para crear una.",
+            "area_create": "Usar «{{name}}»",
+            "area_hint": "Estación donde se prepara (cocina, bar, postres…). Puedes crear una al vuelo.",
             "nombre": "Nombre",
             "nombre_placeholder": "Ej. Lomo saltado",
             "codigo": "Código",
@@ -118,6 +144,10 @@
             "precio": "Precio",
             "descripcion": "Descripción",
             "descripcion_placeholder": "Ingredientes o notas para el cliente",
+            "imagen": "Imagen",
+            "imagen_drop": "Suelta la foto del plato aquí",
+            "imagen_hint": "JPG, PNG o WebP · máx. 2 MB",
+            "imagen_pick": "Elegir imagen",
             "orden": "Orden",
             "orden_hint": "Dentro de la categoría, menor número aparece primero.",
             "activo": "Producto activo",

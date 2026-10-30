@@ -1,9 +1,29 @@
 import { Head, router } from '@inertiajs/react';
-import { FolderOpen, Plus, UtensilsCrossed } from 'lucide-react';
+import {
+    FolderOpen,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Trash2,
+    UtensilsCrossed,
+} from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DataPagination, EmptyState, PageHeader } from '@/components/data-page';
+import {
+    DataPagination,
+    DataTable,
+    EmptyState,
+    PageHeader,
+    StatBadge,
+    type DataTableColumn,
+} from '@/components/data-page';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePlanLimitReached } from '@/hooks/use-plan-limits';
 import { usePermission } from '@/hooks/use-permission';
@@ -13,10 +33,10 @@ import { CartaHeaderActions } from './components/carta-header-actions';
 import { CartaToolbar } from './components/carta-toolbar';
 import { CategoriaFormModal } from './components/categoria-form-modal';
 import { ProductoFormModal } from './components/producto-form-modal';
-import { ProductosGrid } from './components/productos-grid';
 import carta from './carta-routes';
 import { formatPrecio } from './lib/format-precio';
 import type {
+    AreaCarta,
     CartaEstadoFilter,
     CartaFilters,
     CartaStats,
@@ -27,6 +47,7 @@ import type {
 type CartaIndexProps = {
     productos: Paginated<ProductoCarta>;
     categorias: CategoriaCarta[];
+    areas: AreaCarta[];
     filters: CartaFilters;
     stats: CartaStats;
     plan_productos_reached?: boolean;
@@ -45,15 +66,17 @@ const DEFAULT_ESTADO: CartaEstadoFilter = 'todos';
 export default function Index({
     productos: paginated,
     categorias,
+    areas,
     filters,
     stats,
     plan_productos_reached = false,
 }: CartaIndexProps) {
-    const { t } = useTranslation('carta');
+    const { t } = useTranslation(['carta', 'common']);
     const { can } = usePermission();
     const canCreate = can('carta.create');
     const canUpdate = can('carta.update');
     const canDelete = can('carta.delete');
+    const showRowActions = canUpdate || canDelete;
     const hookLimit = usePlanLimitReached('max_productos');
     const productosLimitReached = plan_productos_reached || hookLimit;
 
@@ -61,11 +84,13 @@ export default function Index({
         ...filters,
         sort: filters.sort ?? null,
         direction: filters.direction ?? null,
+        area_id: filters.area_id ?? null,
     };
 
     const { search, setSearch, isLoading, setPerPage, applyFilter, fetch } =
         useDataTablePage<{
             categoria_id: string | null;
+            area_id: string | null;
             estado: CartaEstadoFilter;
         }>({
             routeUrl: carta.index().url,
@@ -73,6 +98,7 @@ export default function Index({
             only: [
                 'productos',
                 'categorias',
+                'areas',
                 'filters',
                 'stats',
                 'plan_productos_reached',
@@ -117,16 +143,161 @@ export default function Index({
         [t],
     );
 
-    const hasActiveFilters = useMemo(() => {
-        return (
+    const hasActiveFilters = useMemo(
+        () =>
             Boolean(filters.search) ||
             filters.estado !== DEFAULT_ESTADO ||
-            Boolean(filters.categoria_id)
-        );
-    }, [filters.search, filters.estado, filters.categoria_id]);
+            Boolean(filters.categoria_id) ||
+            Boolean(filters.area_id),
+        [
+            filters.search,
+            filters.estado,
+            filters.categoria_id,
+            filters.area_id,
+        ],
+    );
 
     const defaultCategoriaForProduct =
         filters.categoria_id ?? categorias.find((c) => c.activa)?.id ?? null;
+
+    const columns = useMemo<DataTableColumn<ProductoCarta>[]>(() => {
+        const base: DataTableColumn<ProductoCarta>[] = [
+            {
+                key: 'nombre',
+                header: t('columns.nombre'),
+                cell: (producto) => (
+                    <div className="flex items-center gap-3">
+                        <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/40">
+                            {producto.imagen_url ? (
+                                <img
+                                    src={producto.imagen_url}
+                                    alt=""
+                                    className="size-full object-cover"
+                                />
+                            ) : (
+                                <div className="flex size-full items-center justify-center text-muted-foreground">
+                                    <UtensilsCrossed className="size-4" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="truncate font-medium text-foreground">
+                                {producto.nombre}
+                            </p>
+                            {producto.descripcion ? (
+                                <p className="line-clamp-1 text-xs text-muted-foreground">
+                                    {producto.descripcion}
+                                </p>
+                            ) : null}
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                key: 'categoria',
+                header: t('columns.categoria'),
+                cell: (producto) => (
+                    <span className="text-sm">
+                        {producto.categoria?.nombre ?? '—'}
+                    </span>
+                ),
+                className: 'hidden md:table-cell',
+            },
+            {
+                key: 'area',
+                header: t('columns.area'),
+                cell: (producto) => (
+                    <span className="text-sm text-muted-foreground">
+                        {producto.area?.nombre ?? t('row.no_area')}
+                    </span>
+                ),
+                className: 'hidden lg:table-cell',
+            },
+            {
+                key: 'precio',
+                header: t('columns.precio'),
+                align: 'right',
+                cell: (producto) => (
+                    <span className="tabular-nums text-sm font-semibold text-brand-700 dark:text-brand-300">
+                        {formatPrecio(producto.precio)}
+                    </span>
+                ),
+            },
+            {
+                key: 'estado',
+                header: t('columns.estado'),
+                cell: (producto) =>
+                    producto.activo ? (
+                        <StatBadge
+                            label={t('row.active')}
+                            value=""
+                            variant="success"
+                        />
+                    ) : (
+                        <StatBadge
+                            label={t('row.inactive')}
+                            value=""
+                            variant="muted"
+                        />
+                    ),
+            },
+        ];
+
+        if (showRowActions) {
+            base.push({
+                key: 'acciones',
+                header: (
+                    <span className="md:sr-only">{t('columns.acciones')}</span>
+                ),
+                align: 'right',
+                cell: (producto) => (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t('row.actions_for_product', {
+                                    name: producto.nombre,
+                                })}
+                                className="size-8 cursor-pointer"
+                            >
+                                <MoreHorizontal className="size-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                            {canUpdate ? (
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        setModal({
+                                            type: 'product-edit',
+                                            producto,
+                                        })
+                                    }
+                                    className="cursor-pointer gap-2"
+                                >
+                                    <Pencil className="size-4" />
+                                    {t('common:actions.edit')}
+                                </DropdownMenuItem>
+                            ) : null}
+                            {canDelete ? (
+                                <DropdownMenuItem
+                                    onSelect={() => deleteProducto(producto)}
+                                    className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                                >
+                                    <Trash2 className="size-4" />
+                                    {t('common:actions.delete')}
+                                </DropdownMenuItem>
+                            ) : null}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ),
+                className: 'w-12',
+            });
+        }
+
+        return base;
+    }, [t, showRowActions, canUpdate, canDelete, deleteProducto]);
 
     return (
         <>
@@ -186,73 +357,71 @@ export default function Index({
                                     }
                                     className="cursor-pointer gap-2"
                                 >
-                                    <Plus className="size-4" strokeWidth={2.5} />
+                                    <Plus className="size-4" />
                                     {t('actions.create_first_category')}
                                 </Button>
                             ) : undefined
                         }
                     />
-                ) : paginated.data.length === 0 ? (
-                    <EmptyState
-                        icon={UtensilsCrossed}
-                        title={
-                            hasActiveFilters
-                                ? t('empty.no_results_title')
-                                : t('empty.no_products_title')
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={paginated.data}
+                        rowKey={(p) => p.id}
+                        isLoading={isLoading}
+                        ariaLiveMessage={t('aria.results_count_other', {
+                            count: stats.coincidencias,
+                        })}
+                        footer={
+                            <DataPagination
+                                meta={paginated}
+                                onPerPageChange={setPerPage}
+                                preservedQuery={{
+                                    search: filters.search || undefined,
+                                    per_page: filters.per_page,
+                                    categoria_id:
+                                        filters.categoria_id ?? undefined,
+                                    area_id: filters.area_id ?? undefined,
+                                    estado:
+                                        filters.estado !== DEFAULT_ESTADO
+                                            ? filters.estado
+                                            : undefined,
+                                }}
+                            />
                         }
-                        description={
-                            hasActiveFilters
-                                ? t('empty.no_results_description')
-                                : t('empty.no_products_description')
-                        }
-                        action={
-                            !hasActiveFilters && canCreate ? (
-                                <Button
-                                    type="button"
-                                    onClick={() =>
-                                        setModal({ type: 'product-create' })
-                                    }
-                                    disabled={productosLimitReached}
-                                    className="cursor-pointer gap-2"
-                                >
-                                    <Plus className="size-4" strokeWidth={2.5} />
-                                    {t('actions.create_first_product')}
-                                </Button>
-                            ) : undefined
+                        emptyState={
+                            <EmptyState
+                                icon={UtensilsCrossed}
+                                title={
+                                    hasActiveFilters
+                                        ? t('empty.no_results_title')
+                                        : t('empty.no_products_title')
+                                }
+                                description={
+                                    hasActiveFilters
+                                        ? t('empty.no_results_description')
+                                        : t('empty.no_products_description')
+                                }
+                                action={
+                                    !hasActiveFilters && canCreate ? (
+                                        <Button
+                                            type="button"
+                                            onClick={() =>
+                                                setModal({
+                                                    type: 'product-create',
+                                                })
+                                            }
+                                            disabled={productosLimitReached}
+                                            className="cursor-pointer gap-2"
+                                        >
+                                            <Plus className="size-4" />
+                                            {t('actions.create_first_product')}
+                                        </Button>
+                                    ) : undefined
+                                }
+                            />
                         }
                     />
-                ) : (
-                    <>
-                        <ProductosGrid
-                            productos={paginated.data}
-                            isLoading={isLoading}
-                            canUpdate={canUpdate}
-                            canDelete={canDelete}
-                            ariaLabel={t('aria.results_count_other', {
-                                count: stats.coincidencias,
-                            })}
-                            formatPrice={formatPrecio}
-                            onEdit={(producto) =>
-                                setModal({ type: 'product-edit', producto })
-                            }
-                            onDelete={deleteProducto}
-                        />
-
-                        <DataPagination
-                            meta={paginated}
-                            onPerPageChange={setPerPage}
-                            preservedQuery={{
-                                search: filters.search || undefined,
-                                per_page: filters.per_page,
-                                categoria_id:
-                                    filters.categoria_id ?? undefined,
-                                estado:
-                                    filters.estado !== DEFAULT_ESTADO
-                                        ? filters.estado
-                                        : undefined,
-                            }}
-                        />
-                    </>
                 )}
             </div>
 
@@ -285,6 +454,7 @@ export default function Index({
                     modal.type === 'product-edit' ? modal.producto : null
                 }
                 categorias={categorias}
+                areas={areas}
                 defaultCategoriaId={defaultCategoriaForProduct}
             />
         </>

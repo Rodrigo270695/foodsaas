@@ -3,13 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Http\Requests\AreaCartaRequest;
 use App\Http\Requests\CategoriaCartaRequest;
 use App\Http\Requests\ProductoCartaRequest;
+use App\Models\AreaCarta;
 use App\Models\CategoriaCarta;
 use App\Models\ProductoCarta;
 use App\Support\Plan\PlanLimits;
+use App\Tenancy\TenantManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,19 +23,20 @@ class CartaController extends Controller
 {
     use ResolvesTenantId;
 
-    private const PER_PAGE_OPTIONS = [10, 15, 20, 25, 50];
+    private const PER_PAGE_OPTIONS = [10, 12, 15, 20, 25, 50];
 
     public function index(Request $request): Response
     {
         $this->tenantIdOrAbort();
 
         $search = trim((string) $request->string('search', ''));
-        $perPageRequested = (int) $request->integer('per_page', 10);
+        $perPageRequested = (int) $request->integer('per_page', 12);
         $perPage = in_array($perPageRequested, self::PER_PAGE_OPTIONS, true)
             ? $perPageRequested
-            : 10;
+            : 12;
 
         $categoriaId = (string) $request->string('categoria_id', '');
+        $areaId = (string) $request->string('area_id', '');
         $estado = (string) $request->string('estado', 'todos');
         if (! in_array($estado, ['todos', 'activos', 'inactivos'], true)) {
             $estado = 'todos';
@@ -42,8 +48,17 @@ class CartaController extends Controller
             ->orderBy('nombre')
             ->get();
 
+        $areas = AreaCarta::query()
+            ->withCount('productos')
+            ->orderBy('orden')
+            ->orderBy('nombre')
+            ->get();
+
         $query = ProductoCarta::query()
-            ->with(['categoria:id,nombre'])
+            ->with([
+                'categoria:id,nombre',
+                'area:id,nombre',
+            ])
             ->orderBy('orden')
             ->orderBy('nombre');
 
@@ -61,6 +76,12 @@ class CartaController extends Controller
             $categoriaId = '';
         }
 
+        if ($areaId !== '' && $areas->contains('id', $areaId)) {
+            $query->where('area_id', $areaId);
+        } else {
+            $areaId = '';
+        }
+
         if ($estado === 'activos') {
             $query->where('activo', true);
         } elseif ($estado === 'inactivos') {
@@ -72,19 +93,61 @@ class CartaController extends Controller
         return Inertia::render('carta/index', [
             'productos' => $productos,
             'categorias' => $categorias,
+            'areas' => $areas,
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
                 'categoria_id' => $categoriaId !== '' ? $categoriaId : null,
+                'area_id' => $areaId !== '' ? $areaId : null,
                 'estado' => $estado,
             ],
             'stats' => [
                 'productos' => ProductoCarta::query()->count(),
                 'productos_activos' => ProductoCarta::query()->where('activo', true)->count(),
                 'categorias' => $categorias->count(),
+                'areas' => $areas->count(),
                 'coincidencias' => $productos->total(),
             ],
             'plan_productos_reached' => PlanLimits::isReached('max_productos'),
+        ]);
+    }
+
+    public function builder(): Response
+    {
+        $this->tenantIdOrAbort();
+
+        return Inertia::render('carta/builder', [
+            'productos_count' => ProductoCarta::query()->where('activo', true)->count(),
+            'areas_count' => AreaCarta::query()->where('activa', true)->count(),
+        ]);
+    }
+
+    public function storeArea(AreaCartaRequest $request): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $nombre = (string) $request->validated('nombre');
+        $existing = AreaCarta::query()
+            ->whereRaw('lower(nombre) = ?', [mb_strtolower($nombre)])
+            ->first();
+
+        if ($existing !== null) {
+            return back()->with([
+                'success' => 'Área ya existía.',
+                'created_area_id' => $existing->id,
+            ]);
+        }
+
+        $maxOrden = (int) AreaCarta::query()->max('orden');
+        $area = AreaCarta::query()->create([
+            'nombre' => $nombre,
+            'orden' => $maxOrden + 10,
+            'activa' => true,
+        ]);
+
+        return back()->with([
+            'success' => 'Área creada correctamente.',
+            'created_area_id' => $area->id,
         ]);
     }
 
@@ -121,20 +184,30 @@ class CartaController extends Controller
         return back()->with('success', 'Categoría eliminada correctamente.');
     }
 
-    public function storeProducto(ProductoCartaRequest $request): RedirectResponse
-    {
+    public function storeProducto(
+        ProductoCartaRequest $request,
+        TenantManager $tenants,
+    ): RedirectResponse {
         $this->tenantIdOrAbort();
 
-        ProductoCarta::query()->create($request->validated());
+        $data = $this->productoPayload($request);
+        $producto = ProductoCarta::query()->create($data);
+        $this->applyProductoImagen($producto, $request, $tenants);
+        $producto->save();
 
         return back()->with('success', 'Producto creado correctamente.');
     }
 
-    public function updateProducto(ProductoCartaRequest $request, ProductoCarta $productoCarta): RedirectResponse
-    {
+    public function updateProducto(
+        ProductoCartaRequest $request,
+        ProductoCarta $productoCarta,
+        TenantManager $tenants,
+    ): RedirectResponse {
         $this->tenantIdOrAbort();
 
-        $productoCarta->update($request->validated());
+        $productoCarta->fill($this->productoPayload($request));
+        $this->applyProductoImagen($productoCarta, $request, $tenants);
+        $productoCarta->save();
 
         return back()->with('success', 'Producto actualizado correctamente.');
     }
@@ -143,8 +216,58 @@ class CartaController extends Controller
     {
         $this->tenantIdOrAbort();
 
+        $productoCarta->deleteImagenFile();
         $productoCarta->delete();
 
         return back()->with('success', 'Producto eliminado correctamente.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function productoPayload(ProductoCartaRequest $request): array
+    {
+        /** @var array<string, mixed> $data */
+        $data = $request->safe()->except(['imagen', 'clear_imagen']);
+
+        return $data;
+    }
+
+    private function applyProductoImagen(
+        ProductoCarta $producto,
+        ProductoCartaRequest $request,
+        TenantManager $tenants,
+    ): void {
+        $disk = Storage::disk('public');
+
+        if ($request->boolean('clear_imagen')) {
+            $producto->deleteImagenFile();
+            $producto->imagen_path = null;
+
+            return;
+        }
+
+        if (! $request->hasFile('imagen')) {
+            return;
+        }
+
+        $file = $request->file('imagen');
+        if ($file === null) {
+            return;
+        }
+
+        $slug = $tenants->slug() ?? 'shared';
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
+        $filename = Str::uuid()->toString().'.'.$extension;
+        $directory = "tenants/{$slug}/productos";
+
+        $disk->putFileAs($directory, $file, $filename, 'public');
+
+        $previous = $producto->imagen_path;
+        $producto->imagen_path = "{$directory}/{$filename}";
+
+        if ($previous && $previous !== $producto->imagen_path && $disk->exists($previous)) {
+            $disk->delete($previous);
+        }
     }
 }

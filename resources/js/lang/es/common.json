@@ -9,7 +9,9 @@
         "search": "Buscar",
         "back": "Volver",
         "loading": "Cargando...",
-        "export_xlsx": "Exportar Excel"
+        "export_xlsx": "Exportar Excel",
+        "remove": "Quitar",
+        "undo": "Deshacer"
     },
     "form": {
         "unsaved_changes": "Hay cambios que aún no guardaste. Si cierras este formulario, se perderán. ¿Quieres salir sin guardar?"

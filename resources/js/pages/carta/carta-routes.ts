@@ -5,6 +5,10 @@ const base = '/carta';
 
 const carta = {
     index: () => ({ url: base }),
+    builder: () => ({ url: `${base}/armar` }),
+    areas: {
+        store: () => ({ url: `${base}/areas` }),
+    },
     categorias: {
         store: () => ({ url: `${base}/categorias` }),
         update: (id: string | number) => ({ url: `${base}/categorias/${id}` }),

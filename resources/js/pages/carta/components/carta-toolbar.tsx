@@ -1,6 +1,7 @@
 import {
     CheckCircle2,
     FolderOpen,
+    LayoutGrid,
     MoreHorizontal,
     Pencil,
     Tag,
@@ -64,6 +65,7 @@ export function CartaToolbar({
 }: CartaToolbarProps) {
     const { t } = useTranslation(['carta', 'common']);
     const inactivos = Math.max(0, stats.productos - stats.productos_activos);
+    const areasCount = stats.areas ?? 0;
     const showCatActions = canUpdate || canDelete;
 
     const categoriaItems = useMemo<PillFilterItem<string>[]>(() => {
@@ -191,6 +193,13 @@ export function CartaToolbar({
                                 icon: FolderOpen,
                                 label: t('catalog.stat_categories', {
                                     count: stats.categorias,
+                                }),
+                            },
+                            {
+                                key: 'areas',
+                                icon: LayoutGrid,
+                                label: t('catalog.stat_areas', {
+                                    count: areasCount,
                                 }),
                             },
                             {

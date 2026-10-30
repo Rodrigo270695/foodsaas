@@ -9,7 +9,9 @@
         "search": "Search",
         "back": "Back",
         "loading": "Loading...",
-        "export_xlsx": "Export Excel"
+        "export_xlsx": "Export Excel",
+        "remove": "Remove",
+        "undo": "Undo"
     },
     "form": {
         "unsaved_changes": "You have changes that haven't been saved yet. If you close this form, they'll be lost. Leave without saving?"

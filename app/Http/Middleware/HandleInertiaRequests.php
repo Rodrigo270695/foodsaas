@@ -90,10 +90,11 @@ class HandleInertiaRequests extends Middleware
                     'warning' => $session->get('warning'),
                     'copy_url' => $session->get('copy_url'),
                     'copy_label' => $session->get('copy_label'),
+                    'created_area_id' => $session->get('created_area_id'),
                 ];
 
                 $hasMessage = collect($payload)
-                    ->filter(fn ($v) => is_string($v) && $v !== '')
+                    ->filter(fn ($v) => (is_string($v) && $v !== '') || (is_scalar($v) && $v !== null && $v !== ''))
                     ->isNotEmpty();
 
                 if (! $hasMessage) {

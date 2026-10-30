@@ -1,4 +1,5 @@
-import { FolderOpen, Plus, RefreshCw } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { FolderOpen, Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import carta from '../carta-routes';
 
 type CartaHeaderActionsProps = {
     isLoading: boolean;
@@ -43,6 +45,22 @@ export function CartaHeaderActions({
                     className={cn('size-4', isLoading && 'animate-spin')}
                     strokeWidth={2.5}
                 />
+            </Button>
+            <Button
+                type="button"
+                variant="outline"
+                asChild
+                className="cursor-pointer gap-2"
+            >
+                <Link href={carta.builder().url}>
+                    <Sparkles className="size-4" strokeWidth={2.5} />
+                    <span className="hidden sm:inline">
+                        {t('actions.build_menu')}
+                    </span>
+                    <span className="sm:hidden">
+                        {t('actions.build_menu_short')}
+                    </span>
+                </Link>
             </Button>
             <Can permission="carta.create">
                 <Button
