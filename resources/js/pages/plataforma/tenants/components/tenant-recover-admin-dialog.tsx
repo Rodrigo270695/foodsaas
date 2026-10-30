@@ -12,6 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import PasswordInput from '@/components/password-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useClipboard } from '@/hooks/use-clipboard';
@@ -204,9 +205,8 @@ export function TenantRecoverAdminDialog({
                             <Label htmlFor="recover-admin-password">
                                 {t('recover_admin.fields.password')}
                             </Label>
-                            <Input
+                            <PasswordInput
                                 id="recover-admin-password"
-                                type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 autoComplete="new-password"
@@ -224,9 +224,8 @@ export function TenantRecoverAdminDialog({
                             <Label htmlFor="recover-admin-password-confirmation">
                                 {t('recover_admin.fields.password_confirmation')}
                             </Label>
-                            <Input
+                            <PasswordInput
                                 id="recover-admin-password-confirmation"
-                                type="password"
                                 value={passwordConfirmation}
                                 onChange={(e) => setPasswordConfirmation(e.target.value)}
                                 autoComplete="new-password"
