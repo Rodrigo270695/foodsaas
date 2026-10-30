@@ -1,44 +1,43 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import AppLayout from '@/layouts/app-layout';
-import { formatPrecio } from '../lib/format-precio';
+import BlankLayout from '@/layouts/blank-layout';
 import carta from '../carta-routes';
-import { resolveFondo } from './lib/fondos';
+import { MenuDocument } from './components/menu-document';
 import type { MenuCartaDetail } from './types';
 
 type PreviewProps = {
     carta: MenuCartaDetail;
     logo_url: string | null;
+    auto_print?: boolean;
 };
 
-export default function Preview({ carta: menu, logo_url }: PreviewProps) {
+export default function Preview({
+    carta: menu,
+    logo_url,
+    auto_print = false,
+}: PreviewProps) {
     const { t } = useTranslation('carta');
-    const theme = resolveFondo(menu.fondo_preset || 'cream');
 
-    const byPage = useMemo(() => {
-        const map = new Map<number, typeof menu.items>();
-        for (let p = 1; p <= menu.paginas; p++) {
-            map.set(p, []);
+    useEffect(() => {
+        if (!auto_print) {
+            return;
         }
-        for (const item of menu.items) {
-            const list = map.get(item.pagina) ?? [];
-            list.push(item);
-            map.set(item.pagina, list);
-        }
+        const timer = window.setTimeout(() => {
+            window.print();
+        }, 400);
 
-        return map;
-    }, [menu.items, menu.paginas]);
+        return () => window.clearTimeout(timer);
+    }, [auto_print]);
 
     return (
         <>
-            <Head title={`${menu.nombre} · ${t('builder.preview')}`} />
+            <Head title={`${menu.nombre} · ${t('builder.pdf')}`} />
 
-            <div className="flex flex-1 flex-col gap-4 p-4 print:p-0 sm:p-6">
-                <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+            <div className="mx-auto flex w-full max-w-[210mm] flex-col gap-4 px-3 py-4 print:p-0 sm:px-0 sm:py-8">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 bg-white/90 px-3 py-2 shadow-sm print:hidden">
                     <Button
                         type="button"
                         variant="outline"
@@ -60,130 +59,25 @@ export default function Preview({ carta: menu, logo_url }: PreviewProps) {
                     </Button>
                 </div>
 
-                <div className="mx-auto flex w-full max-w-2xl flex-col gap-8">
-                    {Array.from({ length: menu.paginas }, (_, i) => i + 1).map(
-                        (page) => {
-                            const items = byPage.get(page) ?? [];
+                <p className="text-center text-xs text-muted-foreground print:hidden">
+                    {t('builder.print_hint', {
+                        defaultValue:
+                            'Usa «PDF / Imprimir» y elige «Guardar como PDF». Solo se imprime la hoja de la carta.',
+                    })}
+                </p>
 
-                            return (
-                                <section
-                                    key={page}
-                                    className={cn(
-                                        'relative break-after-page overflow-hidden rounded-3xl border shadow-lg print:break-after-page print:rounded-none print:border-0 print:shadow-none',
-                                        theme.canvasClass,
-                                        theme.textClass,
-                                    )}
-                                >
-                                    {logo_url ? (
-                                        <img
-                                            src={logo_url}
-                                            alt=""
-                                            aria-hidden
-                                            className="pointer-events-none absolute top-1/2 left-1/2 size-56 -translate-x-1/2 -translate-y-1/2 opacity-[0.08] print:opacity-[0.12]"
-                                        />
-                                    ) : null}
-
-                                    <header className="relative z-10 border-b border-black/10 px-8 py-8 dark:border-white/10">
-                                        <p
-                                            className={cn(
-                                                'text-[10px] font-semibold tracking-[0.25em] uppercase',
-                                                theme.mutedClass,
-                                            )}
-                                        >
-                                            {t('builder.page_label', {
-                                                page,
-                                                pages: menu.paginas,
-                                            })}
-                                        </p>
-                                        <h1 className="mt-2 font-serif text-3xl tracking-tight sm:text-4xl">
-                                            {menu.nombre}
-                                        </h1>
-                                        {menu.descripcion ? (
-                                            <p
-                                                className={cn(
-                                                    'mt-2 max-w-md text-sm',
-                                                    theme.mutedClass,
-                                                )}
-                                            >
-                                                {menu.descripcion}
-                                            </p>
-                                        ) : null}
-                                    </header>
-
-                                    <div className="relative z-10 space-y-4 px-8 py-8">
-                                        {items.map((item) => (
-                                            <article
-                                                key={item.id}
-                                                className="flex items-start gap-4"
-                                            >
-                                                <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-black/10">
-                                                    {item.producto
-                                                        ?.imagen_url ? (
-                                                        <img
-                                                            src={
-                                                                item.producto
-                                                                    .imagen_url
-                                                            }
-                                                            alt=""
-                                                            className="size-full object-cover"
-                                                        />
-                                                    ) : null}
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-baseline justify-between gap-3">
-                                                        <h2 className="text-lg font-semibold">
-                                                            {item.producto
-                                                                ?.nombre ?? '—'}
-                                                        </h2>
-                                                        <span
-                                                            className={cn(
-                                                                'tabular-nums font-semibold',
-                                                                theme.accentClass,
-                                                            )}
-                                                        >
-                                                            {formatPrecio(
-                                                                item.producto
-                                                                    ?.precio ??
-                                                                    '0',
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                    {item.producto
-                                                        ?.descripcion ? (
-                                                        <p
-                                                            className={cn(
-                                                                'mt-1 text-sm',
-                                                                theme.mutedClass,
-                                                            )}
-                                                        >
-                                                            {
-                                                                item.producto
-                                                                    .descripcion
-                                                            }
-                                                        </p>
-                                                    ) : null}
-                                                </div>
-                                            </article>
-                                        ))}
-                                    </div>
-                                </section>
-                            );
-                        },
-                    )}
-                </div>
+                <MenuDocument
+                    title={menu.nombre}
+                    description={menu.descripcion}
+                    fondo={menu.fondo_preset || 'cream'}
+                    logoUrl={logo_url}
+                    watermarkUrl={logo_url}
+                    pages={menu.paginas}
+                    items={menu.items}
+                />
             </div>
         </>
     );
 }
 
-Preview.layout = (page: React.ReactNode) => (
-    <AppLayout
-        breadcrumbs={[
-            { title: 'Operación' },
-            { title: 'Carta', href: '/carta' },
-            { title: 'Vista' },
-        ]}
-    >
-        {page}
-    </AppLayout>
-);
+Preview.layout = (page: React.ReactNode) => <BlankLayout>{page}</BlankLayout>;

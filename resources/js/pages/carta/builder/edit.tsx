@@ -110,10 +110,29 @@ export default function BuilderEdit({
 
     const addProducto = (productoId: string) => {
         startTransition(() => {
-            setIdsForPage(page, [
-                ...currentIds.filter((id) => id !== productoId),
-                productoId,
-            ]);
+            const incoming = productoById.get(productoId);
+            const catId =
+                incoming?.categoria?.id ?? incoming?.categoria_id ?? null;
+            const without = currentIds.filter((id) => id !== productoId);
+
+            // Inserta junto a la misma categoría para que el título de sección
+            // quede agrupado (Entradas, Bebidas…).
+            let insertAt = without.length;
+            if (catId) {
+                for (let i = without.length - 1; i >= 0; i -= 1) {
+                    const p = productoById.get(without[i]!);
+                    const other =
+                        p?.categoria?.id ?? p?.categoria_id ?? null;
+                    if (other === catId) {
+                        insertAt = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            const next = [...without];
+            next.splice(insertAt, 0, productoId);
+            setIdsForPage(page, next);
         });
     };
 
@@ -157,7 +176,8 @@ export default function BuilderEdit({
     };
 
     const printPdf = () => {
-        window.open(carta.menus.preview(initial.id).url, '_blank');
+        // Misma vista limpia (sin sidebar) + diálogo de impresión.
+        router.visit(`${carta.menus.preview(initial.id).url}?print=1`);
     };
 
     useEffect(() => {

@@ -1,9 +1,10 @@
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrecio } from '../../lib/format-precio';
+import { withCategoriaHeadings } from '../lib/group-by-categoria';
 import { resolveFondo } from '../lib/fondos';
 import type { BuilderProducto, FondoPreset } from '../types';
 
@@ -42,13 +43,17 @@ export function MenuCanvas({
     const [dragOver, setDragOver] = useState(false);
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
+    const rows = useMemo(() => withCategoriaHeadings(items), [items]);
+    const darkTheme = theme.id === 'brand' || theme.id === 'ink';
+
     return (
         <div
             className={cn(
                 'relative mx-auto flex min-h-[32rem] w-full max-w-xl flex-col overflow-hidden rounded-3xl border shadow-xl transition-[filter,transform,opacity] duration-500 ease-out',
                 theme.canvasClass,
                 dragOver && 'scale-[1.01] ring-2 ring-brand-500/40',
-                draggingIndex !== null && '[&_.canvas-idle]:blur-[1.5px] [&_.canvas-idle]:opacity-70',
+                draggingIndex !== null &&
+                    '[&_.canvas-idle]:blur-[1.5px] [&_.canvas-idle]:opacity-70',
             )}
             onDragOver={(e) => {
                 e.preventDefault();
@@ -91,12 +96,15 @@ export function MenuCanvas({
                 className={cn(
                     'relative z-10 border-b px-6 py-5 transition-opacity duration-300',
                     theme.textClass,
-                    theme.id === 'brand' || theme.id === 'ink'
-                        ? 'border-white/15'
-                        : 'border-black/10',
+                    darkTheme ? 'border-white/15' : 'border-black/10',
                 )}
             >
-                <p className={cn('text-[10px] font-semibold tracking-[0.2em] uppercase', theme.mutedClass)}>
+                <p
+                    className={cn(
+                        'text-[10px] font-semibold tracking-[0.2em] uppercase',
+                        theme.mutedClass,
+                    )}
+                >
                     {t('builder.page_label', { page, pages })}
                 </p>
                 <h2 className="mt-1 font-serif text-2xl tracking-tight sm:text-3xl">
@@ -110,24 +118,50 @@ export function MenuCanvas({
                         className={cn(
                             'flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-16 text-center transition-colors duration-300',
                             theme.mutedClass,
-                            theme.id === 'brand' || theme.id === 'ink'
-                                ? 'border-white/25'
-                                : 'border-black/15',
+                            darkTheme ? 'border-white/25' : 'border-black/15',
                             dragOver && 'bg-black/5',
                         )}
                     >
-                        <p className="text-sm font-medium">{t('builder.drop_empty')}</p>
+                        <p className="text-sm font-medium">
+                            {t('builder.drop_empty')}
+                        </p>
                         <p className="mt-1 max-w-xs text-xs opacity-80">
                             {t('builder.drop_empty_hint')}
                         </p>
                     </div>
                 ) : (
-                    items.map((entry, index) => {
+                    rows.map((row) => {
+                        if (row.kind === 'heading') {
+                            return (
+                                <div
+                                    key={row.key}
+                                    className={cn(
+                                        'mt-2 flex items-end gap-3 pt-2 first:mt-0 first:pt-0',
+                                        theme.textClass,
+                                    )}
+                                >
+                                    <h3 className="font-serif text-lg tracking-tight sm:text-xl">
+                                        {row.label}
+                                    </h3>
+                                    <span
+                                        className={cn(
+                                            'mb-1.5 h-px flex-1',
+                                            darkTheme
+                                                ? 'bg-white/25'
+                                                : 'bg-black/15',
+                                        )}
+                                        aria-hidden
+                                    />
+                                </div>
+                            );
+                        }
+
+                        const { entry, index } = row;
                         const active = draggingIndex === index;
 
                         return (
                             <article
-                                key={entry.producto.id}
+                                key={row.key}
                                 data-canvas-index={index}
                                 draggable
                                 onDragStart={(e) => {
@@ -144,7 +178,7 @@ export function MenuCanvas({
                                     active
                                         ? 'z-20 scale-[1.03] shadow-lg'
                                         : 'canvas-idle',
-                                    theme.id === 'brand' || theme.id === 'ink'
+                                    darkTheme
                                         ? 'border-white/10 bg-white/5'
                                         : 'border-black/5 bg-white/40',
                                     theme.textClass,
@@ -161,16 +195,18 @@ export function MenuCanvas({
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-baseline justify-between gap-2">
-                                        <h3 className="truncate font-semibold">
+                                        <h4 className="truncate font-semibold">
                                             {entry.producto.nombre}
-                                        </h3>
+                                        </h4>
                                         <span
                                             className={cn(
                                                 'shrink-0 tabular-nums text-sm font-semibold',
                                                 theme.accentClass,
                                             )}
                                         >
-                                            {formatPrecio(entry.producto.precio)}
+                                            {formatPrecio(
+                                                entry.producto.precio,
+                                            )}
                                         </span>
                                     </div>
                                     {entry.producto.descripcion ? (

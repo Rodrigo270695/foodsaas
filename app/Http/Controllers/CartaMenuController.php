@@ -169,7 +169,7 @@ class CartaMenuController extends Controller
         return back()->with('success', 'Canvas guardado.');
     }
 
-    public function preview(MenuCarta $menuCarta): Response
+    public function preview(Request $request, MenuCarta $menuCarta): Response
     {
         $this->tenantIdOrAbort();
         $this->assertMenuSede($menuCarta);
@@ -179,9 +179,13 @@ class CartaMenuController extends Controller
             'items.producto.categoria:id,nombre',
         ]);
 
+        $logo = RestaurantSetting::current()->logo_url
+            ?: \App\Support\Restaurante\RestaurantBrandingUrls::default();
+
         return Inertia::render('carta/builder/preview', [
             'carta' => $menuCarta,
-            'logo_url' => RestaurantSetting::current()->logo_url,
+            'logo_url' => $logo,
+            'auto_print' => $request->boolean('print'),
         ]);
     }
 

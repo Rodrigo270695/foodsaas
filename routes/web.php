@@ -61,6 +61,11 @@ Route::middleware(['auth', 'verified', 'force-password-change'])->group(function
     });
 });
 
+Route::middleware(['tenant.required', 'throttle:60,1'])
+    ->get('m/{slug}', [\App\Http\Controllers\PublicMenuController::class, 'show'])
+    ->where('slug', '[A-Za-z0-9\-]+')
+    ->name('public.menu');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/configuracion.php';
 require __DIR__.'/facturacion.php';

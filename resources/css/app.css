@@ -480,6 +480,36 @@
     }
 }
 
+/* Carta PDF: solo la hoja, sin chrome del navegador/app. */
+@media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
+    html,
+    body {
+        background: white !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .menu-print-page {
+        width: 100% !important;
+        max-width: none !important;
+        min-height: auto !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        break-after: page;
+        break-inside: avoid;
+    }
+
+    .menu-print-page:last-child {
+        break-after: auto;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .aurora-blob-1,
     .aurora-blob-2,

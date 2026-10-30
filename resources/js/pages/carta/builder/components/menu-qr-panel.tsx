@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { toastManager } from '@/lib/toast';
+import { cn } from '@/lib/utils';
 
 type MenuQrPanelProps = {
     publicPath: string;
@@ -21,7 +22,7 @@ export function MenuQrPanel({ publicPath, publicada }: MenuQrPanelProps) {
 
     const qrSrc = useMemo(
         () =>
-            `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(absoluteUrl)}`,
+            `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(absoluteUrl)}`,
         [absoluteUrl],
     );
 
@@ -31,53 +32,67 @@ export function MenuQrPanel({ publicPath, publicada }: MenuQrPanelProps) {
                 <QrCode className="size-4 text-brand-700 dark:text-brand-300" />
                 <p className="text-sm font-semibold">{t('builder.qr_title')}</p>
             </div>
-            <div className="flex items-center gap-3">
+
+            <div
+                className={cn(
+                    'flex flex-col items-center gap-3 rounded-xl border bg-background/80 p-3',
+                    !publicada && 'border-amber-300/60 bg-amber-50/40',
+                )}
+            >
                 <img
                     src={qrSrc}
                     alt={t('builder.qr_alt')}
-                    width={96}
-                    height={96}
-                    className="rounded-lg border bg-white p-1"
+                    width={160}
+                    height={160}
+                    className="size-40 rounded-xl border bg-white p-2 shadow-sm"
                 />
-                <div className="min-w-0 flex-1 space-y-2">
-                    <p className="truncate font-mono text-[11px] text-muted-foreground">
-                        {absoluteUrl}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="cursor-pointer gap-1"
-                            onClick={async () => {
-                                await navigator.clipboard.writeText(absoluteUrl);
-                                toastManager.success({
-                                    title: t('builder.qr_copied'),
-                                });
-                            }}
+                <p className="w-full break-all text-center font-mono text-[11px] leading-relaxed text-muted-foreground">
+                    {absoluteUrl}
+                </p>
+                <div className="flex w-full flex-wrap justify-center gap-1.5">
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer gap-1"
+                        onClick={async () => {
+                            await navigator.clipboard.writeText(absoluteUrl);
+                            toastManager.success({
+                                title: t('builder.qr_copied'),
+                            });
+                        }}
+                    >
+                        <Copy className="size-3.5" />
+                        {t('builder.qr_copy')}
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="cursor-pointer gap-1"
+                        asChild
+                    >
+                        <a
+                            href={absoluteUrl}
+                            target="_blank"
+                            rel="noreferrer"
                         >
-                            <Copy className="size-3.5" />
-                            {t('builder.qr_copy')}
-                        </Button>
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="cursor-pointer gap-1"
-                            asChild
-                        >
-                            <a href={absoluteUrl} target="_blank" rel="noreferrer">
-                                <ExternalLink className="size-3.5" />
-                                {t('builder.qr_open')}
-                            </a>
-                        </Button>
-                    </div>
-                    {!publicada ? (
-                        <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                            {t('builder.qr_unpublished')}
-                        </p>
-                    ) : null}
+                            <ExternalLink className="size-3.5" />
+                            {t('builder.qr_open')}
+                        </a>
+                    </Button>
                 </div>
+                {!publicada ? (
+                    <p className="text-center text-[11px] font-medium text-amber-800 dark:text-amber-300">
+                        {t('builder.qr_unpublished')}
+                    </p>
+                ) : (
+                    <p className="text-center text-[11px] text-emerald-700 dark:text-emerald-300">
+                        {t('builder.qr_live', {
+                            defaultValue: 'Enlace activo para clientes.',
+                        })}
+                    </p>
+                )}
             </div>
         </div>
     );
