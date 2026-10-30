@@ -18,6 +18,13 @@ export {
 } from './form-modal';
 export { FormSection, type FormSectionProps } from './form-section';
 export {
+    OrdenInput,
+    nextOrdenFrom,
+    resolveOrdenValue,
+    type OrdenInputProps,
+    type OrdenValue,
+} from './orden-input';
+export {
     SedeFormField,
     type SedeFormFieldProps,
     type SedeFormOption,

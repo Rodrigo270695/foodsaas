@@ -1,8 +1,15 @@
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormField, FormModal, FormSection } from '@/components/forms';
+import {
+    FormField,
+    FormModal,
+    FormSection,
+    OrdenInput,
+    resolveOrdenValue,
+    type OrdenValue,
+} from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -14,26 +21,31 @@ export type CategoriaFormModalProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     categoria: CategoriaCarta | null;
+    /** Siguiente orden sugerido al crear (1, 2, 3…). */
+    suggestedOrden?: number;
 };
 
 type CategoriaFormData = {
     nombre: string;
     descripcion: string;
-    orden: number;
+    orden: OrdenValue;
     activa: boolean;
 };
 
-const emptyForm: CategoriaFormData = {
+const emptyForm = (suggestedOrden: number): CategoriaFormData => ({
     nombre: '',
     descripcion: '',
-    orden: 0,
+    orden: suggestedOrden,
     activa: true,
-};
+});
 
-const buildInitialData = (categoria: CategoriaCarta | null): CategoriaFormData => ({
+const buildInitialData = (
+    categoria: CategoriaCarta | null,
+    suggestedOrden: number,
+): CategoriaFormData => ({
     nombre: categoria?.nombre ?? '',
     descripcion: categoria?.descripcion ?? '',
-    orden: categoria?.orden ?? 0,
+    orden: categoria ? categoria.orden : suggestedOrden,
     activa: categoria?.activa ?? true,
 });
 
@@ -44,27 +56,31 @@ export function CategoriaFormModal({
     open,
     onOpenChange,
     categoria,
+    suggestedOrden = 1,
 }: CategoriaFormModalProps) {
     const { t } = useTranslation(['carta', 'common']);
     const isEdit = categoria !== null;
+    const nextOrden = Math.max(1, suggestedOrden);
 
-    const { data, setData, post, patch, processing, errors, reset, clearErrors } =
-        useForm<CategoriaFormData>(emptyForm);
+    const { data, setData, processing, errors, reset, clearErrors } =
+        useForm<CategoriaFormData>(emptyForm(nextOrden));
 
-    const initialSnapshotRef = useRef<CategoriaFormData>(emptyForm);
+    const initialSnapshotRef = useRef<CategoriaFormData>(emptyForm(nextOrden));
     const canSubmit = isFormValid(data) && !processing;
 
     useEffect(() => {
         if (open) {
-            const initial = buildInitialData(categoria);
+            const initial = buildInitialData(categoria, nextOrden);
             initialSnapshotRef.current = initial;
-            (Object.keys(initial) as Array<keyof CategoriaFormData>).forEach((key) => {
-                setData(key, initial[key]);
-            });
+            (Object.keys(initial) as Array<keyof CategoriaFormData>).forEach(
+                (key) => {
+                    setData(key, initial[key]);
+                },
+            );
             clearErrors();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, categoria?.id]);
+    }, [open, categoria?.id, nextOrden]);
 
     const isDirty = useMemo(() => {
         const initial = initialSnapshotRef.current;
@@ -86,6 +102,12 @@ export function CategoriaFormModal({
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        const orden = resolveOrdenValue(
+            data.orden,
+            isEdit ? (categoria?.orden ?? nextOrden) : nextOrden,
+        );
+        const body = { ...data, orden };
+
         const onSuccess = () => {
             reset();
             clearErrors();
@@ -93,7 +115,7 @@ export function CategoriaFormModal({
         };
 
         if (isEdit && categoria) {
-            patch(carta.categorias.update(categoria.id).url, {
+            router.patch(carta.categorias.update(categoria.id).url, body, {
                 preserveScroll: true,
                 onSuccess,
             });
@@ -101,7 +123,7 @@ export function CategoriaFormModal({
             return;
         }
 
-        post(carta.categorias.store().url, {
+        router.post(carta.categorias.store().url, body, {
             preserveScroll: true,
             onSuccess,
         });
@@ -112,7 +134,9 @@ export function CategoriaFormModal({
             open={open}
             onOpenChange={handleClose}
             title={
-                isEdit ? t('categoria_form.title_edit') : t('categoria_form.title_create')
+                isEdit
+                    ? t('categoria_form.title_edit')
+                    : t('categoria_form.title_create')
             }
             description={
                 isEdit
@@ -138,7 +162,10 @@ export function CategoriaFormModal({
                         className="cursor-pointer gap-2 disabled:cursor-not-allowed"
                     >
                         {processing && (
-                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                            <Loader2
+                                className="size-4 animate-spin"
+                                aria-hidden="true"
+                            />
                         )}
                         {isEdit
                             ? t('categoria_form.submit_edit')
@@ -156,7 +183,11 @@ export function CategoriaFormModal({
                         {(errors as Partial<Record<string, string>>).sede_id}
                     </p>
                 ) : null}
-                <FormSection index={0} title={t('categoria_form.section_basic')} columns={2}>
+                <FormSection
+                    index={0}
+                    title={t('categoria_form.section_basic')}
+                    columns={2}
+                >
                     <FormField
                         id="categoria-nombre"
                         label={t('categoria_form.fields.nombre')}
@@ -168,7 +199,9 @@ export function CategoriaFormModal({
                             id="categoria-nombre"
                             value={data.nombre}
                             onChange={(e) => setData('nombre', e.target.value)}
-                            placeholder={t('categoria_form.fields.nombre_placeholder')}
+                            placeholder={t(
+                                'categoria_form.fields.nombre_placeholder',
+                            )}
                             autoFocus
                         />
                     </FormField>
@@ -182,9 +215,13 @@ export function CategoriaFormModal({
                         <Textarea
                             id="categoria-descripcion"
                             value={data.descripcion}
-                            onChange={(e) => setData('descripcion', e.target.value)}
+                            onChange={(e) =>
+                                setData('descripcion', e.target.value)
+                            }
                             rows={2}
-                            placeholder={t('categoria_form.fields.descripcion_placeholder')}
+                            placeholder={t(
+                                'categoria_form.fields.descripcion_placeholder',
+                            )}
                         />
                     </FormField>
 
@@ -194,15 +231,15 @@ export function CategoriaFormModal({
                         error={errors.orden}
                         hint={t('categoria_form.fields.orden_hint')}
                     >
-                        <Input
+                        <OrdenInput
                             id="categoria-orden"
-                            type="number"
-                            min={0}
-                            max={9999}
                             value={data.orden}
-                            onChange={(e) =>
-                                setData('orden', Number.parseInt(e.target.value, 10) || 0)
+                            fallbackOnEmpty={
+                                isEdit
+                                    ? (categoria?.orden ?? nextOrden)
+                                    : nextOrden
                             }
+                            onChange={(v) => setData('orden', v)}
                         />
                     </FormField>
                 </FormSection>
@@ -227,7 +264,9 @@ export function CategoriaFormModal({
                         </div>
                     </label>
                     {errors.activa ? (
-                        <p className="text-xs text-destructive">{errors.activa}</p>
+                        <p className="text-xs text-destructive">
+                            {errors.activa}
+                        </p>
                     ) : null}
                 </FormSection>
             </div>

@@ -110,6 +110,21 @@ class CartaController extends Controller
 
         $productos = $query->paginate($perPage)->withQueryString();
 
+        /** @var array<string, int> $nextProductoOrdenByCategoria */
+        $nextProductoOrdenByCategoria = $sedeId === ''
+            ? []
+            : ProductoCarta::query()
+                ->where('sede_id', $sedeId)
+                ->selectRaw('categoria_id, COALESCE(MAX(orden), 0) + 1 as next_orden')
+                ->groupBy('categoria_id')
+                ->pluck('next_orden', 'categoria_id')
+                ->map(static fn ($v): int => (int) $v)
+                ->all();
+
+        $nextCategoriaOrden = $sedeId === ''
+            ? 1
+            : ((int) CategoriaCarta::query()->where('sede_id', $sedeId)->max('orden')) + 1;
+
         return Inertia::render('carta/index', [
             'productos' => $productos,
             'categorias' => $categorias,
@@ -128,6 +143,8 @@ class CartaController extends Controller
                 'areas' => $areas->count(),
                 'coincidencias' => $productos->total(),
             ],
+            'next_producto_orden_by_categoria' => $nextProductoOrdenByCategoria,
+            'next_categoria_orden' => max(1, $nextCategoriaOrden),
             'plan_productos_reached' => PlanLimits::isReached('max_productos'),
             'copy_targets' => array_values(array_filter(
                 ActiveSedeContext::accessibleCatalog(),

@@ -2,7 +2,14 @@ import { router, useForm, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormField, FormModal, FormSection } from '@/components/forms';
+import {
+    FormField,
+    FormModal,
+    FormSection,
+    OrdenInput,
+    resolveOrdenValue,
+    type OrdenValue,
+} from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
@@ -32,6 +39,8 @@ export type ProductoFormModalProps = {
     categorias: readonly CategoriaCarta[];
     areas: readonly AreaCarta[];
     defaultCategoriaId?: string | null;
+    /** Siguiente orden sugerido por categoría (create). */
+    nextOrdenByCategoria?: Readonly<Record<string, number>>;
 };
 
 type ProductoFormData = {
@@ -41,7 +50,7 @@ type ProductoFormData = {
     descripcion: string;
     codigo: string;
     precio: string;
-    orden: number;
+    orden: OrdenValue;
     activo: boolean;
     control_inventario: ControlInventario;
     stock_inicial: string;
@@ -56,14 +65,22 @@ type FlashProps = {
     } | null;
 };
 
-const emptyForm = (categoriaId: string): ProductoFormData => ({
+const suggestedProductoOrden = (
+    categoriaId: string,
+    nextOrdenByCategoria: Readonly<Record<string, number>>,
+): number => nextOrdenByCategoria[categoriaId] ?? 1;
+
+const emptyForm = (
+    categoriaId: string,
+    nextOrdenByCategoria: Readonly<Record<string, number>>,
+): ProductoFormData => ({
     categoria_id: categoriaId,
     area_id: '',
     nombre: '',
     descripcion: '',
     codigo: '',
     precio: '',
-    orden: 0,
+    orden: suggestedProductoOrden(categoriaId, nextOrdenByCategoria),
     activo: true,
     control_inventario: 'none',
     stock_inicial: '0',
@@ -75,6 +92,7 @@ const emptyForm = (categoriaId: string): ProductoFormData => ({
 const buildInitialData = (
     producto: ProductoCarta | null,
     fallbackCategoriaId: string,
+    nextOrdenByCategoria: Readonly<Record<string, number>>,
 ): ProductoFormData => ({
     categoria_id: producto?.categoria_id ?? fallbackCategoriaId,
     area_id: producto?.area_id ?? '',
@@ -82,7 +100,9 @@ const buildInitialData = (
     descripcion: producto?.descripcion ?? '',
     codigo: producto?.codigo ?? '',
     precio: producto?.precio ?? '',
-    orden: producto?.orden ?? 0,
+    orden: producto
+        ? producto.orden
+        : suggestedProductoOrden(fallbackCategoriaId, nextOrdenByCategoria),
     activo: producto?.activo ?? true,
     control_inventario: producto?.control_inventario ?? 'none',
     stock_inicial: producto?.stock ?? '0',
@@ -104,6 +124,7 @@ export function ProductoFormModal({
     categorias,
     areas,
     defaultCategoriaId = null,
+    nextOrdenByCategoria = {},
 }: ProductoFormModalProps) {
     const { t } = useTranslation(['carta', 'common']);
     const { can } = usePermission();
@@ -116,19 +137,32 @@ export function ProductoFormModal({
         categorias[0]?.id ??
         '';
 
-    const { data, setData, post, processing, errors, reset, clearErrors } =
-        useForm<ProductoFormData>(emptyForm(fallbackCategoria));
+    const { data, setData, processing, errors, reset, clearErrors } =
+        useForm<ProductoFormData>(
+            emptyForm(fallbackCategoria, nextOrdenByCategoria),
+        );
 
     const initialSnapshotRef = useRef<ProductoFormData>(
-        emptyForm(fallbackCategoria),
+        emptyForm(fallbackCategoria, nextOrdenByCategoria),
     );
     const [creatingArea, setCreatingArea] = useState(false);
+    const ordenTouchedRef = useRef(false);
     const canSubmit =
         isFormValid(data) && !processing && categorias.length > 0;
 
+    const suggestedOrden = suggestedProductoOrden(
+        data.categoria_id || fallbackCategoria,
+        nextOrdenByCategoria,
+    );
+
     useEffect(() => {
         if (open) {
-            const initial = buildInitialData(producto, fallbackCategoria);
+            ordenTouchedRef.current = false;
+            const initial = buildInitialData(
+                producto,
+                fallbackCategoria,
+                nextOrdenByCategoria,
+            );
             initialSnapshotRef.current = initial;
             (Object.keys(initial) as Array<keyof ProductoFormData>).forEach(
                 (key) => {
@@ -138,7 +172,7 @@ export function ProductoFormModal({
             clearErrors();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, producto?.id, fallbackCategoria]);
+    }, [open, producto?.id, fallbackCategoria, nextOrdenByCategoria]);
 
     useEffect(() => {
         const createdId = flash?.created_area_id;
@@ -227,6 +261,7 @@ export function ProductoFormModal({
             onOpenChange(false);
         };
 
+        const orden = resolveOrdenValue(data.orden, suggestedOrden);
         const payload = {
             forceFormData: true,
             preserveScroll: true,
@@ -239,6 +274,7 @@ export function ProductoFormModal({
                 carta.productos.update(producto.id).url,
                 {
                     ...data,
+                    orden,
                     area_id: data.area_id || null,
                     _method: 'patch',
                 },
@@ -248,7 +284,15 @@ export function ProductoFormModal({
             return;
         }
 
-        post(carta.productos.store().url, payload);
+        router.post(
+            carta.productos.store().url,
+            {
+                ...data,
+                orden,
+                area_id: data.area_id || null,
+            },
+            payload,
+        );
     };
 
     return (
@@ -325,7 +369,18 @@ export function ProductoFormModal({
                     >
                         <Select
                             value={data.categoria_id || undefined}
-                            onValueChange={(v) => setData('categoria_id', v)}
+                            onValueChange={(v) => {
+                                setData('categoria_id', v);
+                                if (!isEdit && !ordenTouchedRef.current) {
+                                    setData(
+                                        'orden',
+                                        suggestedProductoOrden(
+                                            v,
+                                            nextOrdenByCategoria,
+                                        ),
+                                    );
+                                }
+                            }}
                             disabled={processing || categorias.length === 0}
                         >
                             <SelectTrigger
@@ -498,18 +553,18 @@ export function ProductoFormModal({
                         error={errors.orden}
                         hint={t('producto_form.fields.orden_hint')}
                     >
-                        <Input
+                        <OrdenInput
                             id="producto-orden"
-                            type="number"
-                            min={0}
-                            max={9999}
                             value={data.orden}
-                            onChange={(e) =>
-                                setData(
-                                    'orden',
-                                    Number.parseInt(e.target.value, 10) || 0,
-                                )
+                            fallbackOnEmpty={
+                                isEdit
+                                    ? (producto?.orden ?? suggestedOrden)
+                                    : suggestedOrden
                             }
+                            onChange={(v) => {
+                                ordenTouchedRef.current = true;
+                                setData('orden', v);
+                            }}
                         />
                     </FormField>
                 </FormSection>
