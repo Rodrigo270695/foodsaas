@@ -18,15 +18,104 @@ type MesaFloorCardProps = {
     onDelete: (mesa: MesaSalon) => void;
 };
 
+/** Tope visual: más de esto satura la card; el texto sigue mostrando la capacidad real. */
+const MAX_VISIBLE_CHAIRS = 10;
+
 function Chair({ className }: { className?: string }) {
     return (
         <span
             aria-hidden="true"
             className={cn(
-                'block size-2.5 rounded-[3px] border-2 border-current opacity-80 sm:size-3',
+                'block size-2.5 rounded-[3px] border-[1.5px] border-current bg-current/10 sm:size-3',
                 className,
             )}
         />
+    );
+}
+
+type TableDiagramProps = {
+    codigo: string;
+    capacidad: number;
+    available: boolean;
+};
+
+/**
+ * Diagrama de piso: mesa redonda (≤4) o rectangular (≥5),
+ * con exactamente `capacidad` sillas (tope visual 10) alrededor.
+ */
+function TableDiagram({ codigo, capacidad, available }: TableDiagramProps) {
+    const seats = Math.max(1, Math.min(capacidad, MAX_VISIBLE_CHAIRS));
+    const isRound = seats <= 4;
+    const overflow = Math.max(0, capacidad - MAX_VISIBLE_CHAIRS);
+
+    // Radio del anillo de sillas (px relativos al contenedor 88×88 / 104×88)
+    const radiusX = isRound ? 38 : 42;
+    const radiusY = isRound ? 38 : 34;
+
+    return (
+        <div
+            className="relative mx-auto size-[5.5rem] sm:size-[6.5rem]"
+            aria-hidden="true"
+        >
+            {/* Mesa */}
+            <div
+                className={cn(
+                    'absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 shadow-sm',
+                    isRound
+                        ? 'size-[3.25rem] rounded-full sm:size-[3.75rem]'
+                        : 'h-[2.75rem] w-[3.75rem] rounded-xl sm:h-[3.25rem] sm:w-[4.5rem]',
+                    available
+                        ? 'border-emerald-500/55 bg-emerald-500/12'
+                        : 'border-border bg-muted/50',
+                )}
+            >
+                <span className="font-mono text-sm font-bold tracking-tight text-foreground sm:text-base">
+                    {codigo}
+                </span>
+            </div>
+
+            {/* Sillas en anillo (polar) */}
+            {Array.from({ length: seats }).map((_, i) => {
+                // Empieza arriba (-90°) y reparte en círculo completo
+                const angleDeg = (360 / seats) * i - 90;
+                const angleRad = (angleDeg * Math.PI) / 180;
+                const x = Math.cos(angleRad) * radiusX;
+                const y = Math.sin(angleRad) * radiusY;
+                // Oriente la silla hacia el centro de la mesa
+                const faceCenter = angleDeg + 90;
+
+                return (
+                    <span
+                        key={i}
+                        className="absolute top-1/2 left-1/2"
+                        style={{
+                            transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${faceCenter}deg)`,
+                        }}
+                    >
+                        <Chair
+                            className={cn(
+                                available
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-muted-foreground',
+                            )}
+                        />
+                    </span>
+                );
+            })}
+
+            {overflow > 0 ? (
+                <span
+                    className={cn(
+                        'absolute -right-0.5 -bottom-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold tabular-nums',
+                        available
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-muted-foreground text-background',
+                    )}
+                >
+                    +{overflow}
+                </span>
+            ) : null}
+        </div>
     );
 }
 
@@ -52,7 +141,7 @@ export function MesaFloorCard({
                     : 'border-border/70 opacity-90 hover:border-border',
             )}
         >
-            <div className="mb-2 flex items-start justify-between gap-2">
+            <div className="mb-1 flex items-start justify-between gap-2">
                 <span
                     className={cn(
                         'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
@@ -75,7 +164,10 @@ export function MesaFloorCard({
                                 })}
                                 className="size-8 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
                             >
-                                <MoreHorizontal className="size-4" strokeWidth={2.5} />
+                                <MoreHorizontal
+                                    className="size-4"
+                                    strokeWidth={2.5}
+                                />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
@@ -84,7 +176,10 @@ export function MesaFloorCard({
                                     onSelect={() => onEdit(mesa)}
                                     className="cursor-pointer gap-2"
                                 >
-                                    <Pencil className="size-4" strokeWidth={2.25} />
+                                    <Pencil
+                                        className="size-4"
+                                        strokeWidth={2.25}
+                                    />
                                     {t('common:actions.edit')}
                                 </DropdownMenuItem>
                             ) : null}
@@ -93,7 +188,10 @@ export function MesaFloorCard({
                                     onSelect={() => onDelete(mesa)}
                                     className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                                 >
-                                    <Trash2 className="size-4" strokeWidth={2.25} />
+                                    <Trash2
+                                        className="size-4"
+                                        strokeWidth={2.25}
+                                    />
                                     {t('common:actions.delete')}
                                 </DropdownMenuItem>
                             ) : null}
@@ -111,51 +209,29 @@ export function MesaFloorCard({
                     }
                 }}
                 className={cn(
-                    'flex flex-1 flex-col items-center gap-3 rounded-xl px-2 py-3 text-center outline-none',
+                    'flex flex-1 flex-col items-center gap-2.5 rounded-xl px-1 py-2 text-center outline-none',
                     canUpdate ? 'cursor-pointer' : 'cursor-default',
-                    available
-                        ? 'text-emerald-700 dark:text-emerald-300'
-                        : 'text-muted-foreground',
                 )}
             >
-                <div className="relative grid place-items-center">
-                    <div className="absolute -top-1 flex gap-1.5">
-                        {Array.from({ length: Math.min(mesa.capacidad, 4) }).map(
-                            (_, i) => (
-                                <Chair key={`t-${i}`} />
-                            ),
-                        )}
-                    </div>
-                    <div
-                        className={cn(
-                            'mt-3 flex size-16 items-center justify-center rounded-xl border-2 sm:size-[4.5rem]',
-                            available
-                                ? 'border-emerald-500/50 bg-emerald-500/10'
-                                : 'border-border bg-muted/40',
-                        )}
-                    >
-                        <span className="font-mono text-lg font-bold tracking-tight text-foreground sm:text-xl">
-                            {mesa.codigo}
-                        </span>
-                    </div>
-                    <div className="absolute -bottom-1 flex gap-1.5">
-                        {Array.from({
-                            length: Math.min(Math.max(mesa.capacidad - 2, 0), 4),
-                        }).map((_, i) => (
-                            <Chair key={`b-${i}`} />
-                        ))}
-                    </div>
-                </div>
+                <TableDiagram
+                    codigo={mesa.codigo}
+                    capacidad={mesa.capacidad}
+                    available={available}
+                />
 
-                <div className="mt-1 w-full space-y-1">
+                <div className="w-full space-y-0.5">
                     <p className="truncate text-sm font-semibold text-foreground">
                         {displayName}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                         {mesa.zona?.nombre ?? '—'}
                     </p>
-                    <p className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="size-3.5" strokeWidth={2.25} aria-hidden />
+                    <p className="inline-flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        <Users
+                            className="size-3.5"
+                            strokeWidth={2.25}
+                            aria-hidden
+                        />
                         <span className="tabular-nums">
                             {t('floor.capacity', { count: mesa.capacidad })}
                         </span>
