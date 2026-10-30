@@ -1,4 +1,12 @@
-import { MoreHorizontal, Pencil, Trash2, Users } from 'lucide-react';
+import {
+    Link2,
+    MoreHorizontal,
+    Pencil,
+    Trash2,
+    Unlink2,
+    Users,
+} from 'lucide-react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,6 +15,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { MesaSalon } from '../types';
 
@@ -14,11 +27,16 @@ type MesaFloorCardProps = {
     mesa: MesaSalon;
     canUpdate: boolean;
     canDelete: boolean;
+    joinedCapacidad?: number;
     onEdit: (mesa: MesaSalon) => void;
     onDelete: (mesa: MesaSalon) => void;
+    onSeparar?: () => void;
+    /** Si está definido, el click principal activa unión (tap) en vez de editar. */
+    onJoinTap?: () => void;
+    joinHighlight?: 'source' | 'target' | null;
+    onJoinDragStart?: (e: ReactPointerEvent<HTMLButtonElement>) => void;
 };
 
-/** Tope visual: más de esto satura la card; el texto sigue mostrando la capacidad real. */
 const MAX_VISIBLE_CHAIRS = 10;
 
 function Chair({ className }: { className?: string }) {
@@ -33,17 +51,17 @@ function Chair({ className }: { className?: string }) {
     );
 }
 
-type TableDiagramProps = {
+function TableDiagram({
+    codigo,
+    capacidad,
+    available,
+    joined,
+}: {
     codigo: string;
     capacidad: number;
     available: boolean;
-};
-
-/**
- * Diagrama de piso: mesa cuadrada con bordes redondos (misma forma siempre)
- * y exactamente `capacidad` sillas (tope visual 10) alrededor.
- */
-function TableDiagram({ codigo, capacidad, available }: TableDiagramProps) {
+    joined?: boolean;
+}) {
     const seats = Math.max(1, Math.min(capacidad, MAX_VISIBLE_CHAIRS));
     const overflow = Math.max(0, capacidad - MAX_VISIBLE_CHAIRS);
     const radius = 38;
@@ -56,9 +74,11 @@ function TableDiagram({ codigo, capacidad, available }: TableDiagramProps) {
             <div
                 className={cn(
                     'absolute top-1/2 left-1/2 flex size-[3.25rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 shadow-sm sm:size-[3.75rem]',
-                    available
-                        ? 'border-emerald-500/55 bg-emerald-500/12'
-                        : 'border-border bg-muted/50',
+                    joined
+                        ? 'border-[#660033]/70 bg-[#660033]/10'
+                        : available
+                          ? 'border-emerald-500/55 bg-emerald-500/12'
+                          : 'border-border bg-muted/50',
                 )}
             >
                 <span className="font-mono text-sm font-bold tracking-tight text-foreground sm:text-base">
@@ -83,9 +103,11 @@ function TableDiagram({ codigo, capacidad, available }: TableDiagramProps) {
                     >
                         <Chair
                             className={cn(
-                                available
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-muted-foreground',
+                                joined
+                                    ? 'text-[#660033]'
+                                    : available
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-muted-foreground',
                             )}
                         />
                     </span>
@@ -112,100 +134,174 @@ export function MesaFloorCard({
     mesa,
     canUpdate,
     canDelete,
+    joinedCapacidad,
     onEdit,
     onDelete,
+    onSeparar,
+    onJoinTap,
+    joinHighlight = null,
+    onJoinDragStart,
 }: MesaFloorCardProps) {
     const { t } = useTranslation(['salon', 'common']);
     const available = mesa.activa;
+    const joined = Boolean(mesa.union_id);
     const showActions = canUpdate || canDelete;
     const displayName = mesa.nombre?.trim() || mesa.codigo;
 
     return (
         <article
+            data-mesa-id={mesa.id}
             className={cn(
                 'group relative flex flex-col overflow-hidden rounded-2xl border bg-card/80 p-3 shadow-sm transition-all duration-200',
                 'hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-ring/40',
-                available
-                    ? 'border-emerald-500/35 hover:border-emerald-500/55'
-                    : 'border-border/70 opacity-90 hover:border-border',
+                joinHighlight === 'source' &&
+                    'ring-2 ring-[#660033] border-[#660033]/60',
+                joinHighlight === 'target' &&
+                    'ring-2 ring-emerald-500 border-emerald-500/60 scale-[1.02]',
+                !joinHighlight &&
+                    (joined
+                        ? 'border-[#660033]/45 hover:border-[#660033]/70'
+                        : available
+                          ? 'border-emerald-500/35 hover:border-emerald-500/55'
+                          : 'border-border/70 opacity-90 hover:border-border'),
             )}
         >
             <div className="mb-1 flex items-start justify-between gap-2">
-                <span
-                    className={cn(
-                        'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
-                        available
-                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                            : 'bg-muted text-muted-foreground',
-                    )}
-                >
-                    {available ? t('floor.available') : t('floor.inactive')}
-                </span>
-                {showActions ? (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                aria-label={t('row.actions_for_mesa', {
-                                    code: mesa.codigo,
+                <div className="flex min-w-0 flex-wrap items-center gap-1">
+                    <span
+                        className={cn(
+                            'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
+                            available
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-muted text-muted-foreground',
+                        )}
+                    >
+                        {available
+                            ? t('floor.available')
+                            : t('floor.inactive')}
+                    </span>
+                    {joined ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-[#660033]/12 px-2 py-0.5 text-[10px] font-semibold text-[#660033]">
+                            <Link2 className="size-3" />
+                            {t('union.badge', { defaultValue: 'Unida' })}
+                            {joinedCapacidad
+                                ? ` · ${joinedCapacidad}`
+                                : null}
+                        </span>
+                    ) : null}
+                </div>
+                <div className="flex shrink-0 items-center gap-0.5">
+                    {canUpdate && available && onJoinDragStart ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 cursor-grab touch-none text-[#660033] hover:bg-[#660033]/10 active:cursor-grabbing"
+                                    aria-label={t('union.drag', {
+                                        defaultValue:
+                                            'Arrastra para unir con otra mesa',
+                                    })}
+                                    onPointerDown={onJoinDragStart}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <Link2 className="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                {t('union.drag', {
+                                    defaultValue:
+                                        'Arrastra hacia otra mesa para unirlas',
                                 })}
-                                className="size-8 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
-                            >
-                                <MoreHorizontal
-                                    className="size-4"
-                                    strokeWidth={2.5}
-                                />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                            {canUpdate ? (
-                                <DropdownMenuItem
-                                    onSelect={() => onEdit(mesa)}
-                                    className="cursor-pointer gap-2"
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : null}
+                    {showActions ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={t('row.actions_for_mesa', {
+                                        code: mesa.codigo,
+                                    })}
+                                    className="size-8 shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
+                                    onClick={(e) => e.stopPropagation()}
                                 >
-                                    <Pencil
+                                    <MoreHorizontal
                                         className="size-4"
-                                        strokeWidth={2.25}
+                                        strokeWidth={2.5}
                                     />
-                                    {t('common:actions.edit')}
-                                </DropdownMenuItem>
-                            ) : null}
-                            {canDelete ? (
-                                <DropdownMenuItem
-                                    onSelect={() => onDelete(mesa)}
-                                    className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                                >
-                                    <Trash2
-                                        className="size-4"
-                                        strokeWidth={2.25}
-                                    />
-                                    {t('common:actions.delete')}
-                                </DropdownMenuItem>
-                            ) : null}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                ) : null}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                {canUpdate ? (
+                                    <DropdownMenuItem
+                                        onSelect={() => onEdit(mesa)}
+                                        className="cursor-pointer gap-2"
+                                    >
+                                        <Pencil
+                                            className="size-4"
+                                            strokeWidth={2.25}
+                                        />
+                                        {t('common:actions.edit')}
+                                    </DropdownMenuItem>
+                                ) : null}
+                                {canUpdate && onSeparar ? (
+                                    <DropdownMenuItem
+                                        onSelect={onSeparar}
+                                        className="cursor-pointer gap-2"
+                                    >
+                                        <Unlink2 className="size-4" />
+                                        {t('union.separar', {
+                                            defaultValue: 'Separar mesa',
+                                        })}
+                                    </DropdownMenuItem>
+                                ) : null}
+                                {canDelete ? (
+                                    <DropdownMenuItem
+                                        onSelect={() => onDelete(mesa)}
+                                        className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                                    >
+                                        <Trash2
+                                            className="size-4"
+                                            strokeWidth={2.25}
+                                        />
+                                        {t('common:actions.delete')}
+                                    </DropdownMenuItem>
+                                ) : null}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : null}
+                </div>
             </div>
 
             <button
                 type="button"
-                disabled={!canUpdate}
+                disabled={!canUpdate && !onJoinTap}
                 onClick={() => {
+                    if (onJoinTap) {
+                        onJoinTap();
+                        return;
+                    }
                     if (canUpdate) {
                         onEdit(mesa);
                     }
                 }}
                 className={cn(
                     'flex flex-1 flex-col items-center gap-2.5 rounded-xl px-1 py-2 text-center outline-none',
-                    canUpdate ? 'cursor-pointer' : 'cursor-default',
+                    canUpdate || onJoinTap
+                        ? 'cursor-pointer'
+                        : 'cursor-default',
                 )}
             >
                 <TableDiagram
                     codigo={mesa.codigo}
                     capacidad={mesa.capacidad}
                     available={available}
+                    joined={joined}
                 />
 
                 <div className="w-full space-y-0.5">
@@ -222,7 +318,14 @@ export function MesaFloorCard({
                             aria-hidden
                         />
                         <span className="tabular-nums">
-                            {t('floor.capacity', { count: mesa.capacidad })}
+                            {joined && joinedCapacidad
+                                ? t('union.capacity_group', {
+                                      solo: mesa.capacidad,
+                                      total: joinedCapacidad,
+                                  })
+                                : t('floor.capacity', {
+                                      count: mesa.capacidad,
+                                  })}
                         </span>
                     </p>
                 </div>

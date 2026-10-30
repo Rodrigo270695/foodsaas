@@ -26,6 +26,8 @@ export type MesaSalon = {
     nombre: string | null;
     capacidad: number;
     activa: boolean;
+    /** Mesas con el mismo union_id forman un grupo unido. */
+    union_id?: string | null;
     zona?: MesaZonaRef | null;
 };
 

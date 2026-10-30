@@ -25,6 +25,7 @@ class Mesa extends Model
         'nombre',
         'capacidad',
         'activa',
+        'union_id',
     ];
 
     protected function casts(): array
@@ -33,6 +34,11 @@ class Mesa extends Model
             'capacidad' => 'integer',
             'activa' => 'boolean',
         ];
+    }
+
+    public function isJoined(): bool
+    {
+        return is_string($this->union_id) && $this->union_id !== '';
     }
 
     /**

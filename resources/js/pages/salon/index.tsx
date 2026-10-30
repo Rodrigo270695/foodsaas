@@ -142,6 +142,18 @@ export default function Index({
         [t],
     );
 
+    const unirMesas = useCallback((mesaIds: [string, string]) => {
+        router.post(
+            salon.mesas.unir().url,
+            { mesa_ids: mesaIds },
+            { preserveScroll: true },
+        );
+    }, []);
+
+    const separarMesa = useCallback((mesa: MesaSalon) => {
+        router.post(salon.mesas.separar(mesa.id).url, {}, { preserveScroll: true });
+    }, []);
+
     const visibleMesas = useMemo(() => {
         const q = query.trim().toLowerCase();
         if (q === '') {
@@ -337,6 +349,8 @@ export default function Index({
                                     setModal({ type: 'mesa-edit', mesa })
                                 }
                                 onDelete={deleteMesa}
+                                onUnir={unirMesas}
+                                onSeparar={separarMesa}
                             />
                         )}
                     </>

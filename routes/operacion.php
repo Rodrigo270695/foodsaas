@@ -121,6 +121,12 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:salon.update')
                     ->patch('mesas/{mesa}', [SalonController::class, 'updateMesa'])
                     ->name('mesas.update');
+                Route::middleware('permission:salon.update')
+                    ->post('mesas/unir', [SalonController::class, 'unirMesas'])
+                    ->name('mesas.unir');
+                Route::middleware('permission:salon.update')
+                    ->post('mesas/{mesa}/separar', [SalonController::class, 'separarMesa'])
+                    ->name('mesas.separar');
                 Route::middleware('permission:salon.delete')
                     ->delete('mesas/{mesa}', [SalonController::class, 'destroyMesa'])
                     ->name('mesas.destroy');

@@ -15,6 +15,10 @@ const salon = {
         store: () => ({ url: `${base}/mesas` }),
         update: (id: string | number) => ({ url: `${base}/mesas/${id}` }),
         destroy: (id: string | number) => ({ url: `${base}/mesas/${id}` }),
+        unir: () => ({ url: `${base}/mesas/unir` }),
+        separar: (id: string | number) => ({
+            url: `${base}/mesas/${id}/separar`,
+        }),
     },
 };
 

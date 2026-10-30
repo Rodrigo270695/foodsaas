@@ -71,7 +71,7 @@
         "load_error": "No se pudo cargar el salón."
     },
     "floor": {
-        "subtitle": "Toca una mesa para editarla. Las disponibles están listas para comandas; las inactivas no aparecen en operación.",
+        "subtitle": "Toca una mesa para editarla. Une mesas arrastrando el enlace o con el botón Unir. Las inactivas no aparecen en operación.",
         "search": "Buscar mesa...",
         "refresh": "Actualizar salón",
         "available": "Disponible",
@@ -81,6 +81,15 @@
         "stat_available": "Disponibles {{count}}",
         "stat_inactive": "Inactivas {{count}}",
         "stat_capacity": "Capacidad {{count}}"
+    },
+    "union": {
+        "mode": "Unir mesas",
+        "mode_on": "Elige 2 mesas…",
+        "hint": "Arrastra desde el ícono de enlace de una mesa hacia otra, o activa el modo y tócalas.",
+        "drag": "Arrastra hacia otra mesa para unirlas",
+        "badge": "Unida",
+        "separar": "Separar mesa",
+        "capacity_group": "{{solo}} → grupo {{total}}"
     },
     "stats_badges": {
         "total": "Total",

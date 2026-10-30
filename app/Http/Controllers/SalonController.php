@@ -14,6 +14,7 @@ use App\Support\Plan\PlanLimits;
 use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -209,6 +210,92 @@ class SalonController extends Controller
         $mesa->delete();
 
         return back()->with('success', 'Mesa eliminada correctamente.');
+    }
+
+    /**
+     * Une 2+ mesas de la misma sede en un grupo (familia / grupo grande).
+     */
+    public function unirMesas(Request $request): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        $sedeId = $this->activeSedeIdOrAbort();
+
+        $data = $request->validate([
+            'mesa_ids' => ['required', 'array', 'min:2', 'max:8'],
+            'mesa_ids.*' => ['required', 'uuid'],
+        ]);
+
+        /** @var list<string> $ids */
+        $ids = array_values(array_unique($data['mesa_ids']));
+
+        $mesas = Mesa::query()
+            ->where('sede_id', $sedeId)
+            ->whereIn('id', $ids)
+            ->get();
+
+        if ($mesas->count() !== count($ids)) {
+            throw ValidationException::withMessages([
+                'mesa_ids' => 'Alguna mesa no pertenece a la sede activa.',
+            ]);
+        }
+
+        if ($mesas->contains(fn (Mesa $m): bool => ! $m->activa)) {
+            throw ValidationException::withMessages([
+                'mesa_ids' => 'Solo se pueden unir mesas activas / disponibles.',
+            ]);
+        }
+
+        $existingUnions = $mesas
+            ->pluck('union_id')
+            ->filter(fn ($id) => is_string($id) && $id !== '')
+            ->unique()
+            ->values();
+
+        $unionId = $existingUnions->count() === 1
+            ? (string) $existingUnions->first()
+            : (string) Str::uuid();
+
+        // Si había varios grupos distintos, absorbemos todos los miembros.
+        if ($existingUnions->count() > 1) {
+            Mesa::query()
+                ->where('sede_id', $sedeId)
+                ->whereIn('union_id', $existingUnions->all())
+                ->update(['union_id' => $unionId]);
+        }
+
+        Mesa::query()
+            ->whereIn('id', $ids)
+            ->update(['union_id' => $unionId]);
+
+        $cap = (int) Mesa::query()->where('union_id', $unionId)->sum('capacidad');
+
+        return back()->with(
+            'success',
+            sprintf('Mesas unidas · capacidad conjunta %d personas.', $cap),
+        );
+    }
+
+    /**
+     * Saca una mesa del grupo (o disuelve el grupo si quedan < 2).
+     */
+    public function separarMesa(Mesa $mesa): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        $this->assertMesaTenant($mesa);
+
+        $unionId = $mesa->union_id;
+        if (! is_string($unionId) || $unionId === '') {
+            return back()->with('success', 'La mesa ya estaba separada.');
+        }
+
+        $mesa->update(['union_id' => null]);
+
+        $restantes = Mesa::query()->where('union_id', $unionId)->count();
+        if ($restantes < 2) {
+            Mesa::query()->where('union_id', $unionId)->update(['union_id' => null]);
+        }
+
+        return back()->with('success', 'Mesa separada del grupo.');
     }
 
     private function assertSedeTenant(string $sedeId, string $tenantId): void

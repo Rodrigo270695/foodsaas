@@ -71,7 +71,7 @@
         "load_error": "Could not load the dining room."
     },
     "floor": {
-        "subtitle": "Tap a table to edit it. Available tables are ready for orders; inactive ones stay out of operations.",
+        "subtitle": "Tap a table to edit it. Join tables by dragging the link icon or using Join mode. Inactive tables stay out of operations.",
         "search": "Search table...",
         "refresh": "Refresh floor",
         "available": "Available",
@@ -81,6 +81,15 @@
         "stat_available": "Available {{count}}",
         "stat_inactive": "Inactive {{count}}",
         "stat_capacity": "Capacity {{count}}"
+    },
+    "union": {
+        "mode": "Join tables",
+        "mode_on": "Pick 2 tables…",
+        "hint": "Drag from a table’s link icon onto another, or turn on join mode and tap them.",
+        "drag": "Drag onto another table to join them",
+        "badge": "Joined",
+        "separar": "Split table",
+        "capacity_group": "{{solo}} → group {{total}}"
     },
     "zona_form": {
         "title_create": "New zone",
