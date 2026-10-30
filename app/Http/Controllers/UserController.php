@@ -180,7 +180,7 @@ class UserController extends Controller
         ]);
 
         $user->syncRoles([$data['role']]);
-        SedeAssignment::syncForUser($user, $data['sede_ids'] ?? null);
+        SedeAssignment::syncForUser($user, $data['sede_ids'] ?? null, $data['role']);
 
         PlatformSecurityAuditLogger::log(
             action: 'users.created',
@@ -242,7 +242,7 @@ class UserController extends Controller
 
         $user->update($payload);
         $user->syncRoles([$data['role']]);
-        SedeAssignment::syncForUser($user, $data['sede_ids'] ?? null);
+        SedeAssignment::syncForUser($user, $data['sede_ids'] ?? null, $data['role']);
 
         PlatformSecurityAuditLogger::log(
             action: 'users.updated',

@@ -156,6 +156,7 @@
         "config-general": "General settings",
         "sedes": "Branches",
         "carta": "Menu",
+        "almacen": "Warehouse",
         "salon": "Dining room",
         "roles": "Roles",
         "horarios": "Schedules",
@@ -193,6 +194,11 @@
         "resume": "Resume",
         "impersonate": "Impersonate",
         "whatsapp-restart": "Restart WhatsApp",
-        "whatsapp-stop": "Stop WhatsApp"
+        "whatsapp-stop": "Stop WhatsApp",
+        "manage-productos": "Manage products",
+        "manage-categorias": "Manage categories",
+        "manage-areas": "Manage areas",
+        "armar": "Build menu",
+        "ajustar": "Adjust stock"
     }
 }

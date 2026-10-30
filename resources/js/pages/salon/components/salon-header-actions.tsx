@@ -1,4 +1,4 @@
-import { LayoutGrid, Plus, RefreshCw } from 'lucide-react';
+import { Copy, LayoutGrid, Plus, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,9 @@ type SalonHeaderActionsProps = {
     isLoading: boolean;
     mesasLimitReached: boolean;
     hasZonas: boolean;
+    canCopy?: boolean;
     onRefresh: () => void;
+    onCopy?: () => void;
     onNewZona: () => void;
     onNewMesa: () => void;
 };
@@ -22,7 +24,9 @@ export function SalonHeaderActions({
     isLoading,
     mesasLimitReached,
     hasZonas,
+    canCopy = false,
     onRefresh,
+    onCopy,
     onNewZona,
     onNewMesa,
 }: SalonHeaderActionsProps) {
@@ -44,6 +48,23 @@ export function SalonHeaderActions({
                     strokeWidth={2.5}
                 />
             </Button>
+            {canCopy && onCopy ? (
+                <Can permission="salon.create">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onCopy}
+                        className="cursor-pointer gap-2"
+                    >
+                        <Copy className="size-4" strokeWidth={2.5} />
+                        <span className="hidden sm:inline">
+                            {t('actions.copy_sede', {
+                                defaultValue: 'Copiar a sede',
+                            })}
+                        </span>
+                    </Button>
+                </Can>
+            ) : null}
             <Can permission="salon.create">
                 <Button
                     type="button"

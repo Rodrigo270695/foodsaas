@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ActiveSedeOption } from '@/components/active-sede-switcher';
+import { CopyToSedeModal } from '@/components/copy-to-sede-modal';
 import {
     DataPagination,
     DataTable,
@@ -51,6 +53,7 @@ type CartaIndexProps = {
     filters: CartaFilters;
     stats: CartaStats;
     plan_productos_reached?: boolean;
+    copy_targets?: ActiveSedeOption[];
 };
 
 type ModalState =
@@ -70,15 +73,16 @@ export default function Index({
     filters,
     stats,
     plan_productos_reached = false,
+    copy_targets = [],
 }: CartaIndexProps) {
     const { t } = useTranslation(['carta', 'common']);
     const { can } = usePermission();
-    const canCreate = can('carta.create');
-    const canUpdate = can('carta.update');
-    const canDelete = can('carta.delete');
-    const showRowActions = canUpdate || canDelete;
+    const canManageProductos = can('carta.manage-productos');
+    const canManageCategorias = can('carta.manage-categorias');
+    const showRowActions = canManageProductos;
     const hookLimit = usePlanLimitReached('max_productos');
     const productosLimitReached = plan_productos_reached || hookLimit;
+    const [copyOpen, setCopyOpen] = useState(false);
 
     const filtersWithSort: CartaFilters = {
         ...filters,
@@ -102,6 +106,7 @@ export default function Index({
                 'filters',
                 'stats',
                 'plan_productos_reached',
+                'copy_targets',
             ],
             errorMessage: t('toast.load_error'),
             storageKey: 'foodsaas.carta.prefs',
@@ -224,6 +229,35 @@ export default function Index({
                 ),
             },
             {
+                key: 'stock',
+                header: t('columns.stock'),
+                cell: (producto) => {
+                    const control = producto.control_inventario ?? 'none';
+                    if (control === 'none') {
+                        return (
+                            <span className="text-xs text-muted-foreground">
+                                {t('stock.none')}
+                            </span>
+                        );
+                    }
+                    if (control === 'recipe') {
+                        return (
+                            <StatBadge
+                                label={t('stock.recipe')}
+                                value=""
+                                variant="muted"
+                            />
+                        );
+                    }
+                    return (
+                        <span className="tabular-nums text-sm font-medium">
+                            {producto.stock ?? '0'}
+                        </span>
+                    );
+                },
+                className: 'hidden md:table-cell',
+            },
+            {
                 key: 'estado',
                 header: t('columns.estado'),
                 cell: (producto) =>
@@ -266,29 +300,25 @@ export default function Index({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
-                            {canUpdate ? (
-                                <DropdownMenuItem
-                                    onSelect={() =>
-                                        setModal({
-                                            type: 'product-edit',
-                                            producto,
-                                        })
-                                    }
-                                    className="cursor-pointer gap-2"
-                                >
-                                    <Pencil className="size-4" />
-                                    {t('common:actions.edit')}
-                                </DropdownMenuItem>
-                            ) : null}
-                            {canDelete ? (
-                                <DropdownMenuItem
-                                    onSelect={() => deleteProducto(producto)}
-                                    className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                                >
-                                    <Trash2 className="size-4" />
-                                    {t('common:actions.delete')}
-                                </DropdownMenuItem>
-                            ) : null}
+                            <DropdownMenuItem
+                                onSelect={() =>
+                                    setModal({
+                                        type: 'product-edit',
+                                        producto,
+                                    })
+                                }
+                                className="cursor-pointer gap-2"
+                            >
+                                <Pencil className="size-4" />
+                                {t('common:actions.edit')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onSelect={() => deleteProducto(producto)}
+                                className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                            >
+                                <Trash2 className="size-4" />
+                                {t('common:actions.delete')}
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ),
@@ -297,7 +327,7 @@ export default function Index({
         }
 
         return base;
-    }, [t, showRowActions, canUpdate, canDelete, deleteProducto]);
+    }, [t, showRowActions, deleteProducto]);
 
     return (
         <>
@@ -312,7 +342,28 @@ export default function Index({
                             isLoading={isLoading}
                             productosLimitReached={productosLimitReached}
                             hasCategorias={categorias.length > 0}
+                            canCopy={
+                                canManageProductos && copy_targets.length > 0
+                            }
+                            exportHref={(() => {
+                                const params = new URLSearchParams();
+                                if (filters.search) {
+                                    params.set('search', filters.search);
+                                }
+                                if (filters.categoria_id) {
+                                    params.set(
+                                        'categoria_id',
+                                        filters.categoria_id,
+                                    );
+                                }
+                                if (filters.estado !== DEFAULT_ESTADO) {
+                                    params.set('estado', filters.estado);
+                                }
+                                const qs = params.toString();
+                                return `${carta.export().url}${qs ? `?${qs}` : ''}`;
+                            })()}
                             onRefresh={() => fetch()}
+                            onCopy={() => setCopyOpen(true)}
                             onNewCategory={() =>
                                 setModal({ type: 'category-create' })
                             }
@@ -330,8 +381,7 @@ export default function Index({
                     estado={filters.estado}
                     search={search}
                     isSearching={isLoading}
-                    canUpdate={canUpdate}
-                    canDelete={canDelete}
+                    canManageCategorias={canManageCategorias}
                     onCategoriaChange={(categoria_id) =>
                         applyFilter({ categoria_id })
                     }
@@ -349,7 +399,7 @@ export default function Index({
                         title={t('empty.no_categories_title')}
                         description={t('empty.no_categories_description')}
                         action={
-                            canCreate ? (
+                            canManageCategorias ? (
                                 <Button
                                     type="button"
                                     onClick={() =>
@@ -403,7 +453,7 @@ export default function Index({
                                         : t('empty.no_products_description')
                                 }
                                 action={
-                                    !hasActiveFilters && canCreate ? (
+                                    !hasActiveFilters && canManageProductos ? (
                                         <Button
                                             type="button"
                                             onClick={() =>
@@ -456,6 +506,20 @@ export default function Index({
                 categorias={categorias}
                 areas={areas}
                 defaultCategoriaId={defaultCategoriaForProduct}
+            />
+
+            <CopyToSedeModal
+                open={copyOpen}
+                onOpenChange={setCopyOpen}
+                targets={copy_targets}
+                actionUrl={carta.copyToSede().url}
+                title={t('copy.title', {
+                    defaultValue: 'Copiar carta a otra sede',
+                })}
+                description={t('copy.description', {
+                    defaultValue:
+                        'Copia categorías, áreas, productos y cartas publicables. No duplica lo que ya exista con el mismo nombre.',
+                })}
             />
         </>
     );

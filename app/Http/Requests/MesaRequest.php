@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesPlanIntLimits;
 use App\Models\Zona;
+use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -51,7 +52,13 @@ class MesaRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $sedeId = trim((string) $this->input('sede_id', ''));
+        if ($sedeId === '') {
+            $sedeId = ActiveSedeContext::id() ?? '';
+        }
+
         $this->merge([
+            'sede_id' => $sedeId !== '' ? $sedeId : null,
             'codigo' => strtoupper(trim((string) $this->input('codigo', ''))),
             'nombre' => trim((string) $this->input('nombre', '')) ?: null,
             'capacidad' => $this->filled('capacidad') ? (int) $this->input('capacidad') : 4,

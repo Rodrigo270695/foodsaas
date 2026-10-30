@@ -16,6 +16,7 @@ import {
     MapPin,
     UtensilsCrossed,
     Armchair,
+    Warehouse,
     Megaphone,
     MessageCircle,
     Receipt,
@@ -75,6 +76,13 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             href: '/carta',
                             icon: UtensilsCrossed,
                             permission: 'carta.view',
+                            context: 'tenant',
+                        },
+                        {
+                            title: t('items.almacen'),
+                            href: '/almacen',
+                            icon: Warehouse,
+                            permission: 'almacen.view',
                             context: 'tenant',
                         },
                         {

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
+import { usePermission } from '@/hooks/use-permission';
 import {
     Select,
     SelectContent,
@@ -16,7 +17,12 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import carta from '../carta-routes';
-import type { AreaCarta, CategoriaCarta, ProductoCarta } from '../types';
+import type {
+    AreaCarta,
+    CategoriaCarta,
+    ControlInventario,
+    ProductoCarta,
+} from '../types';
 import { ProductoImagenUploader } from './producto-imagen-uploader';
 
 export type ProductoFormModalProps = {
@@ -37,6 +43,9 @@ type ProductoFormData = {
     precio: string;
     orden: number;
     activo: boolean;
+    control_inventario: ControlInventario;
+    stock_inicial: string;
+    stock_minimo: string;
     imagen: File | null;
     clear_imagen: boolean;
 };
@@ -56,6 +65,9 @@ const emptyForm = (categoriaId: string): ProductoFormData => ({
     precio: '',
     orden: 0,
     activo: true,
+    control_inventario: 'none',
+    stock_inicial: '0',
+    stock_minimo: '',
     imagen: null,
     clear_imagen: false,
 });
@@ -72,6 +84,9 @@ const buildInitialData = (
     precio: producto?.precio ?? '',
     orden: producto?.orden ?? 0,
     activo: producto?.activo ?? true,
+    control_inventario: producto?.control_inventario ?? 'none',
+    stock_inicial: producto?.stock ?? '0',
+    stock_minimo: producto?.stock_minimo ?? '',
     imagen: null,
     clear_imagen: false,
 });
@@ -91,6 +106,8 @@ export function ProductoFormModal({
     defaultCategoriaId = null,
 }: ProductoFormModalProps) {
     const { t } = useTranslation(['carta', 'common']);
+    const { can } = usePermission();
+    const canManageAreas = can('carta.manage-areas');
     const { flash } = usePage<FlashProps>().props;
     const isEdit = producto !== null;
     const fallbackCategoria =
@@ -355,14 +372,18 @@ export function ProductoFormModal({
                             emptyMessage={t(
                                 'producto_form.fields.area_empty',
                             )}
-                            creatable
+                            creatable={canManageAreas}
                             createOptionLabel={(q) =>
                                 t('producto_form.fields.area_create', {
                                     name: q,
                                 })
                             }
-                            onCreateOption={createArea}
-                            onDeleteOption={deleteArea}
+                            onCreateOption={
+                                canManageAreas ? createArea : undefined
+                            }
+                            onDeleteOption={
+                                canManageAreas ? deleteArea : undefined
+                            }
                             deleteOptionLabel={(opt) =>
                                 t('producto_form.fields.area_delete', {
                                     name: opt.label,
@@ -495,6 +516,108 @@ export function ProductoFormModal({
 
                 <FormSection
                     index={1}
+                    title={t('producto_form.section_inventory')}
+                    columns={2}
+                >
+                    <p className="sm:col-span-2 text-xs text-muted-foreground">
+                        {t('producto_form.section_inventory_hint')}
+                    </p>
+                    <FormField
+                        id="producto-control"
+                        label={t('producto_form.fields.control_inventario')}
+                        required
+                        error={errors.control_inventario}
+                        hint={t('producto_form.fields.control_hint')}
+                        className="sm:col-span-2"
+                    >
+                        <Select
+                            value={data.control_inventario}
+                            onValueChange={(v) =>
+                                setData(
+                                    'control_inventario',
+                                    v as ControlInventario,
+                                )
+                            }
+                            disabled={processing}
+                        >
+                            <SelectTrigger id="producto-control" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">
+                                    {t('producto_form.fields.control_none')}
+                                </SelectItem>
+                                <SelectItem value="sku">
+                                    {t('producto_form.fields.control_sku')}
+                                </SelectItem>
+                                <SelectItem value="recipe">
+                                    {t('producto_form.fields.control_recipe')}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormField>
+
+                    {data.control_inventario === 'sku' ? (
+                        <>
+                            {!isEdit ||
+                            (producto &&
+                                producto.control_inventario !== 'sku') ? (
+                                <FormField
+                                    id="producto-stock-inicial"
+                                    label={t(
+                                        'producto_form.fields.stock_inicial',
+                                    )}
+                                    error={errors.stock_inicial}
+                                    hint={t(
+                                        'producto_form.fields.stock_inicial_hint',
+                                    )}
+                                >
+                                    <Input
+                                        id="producto-stock-inicial"
+                                        type="number"
+                                        min={0}
+                                        step="0.001"
+                                        value={data.stock_inicial}
+                                        onChange={(e) =>
+                                            setData(
+                                                'stock_inicial',
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+                                </FormField>
+                            ) : (
+                                <p className="text-sm text-muted-foreground sm:col-span-1">
+                                    {t('producto_form.fields.stock_actual', {
+                                        stock: producto?.stock ?? '0',
+                                    })}
+                                </p>
+                            )}
+                            <FormField
+                                id="producto-stock-minimo"
+                                label={t('producto_form.fields.stock_minimo')}
+                                error={errors.stock_minimo}
+                                hint={t(
+                                    'producto_form.fields.stock_minimo_hint',
+                                )}
+                            >
+                                <Input
+                                    id="producto-stock-minimo"
+                                    type="number"
+                                    min={0}
+                                    step="0.001"
+                                    value={data.stock_minimo}
+                                    onChange={(e) =>
+                                        setData('stock_minimo', e.target.value)
+                                    }
+                                />
+                            </FormField>
+                        </>
+                    ) : null}
+                </FormSection>
+
+                <FormSection
+                    index={2}
                     title={t('producto_form.section_status')}
                 >
                     <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:bg-muted/30">

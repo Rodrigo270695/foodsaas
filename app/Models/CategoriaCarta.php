@@ -17,6 +17,7 @@ class CategoriaCarta extends Model
     protected $table = 'cat_categorias';
 
     protected $fillable = [
+        'sede_id',
         'nombre',
         'descripcion',
         'orden',

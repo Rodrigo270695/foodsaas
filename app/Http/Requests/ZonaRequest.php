@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,7 +43,13 @@ class ZonaRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $sedeId = trim((string) $this->input('sede_id', ''));
+        if ($sedeId === '') {
+            $sedeId = ActiveSedeContext::id() ?? '';
+        }
+
         $this->merge([
+            'sede_id' => $sedeId !== '' ? $sedeId : null,
             'nombre' => trim((string) $this->input('nombre', '')),
             'orden' => $this->filled('orden') ? (int) $this->input('orden') : 0,
             'activa' => $this->boolean('activa'),

@@ -1,0 +1,89 @@
+{
+    "title": "Almacén",
+    "description": "Stock de productos con control (SKU) y kardex de entradas y salidas.",
+    "subtitle": "Solo productos con control de inventario. Platos sin control no aparecen aquí.",
+    "actions": {
+        "export": "Exportar stock",
+        "adjust": "Registrar movimiento",
+        "view_kardex": "Ver kardex",
+        "back": "Volver al almacén"
+    },
+    "stats": {
+        "sku": "Con stock",
+        "bajo": "Stock bajo",
+        "recipe": "Por receta",
+        "matches": "Coincidencias"
+    },
+    "search_placeholder": "Buscar producto o código…",
+    "filters": {
+        "control_all": "Todos controlados",
+        "control_sku": "SKU",
+        "control_recipe": "Por receta",
+        "alerta_all": "Todas las alertas",
+        "alerta_bajo": "Stock bajo",
+        "alerta_ok": "Sin alerta"
+    },
+    "columns": {
+        "producto": "Producto",
+        "categoria": "Categoría",
+        "control": "Control",
+        "stock": "Stock",
+        "minimo": "Mínimo",
+        "acciones": "Acciones"
+    },
+    "control": {
+        "sku": "SKU",
+        "recipe": "Receta",
+        "none": "Sin control"
+    },
+    "row": {
+        "bajo": "Bajo",
+        "actions_for": "Acciones para {{name}}",
+        "recipe_hint": "Descuento por insumos (próximamente)"
+    },
+    "empty": {
+        "title": "Sin productos en almacén",
+        "description": "Marca productos de la carta como «Control SKU» (p. ej. gaseosas) para verlos aquí.",
+        "no_results_title": "Sin resultados",
+        "no_results_description": "Ningún ítem coincide con los filtros."
+    },
+    "toast": {
+        "load_error": "No se pudo cargar el almacén."
+    },
+    "kardex": {
+        "title": "Kardex",
+        "subtitle": "Historial de entradas, salidas y ajustes de «{{name}}».",
+        "export": "Exportar kardex",
+        "empty_title": "Sin movimientos",
+        "empty_description": "Registra la primera entrada o ajuste de stock.",
+        "columns": {
+            "fecha": "Fecha",
+            "tipo": "Tipo",
+            "cantidad": "Cantidad",
+            "anterior": "Anterior",
+            "despues": "Después",
+            "motivo": "Motivo",
+            "usuario": "Usuario"
+        }
+    },
+    "movimiento_form": {
+        "title": "Registrar movimiento",
+        "description": "Actualiza el stock de «{{name}}». Queda registrado en el kardex.",
+        "submit": "Registrar",
+        "stock_actual": "Stock actual: {{stock}}",
+        "fields": {
+            "tipo": "Tipo",
+            "cantidad": "Cantidad",
+            "stock_nuevo": "Stock resultante",
+            "motivo": "Motivo",
+            "motivo_placeholder": "Opcional (compra, merma, inventario…)"
+        },
+        "tipos": {
+            "entrada": "Entrada",
+            "salida": "Salida",
+            "ajuste": "Ajuste a cantidad",
+            "merma": "Merma",
+            "venta": "Venta manual"
+        }
+    }
+}

@@ -5,6 +5,8 @@ const base = '/carta';
 
 const carta = {
     index: () => ({ url: base }),
+    export: () => ({ url: `${base}/export` }),
+    copyToSede: () => ({ url: `${base}/copy-to-sede` }),
     builder: () => ({ url: `${base}/armar` }),
     menus: {
         index: () => ({ url: `${base}/armar` }),

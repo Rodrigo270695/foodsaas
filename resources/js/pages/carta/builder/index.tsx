@@ -121,7 +121,7 @@ export default function BuilderIndex({
                                 {t('builder.open_canvas')}
                             </Link>
                         </DropdownMenuItem>
-                        {can('carta.delete') ? (
+                        {can('carta.armar') ? (
                             <DropdownMenuItem
                                 className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                                 onSelect={() => {
@@ -169,7 +169,7 @@ export default function BuilderIndex({
                                     {t('builder.back')}
                                 </Link>
                             </Button>
-                            <Can permission="carta.create">
+                            <Can permission="carta.armar">
                                 <Button
                                     type="button"
                                     onClick={() => setCreateOpen(true)}
@@ -200,7 +200,7 @@ export default function BuilderIndex({
                             title={t('builder.empty_title')}
                             description={t('builder.empty_description')}
                             action={
-                                can('carta.create') ? (
+                                can('carta.armar') ? (
                                     <Button
                                         type="button"
                                         onClick={() => setCreateOpen(true)}

@@ -136,6 +136,7 @@ class SedeController extends Controller
         ]);
 
         SedeAssignment::attachTenantUsersIfFirstSede($sede);
+        SedeAssignment::attachAdminsToSede($sede);
         SedeAssignment::reconcileTenant($tenantId);
 
         return back()->with('success', 'Sede creada correctamente.');

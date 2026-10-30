@@ -6,6 +6,7 @@ use App\Models\RestaurantSetting;
 use App\Models\User;
 use App\Support\Plan\PlanLimits;
 use App\Support\Restaurante\RestaurantBrandingUrls;
+use App\Support\Sedes\ActiveSedeContext;
 use App\Support\Tenancy\TenantSubdomainUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -172,6 +173,7 @@ class HandleInertiaRequests extends Middleware
                 }
             },
             'plan_limits' => static fn () => PlanLimits::snapshot(),
+            'active_sede' => static fn () => ActiveSedeContext::sharedPayload(),
         ];
     }
 

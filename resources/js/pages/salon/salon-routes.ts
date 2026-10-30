@@ -5,6 +5,7 @@ const base = '/salon';
 
 const salon = {
     index: () => ({ url: base }),
+    copyToSede: () => ({ url: `${base}/copy-to-sede` }),
     zonas: {
         store: () => ({ url: `${base}/zonas` }),
         update: (id: string | number) => ({ url: `${base}/zonas/${id}` }),

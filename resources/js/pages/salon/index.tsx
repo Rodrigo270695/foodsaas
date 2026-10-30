@@ -2,21 +2,11 @@ import { Head, router } from '@inertiajs/react';
 import { Armchair, LayoutGrid, Plus } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CopyToSedeModal } from '@/components/copy-to-sede-modal';
 import { EmptyState, PageHeader } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { usePlanLimitReached } from '@/hooks/use-plan-limits';
 import { usePermission } from '@/hooks/use-permission';
-import {
-    resolveDefaultSedeIdOrEmpty,
-    shouldShowSedeSelector,
-} from '@/lib/default-sede';
 import { toastManager } from '@/lib/toast';
 import AppLayout from '@/layouts/app-layout';
 import { MesaFormModal } from './components/mesa-form-modal';
@@ -41,6 +31,7 @@ type SalonIndexProps = {
     filters: SalonFilters;
     stats: SalonStats;
     plan_mesas_reached?: boolean;
+    copy_targets?: SedeOpcion[];
 };
 
 type ModalState =
@@ -59,6 +50,7 @@ const SALON_ONLY = [
     'filters',
     'stats',
     'plan_mesas_reached',
+    'copy_targets',
 ] as const;
 
 export default function Index({
@@ -68,8 +60,9 @@ export default function Index({
     filters,
     stats,
     plan_mesas_reached = false,
+    copy_targets = [],
 }: SalonIndexProps) {
-    const { t } = useTranslation('salon');
+    const { t } = useTranslation(['salon', 'common']);
     const { can } = usePermission();
     const canCreate = can('salon.create');
     const canUpdate = can('salon.update');
@@ -77,11 +70,10 @@ export default function Index({
     const hookLimit = usePlanLimitReached('max_mesas');
     const mesasLimitReached = plan_mesas_reached || hookLimit;
 
-    const sedeId =
-        filters.sede_id ?? resolveDefaultSedeIdOrEmpty(sedes_opciones) ?? '';
-    const showSedeSelector = shouldShowSedeSelector(sedes_opciones);
+    const sedeId = filters.sede_id ?? '';
 
     const [modal, setModal] = useState<ModalState>({ type: 'idle' });
+    const [copyOpen, setCopyOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [query, setQuery] = useState('');
     const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
@@ -92,9 +84,6 @@ export default function Index({
             const merged: Record<string, string> = {};
             const next: SalonFilters = { ...filters, ...overrides };
 
-            if (next.sede_id) {
-                merged.sede_id = next.sede_id;
-            }
             if (next.zona_id) {
                 merged.zona_id = next.zona_id;
             }
@@ -170,6 +159,14 @@ export default function Index({
         filters.estado !== DEFAULT_ESTADO;
 
     const defaultZonaId = filters.zona_id ?? zonas[0]?.id ?? null;
+    // Modales usan la sede activa del header (sin selector local).
+    const sedeForForms = useMemo(
+        () =>
+            sedeId
+                ? sedes_opciones.filter((s) => s.id === sedeId)
+                : sedes_opciones.slice(0, 1),
+        [sedeId, sedes_opciones],
+    );
 
     return (
         <>
@@ -185,7 +182,9 @@ export default function Index({
                                 isLoading={isLoading}
                                 mesasLimitReached={mesasLimitReached}
                                 hasZonas={zonas.length > 0}
+                                canCopy={canCreate && copy_targets.length > 0}
                                 onRefresh={() => reload()}
+                                onCopy={() => setCopyOpen(true)}
                                 onNewZona={() =>
                                     setModal({ type: 'zona-create' })
                                 }
@@ -196,37 +195,6 @@ export default function Index({
                         ) : undefined
                     }
                 />
-
-                {showSedeSelector ? (
-                    <div className="flex flex-col gap-1.5 sm:max-w-xs">
-                        <label
-                            htmlFor="salon-sede"
-                            className="text-xs font-medium text-muted-foreground"
-                        >
-                            {t('sede_label')}
-                        </label>
-                        <Select
-                            value={sedeId || undefined}
-                            onValueChange={(value) =>
-                                reload({ sede_id: value, zona_id: null })
-                            }
-                        >
-                            <SelectTrigger
-                                id="salon-sede"
-                                className="h-10 w-full"
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {sedes_opciones.map((sede) => (
-                                    <SelectItem key={sede.id} value={sede.id}>
-                                        {sede.nombre} ({sede.codigo})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                ) : null}
 
                 {!sedeId ? (
                     <EmptyState
@@ -335,7 +303,7 @@ export default function Index({
                     }
                 }}
                 zona={modal.type === 'zona-edit' ? modal.zona : null}
-                sedes={sedes_opciones}
+                sedes={sedeForForms}
                 defaultSedeId={sedeId}
             />
 
@@ -349,10 +317,24 @@ export default function Index({
                     }
                 }}
                 mesa={modal.type === 'mesa-edit' ? modal.mesa : null}
-                sedes={sedes_opciones}
+                sedes={sedeForForms}
                 zonas={zonas}
                 defaultSedeId={sedeId}
                 defaultZonaId={defaultZonaId}
+            />
+
+            <CopyToSedeModal
+                open={copyOpen}
+                onOpenChange={setCopyOpen}
+                targets={copy_targets}
+                actionUrl={salon.copyToSede().url}
+                title={t('copy.title', {
+                    defaultValue: 'Copiar salón a otra sede',
+                })}
+                description={t('copy.description', {
+                    defaultValue:
+                        'Copia zonas y mesas a la sede destino. No duplica códigos que ya existan.',
+                })}
             />
         </>
     );

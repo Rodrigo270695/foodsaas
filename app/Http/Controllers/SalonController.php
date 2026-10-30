@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Http\Requests\MesaRequest;
 use App\Http\Requests\ZonaRequest;
 use App\Models\Mesa;
 use App\Models\Sede;
 use App\Models\Zona;
+use App\Services\Sedes\CopySalonToSedeService;
 use App\Support\Plan\PlanLimits;
+use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -17,23 +20,15 @@ use Inertia\Response;
 
 class SalonController extends Controller
 {
+    use ResolvesActiveSede;
     use ResolvesTenantId;
 
     public function index(Request $request): Response
     {
-        $tenantId = $this->tenantIdOrAbort();
+        $this->tenantIdOrAbort();
 
-        $sedes = Sede::query()
-            ->where('tenant_id', $tenantId)
-            ->where('activa', true)
-            ->orderBy('nombre')
-            ->get(['id', 'nombre', 'codigo']);
-
-        $sedeIds = $sedes->pluck('id')->map(fn ($id) => (string) $id)->all();
-        $sedeRequested = (string) $request->string('sede_id', '');
-        $sedeId = in_array($sedeRequested, $sedeIds, true)
-            ? $sedeRequested
-            : (string) ($sedes->first()?->id ?? '');
+        $sedeId = ActiveSedeContext::id() ?? '';
+        $sedes = collect(ActiveSedeContext::accessibleCatalog());
 
         $zonas = $sedeId === ''
             ? collect()
@@ -92,14 +87,42 @@ class SalonController extends Controller
                 'capacidad' => $mesas->where('activa', true)->sum('capacidad'),
             ],
             'plan_mesas_reached' => PlanLimits::isReached('max_mesas'),
+            'copy_targets' => array_values(array_filter(
+                $sedes->all(),
+                static fn (array $s): bool => $s['id'] !== $sedeId,
+            )),
         ]);
+    }
+
+    public function copyToSede(Request $request, CopySalonToSedeService $copier): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        $from = $this->activeSedeIdOrAbort();
+        $data = $request->validate([
+            'target_sede_id' => ['required', 'uuid'],
+        ]);
+
+        $result = $copier->copy($from, (string) $data['target_sede_id']);
+
+        return back()->with(
+            'success',
+            sprintf(
+                'Copia a sede lista: %d zonas, %d mesas nuevas.',
+                $result['zonas'],
+                $result['mesas'],
+            ),
+        );
     }
 
     public function storeZona(ZonaRequest $request): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        $sedeId = $this->activeSedeIdOrAbort();
 
-        Zona::query()->create($request->validated());
+        Zona::query()->create([
+            ...$request->validated(),
+            'sede_id' => $sedeId,
+        ]);
 
         return back()->with('success', 'Zona creada correctamente.');
     }
@@ -132,11 +155,13 @@ class SalonController extends Controller
 
     public function storeMesa(MesaRequest $request): RedirectResponse
     {
-        $tenantId = $this->tenantIdOrAbort();
+        $this->tenantIdOrAbort();
+        $sedeId = $this->activeSedeIdOrAbort();
         $data = $request->validated();
+        $data['sede_id'] = $sedeId;
 
         $existe = Mesa::query()
-            ->where('sede_id', $data['sede_id'])
+            ->where('sede_id', $sedeId)
             ->where('codigo', $data['codigo'])
             ->exists();
 
@@ -146,8 +171,7 @@ class SalonController extends Controller
             ]);
         }
 
-        $this->assertSedeTenant($data['sede_id'], $tenantId);
-
+        ActiveSedeContext::assertAccessible($sedeId);
         Mesa::query()->create($data);
 
         return back()->with('success', 'Mesa creada correctamente.');
@@ -155,9 +179,10 @@ class SalonController extends Controller
 
     public function updateMesa(MesaRequest $request, Mesa $mesa): RedirectResponse
     {
-        $tenantId = $this->tenantIdOrAbort();
+        $this->tenantIdOrAbort();
         $this->assertMesaTenant($mesa);
         $data = $request->validated();
+        $data['sede_id'] = (string) $mesa->sede_id;
 
         $existe = Mesa::query()
             ->where('sede_id', $data['sede_id'])
@@ -171,7 +196,7 @@ class SalonController extends Controller
             ]);
         }
 
-        $this->assertSedeTenant($data['sede_id'], $tenantId);
+        ActiveSedeContext::assertAccessible($data['sede_id']);
         $mesa->update($data);
 
         return back()->with('success', 'Mesa actualizada correctamente.');

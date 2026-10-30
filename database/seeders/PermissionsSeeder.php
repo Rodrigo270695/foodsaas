@@ -15,7 +15,16 @@ class PermissionsSeeder extends Seeder
 {
     public const CATALOG = [
         'dashboard' => ['view'],
-        'carta' => ['view', 'create', 'update', 'delete'],
+        // Acciones potentes (no CRUD genérico): ver, gestionar catálogo, armar carta, exportar.
+        'carta' => [
+            'view',
+            'manage-productos',
+            'manage-categorias',
+            'manage-areas',
+            'armar',
+            'export',
+        ],
+        'almacen' => ['view', 'ajustar', 'export'],
         'salon' => ['view', 'create', 'update', 'delete'],
         'config-general' => ['view', 'update'],
         'series' => ['view', 'create', 'update', 'delete'],

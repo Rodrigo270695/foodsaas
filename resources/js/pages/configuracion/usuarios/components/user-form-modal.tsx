@@ -88,6 +88,8 @@ const buildInitialData = (user: User | null): UserFormData => ({
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const isAdminRole = (role: string): boolean => role === 'admin_restaurante';
+
 const isFormValid = (
     data: UserFormData,
     isEdit: boolean,
@@ -96,7 +98,13 @@ const isFormValid = (
     if (data.name.trim().length < 2) return false;
     if (!EMAIL_REGEX.test(data.email.trim())) return false;
     if (!data.role) return false;
-    if (requireSedes && data.sede_ids.length === 0) return false;
+    if (
+        requireSedes &&
+        !isAdminRole(data.role) &&
+        data.sede_ids.length === 0
+    ) {
+        return false;
+    }
     if (!isEdit) {
         if (data.password.length < 8) return false;
         if (data.password !== data.password_confirmation) return false;
@@ -491,49 +499,70 @@ export function UserFormModal({
                     <FormSection
                         index={1}
                         title={t('usuarios:form.section_sedes')}
-                        description={t('usuarios:form.section_sedes_hint')}
+                        description={
+                            isAdminRole(data.role)
+                                ? t('usuarios:form.section_sedes_admin_hint', {
+                                      defaultValue:
+                                          'El administrador del restaurante tiene acceso automático a todas las sedes activas.',
+                                  })
+                                : t('usuarios:form.section_sedes_hint')
+                        }
                     >
-                        {sedesCatalog.length === 0 ? (
+                        {isAdminRole(data.role) ? (
+                            <p className="rounded-lg border border-brand-600/20 bg-brand-50/50 px-3 py-2 text-sm text-brand-900 dark:bg-brand-950/30 dark:text-brand-100">
+                                {t('usuarios:form.section_sedes_admin_banner', {
+                                    defaultValue:
+                                        'No hace falta elegir sedes: este rol opera en todos los locales.',
+                                })}
+                            </p>
+                        ) : sedesCatalog.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
                                 {t('usuarios:form.section_sedes_empty')}
                             </p>
                         ) : (
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {sedesCatalog.map((sede) => {
-                                const checked = data.sede_ids.includes(sede.id);
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                {sedesCatalog.map((sede) => {
+                                    const checked = data.sede_ids.includes(
+                                        sede.id,
+                                    );
 
-                                return (
-                                    <label
-                                        key={sede.id}
-                                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:bg-muted/30"
-                                    >
-                                        <Checkbox
-                                            checked={checked}
-                                            onCheckedChange={(next) => {
-                                                const on = next === true;
-                                                setData(
-                                                    'sede_ids',
-                                                    on
-                                                        ? [...data.sede_ids, sede.id]
-                                                        : data.sede_ids.filter(
-                                                              (id) => id !== sede.id,
-                                                          ),
-                                                );
-                                            }}
-                                            className="mt-0.5"
-                                        />
-                                        <span className="min-w-0">
-                                            <span className="block text-sm font-medium">
-                                                {sede.nombre}
+                                    return (
+                                        <label
+                                            key={sede.id}
+                                            className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:bg-muted/30"
+                                        >
+                                            <Checkbox
+                                                checked={checked}
+                                                onCheckedChange={(next) => {
+                                                    const on = next === true;
+                                                    setData(
+                                                        'sede_ids',
+                                                        on
+                                                            ? [
+                                                                  ...data.sede_ids,
+                                                                  sede.id,
+                                                              ]
+                                                            : data.sede_ids.filter(
+                                                                  (id) =>
+                                                                      id !==
+                                                                      sede.id,
+                                                              ),
+                                                    );
+                                                }}
+                                                className="mt-0.5"
+                                            />
+                                            <span className="min-w-0">
+                                                <span className="block text-sm font-medium">
+                                                    {sede.nombre}
+                                                </span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {sede.codigo}
+                                                </span>
                                             </span>
-                                            <span className="text-xs text-muted-foreground">
-                                                {sede.codigo}
-                                            </span>
-                                        </span>
-                                    </label>
-                                );
-                            })}
-                        </div>
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         )}
                         {errors.sede_ids ? (
                             <p className="text-xs text-destructive" role="alert">

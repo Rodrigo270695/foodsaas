@@ -13,6 +13,15 @@
         "remove": "Quitar",
         "undo": "Deshacer"
     },
+    "sede_switcher": {
+        "label": "Sede activa",
+        "placeholder": "Sede",
+        "copy": "Copiar a otra sede",
+        "copy_confirm": "Copiar",
+        "target": "Sede destino",
+        "target_placeholder": "Elige sede",
+        "no_targets": "No hay otra sede disponible para copiar."
+    },
     "form": {
         "unsaved_changes": "Hay cambios que aún no guardaste. Si cierras este formulario, se perderán. ¿Quieres salir sin guardar?"
     },

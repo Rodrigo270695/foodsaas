@@ -19,6 +19,7 @@ class AreaCarta extends Model
     protected $table = 'cat_areas';
 
     protected $fillable = [
+        'sede_id',
         'nombre',
         'orden',
         'activa',

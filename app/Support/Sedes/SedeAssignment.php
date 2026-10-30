@@ -57,16 +57,42 @@ final class SedeAssignment
         return $ids->count() === 1 ? (string) $ids->first() : null;
     }
 
+    public static function isTenantAdminRole(?string $roleName): bool
+    {
+        return $roleName === 'admin_restaurante';
+    }
+
     /**
      * @param  list<string>|null  $sedeIds
      */
-    public static function syncForUser(User $user, ?array $sedeIds): void
+    public static function syncForUser(User $user, ?array $sedeIds, ?string $roleName = null): void
     {
         if (! self::tablesReady() || $user->tenant_id === null) {
             return;
         }
 
         $tenantId = (string) $user->tenant_id;
+        $role = $roleName;
+        if ($role === null) {
+            try {
+                $role = $user->getRoleNames()->first();
+            } catch (\Throwable) {
+                $role = null;
+            }
+        }
+
+        // Admin del restaurante: siempre todas las sedes activas.
+        if (self::isTenantAdminRole(is_string($role) ? $role : null)) {
+            $all = Sede::query()
+                ->where('tenant_id', $tenantId)
+                ->where('activa', true)
+                ->pluck('id')
+                ->all();
+            $user->sedes()->sync($all);
+
+            return;
+        }
+
         $sole = self::soleActiveSedeId($tenantId);
 
         if ($sole !== null) {
@@ -89,6 +115,32 @@ final class SedeAssignment
             ->all();
 
         $user->sedes()->sync($valid);
+    }
+
+    /**
+     * Al crear una sede, los admins del tenant la reciben automáticamente.
+     */
+    public static function attachAdminsToSede(Sede $sede): void
+    {
+        if (! self::tablesReady()) {
+            return;
+        }
+
+        $previousTeam = getPermissionsTeamId();
+        setPermissionsTeamId($sede->tenant_id);
+
+        try {
+            $admins = User::query()
+                ->where('tenant_id', $sede->tenant_id)
+                ->role('admin_restaurante')
+                ->get();
+
+            foreach ($admins as $admin) {
+                $admin->sedes()->syncWithoutDetaching([(string) $sede->id]);
+            }
+        } finally {
+            setPermissionsTeamId($previousTeam);
+        }
     }
 
     public static function attachTenantUsersIfFirstSede(Sede $sede): void

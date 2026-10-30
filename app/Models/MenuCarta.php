@@ -21,6 +21,7 @@ class MenuCarta extends Model
     protected $table = 'men_cartas';
 
     protected $fillable = [
+        'sede_id',
         'nombre',
         'slug',
         'descripcion',

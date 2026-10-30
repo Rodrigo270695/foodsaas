@@ -12,7 +12,14 @@
         "create_first_product": "Crear primer producto",
         "create_first_category": "Crear primera categoría",
         "build_menu": "Armar carta",
-        "build_menu_short": "Armar"
+        "build_menu_short": "Armar",
+        "export": "Exportar catálogo"
+    },
+    "stock": {
+        "none": "Sin control",
+        "sku": "SKU",
+        "recipe": "Por receta",
+        "label": "Stock"
     },
     "stats": {
         "productos": "Productos",
@@ -41,6 +48,7 @@
         "area": "Área",
         "codigo": "Código",
         "precio": "Precio",
+        "stock": "Stock",
         "orden": "Orden",
         "estado": "Estado",
         "acciones": "Acciones"
@@ -179,6 +187,8 @@
         "submit_edit": "Guardar cambios",
         "no_categories": "Crea al menos una categoría antes de agregar productos.",
         "section_basic": "Datos del producto",
+        "section_inventory": "Inventario",
+        "section_inventory_hint": "Ceviche / platos: sin control. Gaseosas: control SKU con kardex. Receta: descuenta insumos (próximamente).",
         "section_status": "Estado",
         "fields": {
             "categoria": "Categoría",
@@ -207,7 +217,18 @@
             "orden": "Orden",
             "orden_hint": "Dentro de la categoría, menor número aparece primero.",
             "activo": "Producto activo",
-            "activo_hint": "Los productos inactivos no se muestran en venta."
+            "activo_hint": "Los productos inactivos no se muestran en venta.",
+            "control_inventario": "Control de inventario",
+            "control_none": "Sin control (ilimitado)",
+            "control_sku": "SKU — descuenta al vender",
+            "control_recipe": "Por receta (próximamente)",
+            "control_hint": "«Sin control» equivale a no llevar stock (antes −1). Usa SKU para bebidas embotelladas y similares.",
+            "stock_inicial": "Stock inicial",
+            "stock_inicial_hint": "Solo al crear o activar control SKU. Después ajusta en Almacén.",
+            "stock_actual": "Stock actual: {{stock}} (ajusta en Almacén)",
+            "stock_minimo": "Stock mínimo",
+            "stock_minimo_hint": "Alerta en Almacén cuando el stock llega a este valor."
         }
     }
 }
+

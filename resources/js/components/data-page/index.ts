@@ -34,6 +34,10 @@ export {
     type PillFilterItem,
     type PillFiltersProps,
 } from './pill-filters';
+export {
+    ScrollableEntityFilters,
+    type EntityFilterItem,
+} from './scrollable-entity-filters';
 export { SearchField, type SearchFieldProps } from './search-field';
 export {
     StatBadge,

@@ -1,3 +1,4 @@
+import { ActiveSedeSwitcher } from '@/components/active-sede-switcher';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { PwaInstallHeaderButton } from '@/components/pwa-install-banner';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -17,7 +18,8 @@ export function AppSidebarHeader({
                 </div>
             </div>
 
-            <div className="ml-auto flex min-w-0 shrink-0 items-center gap-0.5 sm:gap-1">
+            <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-1.5">
+                <ActiveSedeSwitcher />
                 <PwaInstallHeaderButton />
             </div>
         </header>

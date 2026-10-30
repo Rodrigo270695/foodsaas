@@ -1,23 +1,13 @@
-import { Armchair, CheckCircle2, MoreHorizontal, Pencil, Trash2, Users } from 'lucide-react';
+import { Armchair, CheckCircle2, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     InlineStats,
-    PillFilters,
+    ScrollableEntityFilters,
     SearchField,
     StatusPills,
-    type PillFilterItem,
 } from '@/components/data-page';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import type { SalonEstadoFilter, SalonStats, ZonaSalon } from '../types';
-
-const ALL_ZONAS = '__all__';
 
 type SalonToolbarProps = {
     zonas: ZonaSalon[];
@@ -50,70 +40,18 @@ export function SalonToolbar({
 }: SalonToolbarProps) {
     const { t } = useTranslation(['salon', 'common']);
     const inactivas = Math.max(0, stats.mesas - stats.mesas_activas);
-    const showZonaActions = canUpdate || canDelete;
+    const canManage = canUpdate || canDelete;
 
-    const zonaItems = useMemo<PillFilterItem<string>[]>(() => {
-        const all: PillFilterItem<string> = {
-            value: ALL_ZONAS,
-            label: t('filters.all'),
-            count: stats.mesas,
-        };
-
-        const zonaPills = zonas.map((zona) => ({
-            value: zona.id,
-            label: zona.nombre,
-            count: zona.mesas_count ?? 0,
-            muted: !zona.activa,
-            trailing: showZonaActions ? (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={t('row.actions_for_zona', {
-                                name: zona.nombre,
-                            })}
-                            className="size-8 cursor-pointer"
-                        >
-                            <MoreHorizontal className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
-                        {canUpdate ? (
-                            <DropdownMenuItem
-                                onSelect={() => onEditZona(zona)}
-                                className="cursor-pointer gap-2"
-                            >
-                                <Pencil className="size-4" />
-                                {t('common:actions.edit')}
-                            </DropdownMenuItem>
-                        ) : null}
-                        {canDelete ? (
-                            <DropdownMenuItem
-                                onSelect={() => onDeleteZona(zona)}
-                                className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                            >
-                                <Trash2 className="size-4" />
-                                {t('common:actions.delete')}
-                            </DropdownMenuItem>
-                        ) : null}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            ) : undefined,
-        }));
-
-        return [all, ...zonaPills];
-    }, [
-        zonas,
-        stats.mesas,
-        showZonaActions,
-        canUpdate,
-        canDelete,
-        onEditZona,
-        onDeleteZona,
-        t,
-    ]);
+    const entityItems = useMemo(
+        () =>
+            zonas.map((zona) => ({
+                id: zona.id,
+                label: zona.nombre,
+                count: zona.mesas_count ?? 0,
+                muted: !zona.activa,
+            })),
+        [zonas],
+    );
 
     const estadoOptions = useMemo(
         () =>
@@ -128,15 +66,43 @@ export function SalonToolbar({
     return (
         <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <PillFilters
+                <ScrollableEntityFilters
                     aria-label={t('zona_filter_label')}
-                    items={zonaItems}
-                    value={zonaId ?? ALL_ZONAS}
-                    clearValue={ALL_ZONAS}
-                    toggleOff
-                    onChange={(value) =>
-                        onZonaChange(value === ALL_ZONAS ? null : value)
+                    items={entityItems}
+                    value={zonaId}
+                    allLabel={t('filters.all')}
+                    allCount={stats.mesas}
+                    onChange={onZonaChange}
+                    searchPlaceholder={t('zona_search', {
+                        defaultValue: 'Buscar zona…',
+                    })}
+                    canManage={canManage}
+                    manageLabel={(name) =>
+                        t('row.actions_for_zona', { name })
                     }
+                    onEdit={
+                        canUpdate
+                            ? (id) => {
+                                  const zona = zonas.find((z) => z.id === id);
+                                  if (zona) {
+                                      onEditZona(zona);
+                                  }
+                              }
+                            : undefined
+                    }
+                    onDelete={
+                        canDelete
+                            ? (id) => {
+                                  const zona = zonas.find((z) => z.id === id);
+                                  if (zona) {
+                                      onDeleteZona(zona);
+                                  }
+                              }
+                            : undefined
+                    }
+                    editLabel={t('common:actions.edit')}
+                    deleteLabel={t('common:actions.delete')}
+                    className="min-w-0 flex-1"
                 />
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

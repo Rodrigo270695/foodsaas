@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -14,14 +15,30 @@ use Illuminate\Support\Facades\Storage;
  * @property string $nombre
  * @property string $precio
  * @property string|null $imagen_path
+ * @property string $control_inventario
+ * @property string|null $stock
+ * @property string|null $stock_minimo
  */
 class ProductoCarta extends Model
 {
     use HasUuids;
 
+    public const CONTROL_NONE = 'none';
+
+    public const CONTROL_SKU = 'sku';
+
+    public const CONTROL_RECIPE = 'recipe';
+
+    public const CONTROLES = [
+        self::CONTROL_NONE,
+        self::CONTROL_SKU,
+        self::CONTROL_RECIPE,
+    ];
+
     protected $table = 'cat_productos';
 
     protected $fillable = [
+        'sede_id',
         'categoria_id',
         'area_id',
         'nombre',
@@ -31,6 +48,9 @@ class ProductoCarta extends Model
         'precio',
         'orden',
         'activo',
+        'control_inventario',
+        'stock',
+        'stock_minimo',
     ];
 
     protected $appends = [
@@ -43,7 +63,14 @@ class ProductoCarta extends Model
             'precio' => 'decimal:2',
             'orden' => 'integer',
             'activo' => 'boolean',
+            'stock' => 'decimal:3',
+            'stock_minimo' => 'decimal:3',
         ];
+    }
+
+    public function tracksSkuStock(): bool
+    {
+        return $this->control_inventario === self::CONTROL_SKU;
     }
 
     public function getImagenUrlAttribute(): ?string
@@ -69,6 +96,14 @@ class ProductoCarta extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(AreaCarta::class, 'area_id');
+    }
+
+    /**
+     * @return HasMany<MovimientoInventario, $this>
+     */
+    public function movimientos(): HasMany
+    {
+        return $this->hasMany(MovimientoInventario::class, 'producto_id');
     }
 
     public function deleteImagenFile(): void

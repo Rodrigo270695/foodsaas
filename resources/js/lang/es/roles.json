@@ -156,6 +156,7 @@
         "config-general": "Configuración general",
         "sedes": "Sedes",
         "carta": "Carta",
+        "almacen": "Almacén",
         "salon": "Salón",
         "roles": "Roles",
         "horarios": "Horarios",
@@ -193,6 +194,11 @@
         "resume": "Reactivar",
         "impersonate": "Suplantar",
         "whatsapp-restart": "Reiniciar WhatsApp",
-        "whatsapp-stop": "Detener WhatsApp"
+        "whatsapp-stop": "Detener WhatsApp",
+        "manage-productos": "Gestionar productos",
+        "manage-categorias": "Gestionar categorías",
+        "manage-areas": "Gestionar áreas",
+        "armar": "Armar carta",
+        "ajustar": "Ajustar stock"
     }
 }

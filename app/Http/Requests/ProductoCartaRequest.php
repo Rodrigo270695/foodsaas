@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Http\Requests\Concerns\ValidatesPlanIntLimits;
 use App\Models\AreaCarta;
 use App\Models\CategoriaCarta;
+use App\Models\ProductoCarta;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -20,6 +21,8 @@ class ProductoCartaRequest extends FormRequest
 
     public function rules(): array
     {
+        $control = (string) $this->input('control_inventario', ProductoCarta::CONTROL_NONE);
+
         return [
             'categoria_id' => [
                 'required',
@@ -37,6 +40,27 @@ class ProductoCartaRequest extends FormRequest
             'precio' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
             'orden' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'activo' => ['required', 'boolean'],
+            'control_inventario' => [
+                'required',
+                'string',
+                Rule::in(ProductoCarta::CONTROLES),
+            ],
+            'stock_inicial' => [
+                Rule::requiredIf(
+                    $this->isMethod('POST')
+                    && $control === ProductoCarta::CONTROL_SKU,
+                ),
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999999.999',
+            ],
+            'stock_minimo' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                'max:999999999.999',
+            ],
             'imagen' => [
                 'nullable',
                 'image',
@@ -58,6 +82,9 @@ class ProductoCartaRequest extends FormRequest
             'precio' => 'precio',
             'orden' => 'orden',
             'activo' => 'estado',
+            'control_inventario' => 'control de inventario',
+            'stock_inicial' => 'stock inicial',
+            'stock_minimo' => 'stock mínimo',
             'imagen' => 'imagen',
         ];
     }
@@ -66,6 +93,13 @@ class ProductoCartaRequest extends FormRequest
     {
         $codigo = trim((string) $this->input('codigo', ''));
         $areaId = trim((string) $this->input('area_id', ''));
+        $control = trim((string) $this->input('control_inventario', ProductoCarta::CONTROL_NONE));
+        if (! in_array($control, ProductoCarta::CONTROLES, true)) {
+            $control = ProductoCarta::CONTROL_NONE;
+        }
+
+        $stockMinimo = $this->input('stock_minimo');
+        $stockInicial = $this->input('stock_inicial');
 
         $this->merge([
             'nombre' => trim((string) $this->input('nombre', '')),
@@ -75,6 +109,13 @@ class ProductoCartaRequest extends FormRequest
             'orden' => $this->filled('orden') ? (int) $this->input('orden') : 0,
             'activo' => $this->boolean('activo'),
             'clear_imagen' => $this->boolean('clear_imagen'),
+            'control_inventario' => $control,
+            'stock_minimo' => $control === ProductoCarta::CONTROL_SKU && $stockMinimo !== null && $stockMinimo !== ''
+                ? $stockMinimo
+                : null,
+            'stock_inicial' => $control === ProductoCarta::CONTROL_SKU && $stockInicial !== null && $stockInicial !== ''
+                ? $stockInicial
+                : ($control === ProductoCarta::CONTROL_SKU ? 0 : null),
         ]);
     }
 

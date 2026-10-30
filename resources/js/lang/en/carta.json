@@ -12,7 +12,14 @@
         "create_first_product": "Create first product",
         "create_first_category": "Create first category",
         "build_menu": "Build menu",
-        "build_menu_short": "Build"
+        "build_menu_short": "Build",
+        "export": "Export catalog"
+    },
+    "stock": {
+        "none": "No control",
+        "sku": "SKU",
+        "recipe": "Recipe",
+        "label": "Stock"
     },
     "stats": {
         "productos": "Products",
@@ -41,6 +48,7 @@
         "area": "Area",
         "codigo": "Code",
         "precio": "Price",
+        "stock": "Stock",
         "orden": "Order",
         "estado": "Status",
         "acciones": "Actions"
@@ -179,6 +187,8 @@
         "submit_edit": "Save changes",
         "no_categories": "Create at least one category before adding products.",
         "section_basic": "Product details",
+        "section_inventory": "Inventory",
+        "section_inventory_hint": "Fresh dishes: no control. Bottled drinks: SKU with kardex. Recipe: deduct ingredients (coming soon).",
         "section_status": "Status",
         "fields": {
             "categoria": "Category",
@@ -207,7 +217,18 @@
             "orden": "Order",
             "orden_hint": "Within the category, lower numbers appear first.",
             "activo": "Active product",
-            "activo_hint": "Inactive products are hidden from sales."
+            "activo_hint": "Inactive products are hidden from sales.",
+            "control_inventario": "Inventory control",
+            "control_none": "No control (unlimited)",
+            "control_sku": "SKU — deduct on sale",
+            "control_recipe": "By recipe (coming soon)",
+            "control_hint": "«No control» means untracked stock (legacy −1). Use SKU for bottled drinks and similar.",
+            "stock_inicial": "Initial stock",
+            "stock_inicial_hint": "Only when creating or enabling SKU control. Then adjust in Warehouse.",
+            "stock_actual": "Current stock: {{stock}} (adjust in Warehouse)",
+            "stock_minimo": "Minimum stock",
+            "stock_minimo_hint": "Warehouse alert when stock reaches this level."
         }
     }
 }
+

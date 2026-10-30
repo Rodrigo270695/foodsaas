@@ -1,0 +1,89 @@
+{
+    "title": "Warehouse",
+    "description": "Stock for controlled products (SKU) and kardex of in/out movements.",
+    "subtitle": "Only products with inventory control. Untracked dishes stay out of this list.",
+    "actions": {
+        "export": "Export stock",
+        "adjust": "Record movement",
+        "view_kardex": "View kardex",
+        "back": "Back to warehouse"
+    },
+    "stats": {
+        "sku": "Tracked",
+        "bajo": "Low stock",
+        "recipe": "Recipe-based",
+        "matches": "Matches"
+    },
+    "search_placeholder": "Search product or code…",
+    "filters": {
+        "control_all": "All controlled",
+        "control_sku": "SKU",
+        "control_recipe": "Recipe",
+        "alerta_all": "All alerts",
+        "alerta_bajo": "Low stock",
+        "alerta_ok": "No alert"
+    },
+    "columns": {
+        "producto": "Product",
+        "categoria": "Category",
+        "control": "Control",
+        "stock": "Stock",
+        "minimo": "Minimum",
+        "acciones": "Actions"
+    },
+    "control": {
+        "sku": "SKU",
+        "recipe": "Recipe",
+        "none": "No control"
+    },
+    "row": {
+        "bajo": "Low",
+        "actions_for": "Actions for {{name}}",
+        "recipe_hint": "Ingredient deduction (coming soon)"
+    },
+    "empty": {
+        "title": "No warehouse products",
+        "description": "Set menu items to «SKU control» (e.g. sodas) so they appear here.",
+        "no_results_title": "No results",
+        "no_results_description": "Nothing matches the current filters."
+    },
+    "toast": {
+        "load_error": "Could not load the warehouse."
+    },
+    "kardex": {
+        "title": "Kardex",
+        "subtitle": "History of in/out/adjustments for «{{name}}».",
+        "export": "Export kardex",
+        "empty_title": "No movements",
+        "empty_description": "Record the first stock entry or adjustment.",
+        "columns": {
+            "fecha": "Date",
+            "tipo": "Type",
+            "cantidad": "Qty",
+            "anterior": "Before",
+            "despues": "After",
+            "motivo": "Reason",
+            "usuario": "User"
+        }
+    },
+    "movimiento_form": {
+        "title": "Record movement",
+        "description": "Update stock for «{{name}}». It is logged in the kardex.",
+        "submit": "Record",
+        "stock_actual": "Current stock: {{stock}}",
+        "fields": {
+            "tipo": "Type",
+            "cantidad": "Quantity",
+            "stock_nuevo": "Resulting stock",
+            "motivo": "Reason",
+            "motivo_placeholder": "Optional (purchase, waste, count…)"
+        },
+        "tipos": {
+            "entrada": "Inbound",
+            "salida": "Outbound",
+            "ajuste": "Set quantity",
+            "merma": "Waste",
+            "venta": "Manual sale"
+        }
+    }
+}

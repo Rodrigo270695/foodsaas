@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Http\Requests\MenuCartaRequest;
 use App\Models\MenuCarta;
 use App\Models\MenuCartaItem;
 use App\Models\ProductoCarta;
 use App\Models\RestaurantSetting;
+use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,20 +17,27 @@ use Inertia\Response;
 
 class CartaMenuController extends Controller
 {
+    use ResolvesActiveSede;
     use ResolvesTenantId;
 
     public function index(): Response
     {
         $this->tenantIdOrAbort();
+        $sedeId = ActiveSedeContext::id() ?? '';
 
-        $cartas = MenuCarta::query()
-            ->withCount('items')
-            ->orderByDesc('updated_at')
-            ->get();
+        $cartas = $sedeId === ''
+            ? collect()
+            : MenuCarta::query()
+                ->where('sede_id', $sedeId)
+                ->withCount('items')
+                ->orderByDesc('updated_at')
+                ->get();
 
         return Inertia::render('carta/builder/index', [
             'cartas' => $cartas,
-            'productos_activos' => ProductoCarta::query()->where('activo', true)->count(),
+            'productos_activos' => $sedeId === ''
+                ? 0
+                : ProductoCarta::query()->where('sede_id', $sedeId)->where('activo', true)->count(),
             'logo_url' => RestaurantSetting::current()->logo_url,
         ]);
     }
@@ -36,10 +45,12 @@ class CartaMenuController extends Controller
     public function store(MenuCartaRequest $request): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        $sedeId = $this->activeSedeIdOrAbort();
 
         $data = $request->validated();
         $carta = MenuCarta::query()->create([
             ...$data,
+            'sede_id' => $sedeId,
             'slug' => MenuCarta::uniqueSlug((string) $data['nombre']),
         ]);
 
@@ -51,14 +62,17 @@ class CartaMenuController extends Controller
     public function edit(MenuCarta $menuCarta): Response
     {
         $this->tenantIdOrAbort();
+        $this->assertMenuSede($menuCarta);
 
         $menuCarta->load([
             'items.producto:id,nombre,precio,descripcion,imagen_path,categoria_id,activo',
             'items.producto.categoria:id,nombre',
         ]);
 
+        $sedeId = (string) $menuCarta->sede_id;
         $productos = ProductoCarta::query()
             ->with('categoria:id,nombre')
+            ->where('sede_id', $sedeId)
             ->where('activo', true)
             ->orderBy('orden')
             ->orderBy('nombre')
@@ -84,6 +98,7 @@ class CartaMenuController extends Controller
     public function update(MenuCartaRequest $request, MenuCarta $menuCarta): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        $this->assertMenuSede($menuCarta);
 
         $data = $request->validated();
         if ($menuCarta->nombre !== $data['nombre']) {
@@ -98,6 +113,7 @@ class CartaMenuController extends Controller
     public function destroy(MenuCarta $menuCarta): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        $this->assertMenuSede($menuCarta);
 
         $menuCarta->delete();
 
@@ -109,6 +125,7 @@ class CartaMenuController extends Controller
     public function syncItems(Request $request, MenuCarta $menuCarta): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        $this->assertMenuSede($menuCarta);
 
         $validated = $request->validate([
             'pages' => ['required', 'array', 'min:1'],
@@ -118,6 +135,7 @@ class CartaMenuController extends Controller
 
         /** @var array<string, list<string>> $pages */
         $pages = $validated['pages'];
+        $sedeId = (string) $menuCarta->sede_id;
 
         $menuCarta->items()->delete();
 
@@ -128,7 +146,17 @@ class CartaMenuController extends Controller
             }
 
             $ids = array_values(array_unique($productoIds));
+            $validIds = ProductoCarta::query()
+                ->where('sede_id', $sedeId)
+                ->whereIn('id', $ids)
+                ->pluck('id')
+                ->all();
+            $validSet = array_flip($validIds);
+
             foreach ($ids as $index => $productoId) {
+                if (! isset($validSet[$productoId])) {
+                    continue;
+                }
                 MenuCartaItem::query()->create([
                     'carta_id' => $menuCarta->id,
                     'producto_id' => $productoId,
@@ -144,6 +172,7 @@ class CartaMenuController extends Controller
     public function preview(MenuCarta $menuCarta): Response
     {
         $this->tenantIdOrAbort();
+        $this->assertMenuSede($menuCarta);
 
         $menuCarta->load([
             'items.producto:id,nombre,precio,descripcion,imagen_path,categoria_id',
@@ -154,5 +183,10 @@ class CartaMenuController extends Controller
             'carta' => $menuCarta,
             'logo_url' => RestaurantSetting::current()->logo_url,
         ]);
+    }
+
+    private function assertMenuSede(MenuCarta $menuCarta): void
+    {
+        ActiveSedeContext::assertAccessible((string) $menuCarta->sede_id);
     }
 }

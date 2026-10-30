@@ -25,6 +25,8 @@ export type ProductoAreaRef = {
     nombre: string;
 };
 
+export type ControlInventario = 'none' | 'sku' | 'recipe';
+
 export type ProductoCarta = {
     id: string;
     categoria_id: string;
@@ -35,6 +37,9 @@ export type ProductoCarta = {
     precio: string;
     orden: number;
     activo: boolean;
+    control_inventario: ControlInventario;
+    stock: string | null;
+    stock_minimo: string | null;
     imagen_path?: string | null;
     imagen_url?: string | null;
     categoria?: ProductoCategoriaRef | null;

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CartaProductosXlsxExport;
+use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Http\Requests\AreaCartaRequest;
 use App\Http\Requests\CategoriaCartaRequest;
@@ -9,7 +11,10 @@ use App\Http\Requests\ProductoCartaRequest;
 use App\Models\AreaCarta;
 use App\Models\CategoriaCarta;
 use App\Models\ProductoCarta;
+use App\Services\Inventario\KardexService;
+use App\Services\Sedes\CopyCartaToSedeService;
 use App\Support\Plan\PlanLimits;
+use App\Support\Sedes\ActiveSedeContext;
 use App\Tenancy\TenantManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,9 +23,11 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CartaController extends Controller
 {
+    use ResolvesActiveSede;
     use ResolvesTenantId;
 
     private const PER_PAGE_OPTIONS = [10, 12, 15, 20, 25, 50];
@@ -28,6 +35,7 @@ class CartaController extends Controller
     public function index(Request $request): Response
     {
         $this->tenantIdOrAbort();
+        $sedeId = ActiveSedeContext::id() ?? '';
 
         $search = trim((string) $request->string('search', ''));
         $perPageRequested = (int) $request->integer('per_page', 12);
@@ -42,17 +50,23 @@ class CartaController extends Controller
             $estado = 'todos';
         }
 
-        $categorias = CategoriaCarta::query()
-            ->withCount('productos')
-            ->orderBy('orden')
-            ->orderBy('nombre')
-            ->get();
+        $categorias = $sedeId === ''
+            ? collect()
+            : CategoriaCarta::query()
+                ->where('sede_id', $sedeId)
+                ->withCount('productos')
+                ->orderBy('orden')
+                ->orderBy('nombre')
+                ->get();
 
-        $areas = AreaCarta::query()
-            ->withCount('productos')
-            ->orderBy('orden')
-            ->orderBy('nombre')
-            ->get();
+        $areas = $sedeId === ''
+            ? collect()
+            : AreaCarta::query()
+                ->where('sede_id', $sedeId)
+                ->withCount('productos')
+                ->orderBy('orden')
+                ->orderBy('nombre')
+                ->get();
 
         $query = ProductoCarta::query()
             ->with([
@@ -61,6 +75,12 @@ class CartaController extends Controller
             ])
             ->orderBy('orden')
             ->orderBy('nombre');
+
+        if ($sedeId !== '') {
+            $query->where('sede_id', $sedeId);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
 
         if ($search !== '') {
             $query->where(function ($q) use ($search): void {
@@ -102,22 +122,50 @@ class CartaController extends Controller
                 'estado' => $estado,
             ],
             'stats' => [
-                'productos' => ProductoCarta::query()->count(),
-                'productos_activos' => ProductoCarta::query()->where('activo', true)->count(),
+                'productos' => $sedeId === '' ? 0 : ProductoCarta::query()->where('sede_id', $sedeId)->count(),
+                'productos_activos' => $sedeId === '' ? 0 : ProductoCarta::query()->where('sede_id', $sedeId)->where('activo', true)->count(),
                 'categorias' => $categorias->count(),
                 'areas' => $areas->count(),
                 'coincidencias' => $productos->total(),
             ],
             'plan_productos_reached' => PlanLimits::isReached('max_productos'),
+            'copy_targets' => array_values(array_filter(
+                ActiveSedeContext::accessibleCatalog(),
+                static fn (array $s): bool => $s['id'] !== $sedeId,
+            )),
         ]);
+    }
+
+    public function copyToSede(Request $request, CopyCartaToSedeService $copier): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        $from = $this->activeSedeIdOrAbort();
+        $data = $request->validate([
+            'target_sede_id' => ['required', 'uuid'],
+        ]);
+
+        $result = $copier->copy($from, (string) $data['target_sede_id']);
+
+        return back()->with(
+            'success',
+            sprintf(
+                'Copia a sede lista: %d áreas, %d categorías, %d productos, %d cartas.',
+                $result['areas'],
+                $result['categorias'],
+                $result['productos'],
+                $result['menus'],
+            ),
+        );
     }
 
     public function storeArea(AreaCartaRequest $request): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        $sedeId = $this->activeSedeIdOrAbort();
 
         $nombre = (string) $request->validated('nombre');
         $existing = AreaCarta::query()
+            ->where('sede_id', $sedeId)
             ->whereRaw('lower(nombre) = ?', [mb_strtolower($nombre)])
             ->first();
 
@@ -128,8 +176,9 @@ class CartaController extends Controller
             ]);
         }
 
-        $maxOrden = (int) AreaCarta::query()->max('orden');
+        $maxOrden = (int) AreaCarta::query()->where('sede_id', $sedeId)->max('orden');
         $area = AreaCarta::query()->create([
+            'sede_id' => $sedeId,
             'nombre' => $nombre,
             'orden' => $maxOrden + 10,
             'activa' => true,
@@ -159,8 +208,12 @@ class CartaController extends Controller
     public function storeCategoria(CategoriaCartaRequest $request): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        $sedeId = $this->activeSedeIdOrAbort();
 
-        CategoriaCarta::query()->create($request->validated());
+        CategoriaCarta::query()->create([
+            ...$request->validated(),
+            'sede_id' => $sedeId,
+        ]);
 
         return back()->with('success', 'Categoría creada correctamente.');
     }
@@ -192,13 +245,30 @@ class CartaController extends Controller
     public function storeProducto(
         ProductoCartaRequest $request,
         TenantManager $tenants,
+        KardexService $kardex,
     ): RedirectResponse {
         $this->tenantIdOrAbort();
 
+        $sedeId = $this->activeSedeIdOrAbort();
         $data = $this->productoPayload($request);
+        $stockInicial = (float) ($request->validated('stock_inicial') ?? 0);
+        unset($data['stock_inicial']);
+        $data['sede_id'] = $sedeId;
+
+        if ($data['control_inventario'] !== ProductoCarta::CONTROL_SKU) {
+            $data['stock'] = null;
+            $data['stock_minimo'] = null;
+        } else {
+            $data['stock'] = 0;
+        }
+
         $producto = ProductoCarta::query()->create($data);
         $this->applyProductoImagen($producto, $request, $tenants);
         $producto->save();
+
+        if ($producto->tracksSkuStock()) {
+            $kardex->stockInicial($producto, $stockInicial);
+        }
 
         return back()->with('success', 'Producto creado correctamente.');
     }
@@ -207,14 +277,93 @@ class CartaController extends Controller
         ProductoCartaRequest $request,
         ProductoCarta $productoCarta,
         TenantManager $tenants,
+        KardexService $kardex,
     ): RedirectResponse {
         $this->tenantIdOrAbort();
 
-        $productoCarta->fill($this->productoPayload($request));
+        $data = $this->productoPayload($request);
+        unset($data['stock_inicial']);
+
+        $prevControl = $productoCarta->control_inventario;
+        $newControl = (string) $data['control_inventario'];
+
+        if ($newControl !== ProductoCarta::CONTROL_SKU) {
+            $data['stock'] = null;
+            $data['stock_minimo'] = null;
+        } else {
+            // El stock operativo solo se mueve por kardex; conservar el actual.
+            unset($data['stock']);
+            if ($prevControl !== ProductoCarta::CONTROL_SKU) {
+                $data['stock'] = 0;
+            }
+        }
+
+        $productoCarta->fill($data);
         $this->applyProductoImagen($productoCarta, $request, $tenants);
         $productoCarta->save();
 
+        if (
+            $prevControl !== ProductoCarta::CONTROL_SKU
+            && $productoCarta->tracksSkuStock()
+        ) {
+            $stockInicial = (float) ($request->validated('stock_inicial') ?? 0);
+            $kardex->stockInicial($productoCarta, $stockInicial);
+        }
+
         return back()->with('success', 'Producto actualizado correctamente.');
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $search = trim((string) $request->string('search', ''));
+        $categoriaId = (string) $request->string('categoria_id', '');
+        $estado = (string) $request->string('estado', 'todos');
+
+        $sedeId = ActiveSedeContext::id() ?? '';
+
+        $query = ProductoCarta::query()
+            ->with([
+                'categoria:id,nombre',
+                'area:id,nombre',
+            ])
+            ->orderBy('orden')
+            ->orderBy('nombre');
+
+        if ($sedeId !== '') {
+            $query->where('sede_id', $sedeId);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search): void {
+                $q->where('nombre', 'ilike', "%{$search}%")
+                    ->orWhere('codigo', 'ilike', "%{$search}%")
+                    ->orWhere('descripcion', 'ilike', "%{$search}%");
+            });
+        }
+
+        if ($categoriaId !== '') {
+            $query->where('categoria_id', $categoriaId);
+        }
+
+        if ($estado === 'activos') {
+            $query->where('activo', true);
+        } elseif ($estado === 'inactivos') {
+            $query->where('activo', false);
+        }
+
+        $exporter = new CartaProductosXlsxExport;
+
+        return response()->streamDownload(
+            fn () => $exporter->streamTo($query),
+            'carta-productos-'.now()->format('Y-m-d-His').'.xlsx',
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ],
+        );
     }
 
     public function destroyProducto(ProductoCarta $productoCarta): RedirectResponse
@@ -233,7 +382,7 @@ class CartaController extends Controller
     private function productoPayload(ProductoCartaRequest $request): array
     {
         /** @var array<string, mixed> $data */
-        $data = $request->safe()->except(['imagen', 'clear_imagen']);
+        $data = $request->safe()->except(['imagen', 'clear_imagen', 'stock_inicial']);
 
         return $data;
     }

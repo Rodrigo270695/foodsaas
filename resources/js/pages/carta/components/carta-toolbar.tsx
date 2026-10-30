@@ -2,35 +2,22 @@ import {
     CheckCircle2,
     FolderOpen,
     LayoutGrid,
-    MoreHorizontal,
-    Pencil,
     Tag,
-    Trash2,
     UtensilsCrossed,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     InlineStats,
-    PillFilters,
+    ScrollableEntityFilters,
     SearchField,
     StatusPills,
-    type PillFilterItem,
 } from '@/components/data-page';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import type {
     CartaEstadoFilter,
     CartaStats,
     CategoriaCarta,
 } from '../types';
-
-const ALL_CATEGORIAS = '__all__';
 
 type CartaToolbarProps = {
     categorias: CategoriaCarta[];
@@ -39,8 +26,7 @@ type CartaToolbarProps = {
     estado: CartaEstadoFilter;
     search: string;
     isSearching?: boolean;
-    canUpdate: boolean;
-    canDelete: boolean;
+    canManageCategorias: boolean;
     onCategoriaChange: (categoriaId: string | null) => void;
     onEstadoChange: (estado: CartaEstadoFilter) => void;
     onSearchChange: (search: string) => void;
@@ -55,8 +41,7 @@ export function CartaToolbar({
     estado,
     search,
     isSearching = false,
-    canUpdate,
-    canDelete,
+    canManageCategorias,
     onCategoriaChange,
     onEstadoChange,
     onSearchChange,
@@ -66,70 +51,17 @@ export function CartaToolbar({
     const { t } = useTranslation(['carta', 'common']);
     const inactivos = Math.max(0, stats.productos - stats.productos_activos);
     const areasCount = stats.areas ?? 0;
-    const showCatActions = canUpdate || canDelete;
 
-    const categoriaItems = useMemo<PillFilterItem<string>[]>(() => {
-        const all: PillFilterItem<string> = {
-            value: ALL_CATEGORIAS,
-            label: t('filters.all'),
-            count: stats.productos,
-        };
-
-        const catPills = categorias.map((cat) => ({
-            value: cat.id,
-            label: cat.nombre,
-            count: cat.productos_count ?? 0,
-            muted: !cat.activa,
-            trailing: showCatActions ? (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={t('row.actions_for_category', {
-                                name: cat.nombre,
-                            })}
-                            className="size-8 cursor-pointer"
-                        >
-                            <MoreHorizontal className="size-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-44">
-                        {canUpdate ? (
-                            <DropdownMenuItem
-                                onSelect={() => onEditCategoria(cat)}
-                                className="cursor-pointer gap-2"
-                            >
-                                <Pencil className="size-4" />
-                                {t('common:actions.edit')}
-                            </DropdownMenuItem>
-                        ) : null}
-                        {canDelete ? (
-                            <DropdownMenuItem
-                                onSelect={() => onDeleteCategoria(cat)}
-                                className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                            >
-                                <Trash2 className="size-4" />
-                                {t('common:actions.delete')}
-                            </DropdownMenuItem>
-                        ) : null}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            ) : undefined,
-        }));
-
-        return [all, ...catPills];
-    }, [
-        categorias,
-        stats.productos,
-        showCatActions,
-        canUpdate,
-        canDelete,
-        onEditCategoria,
-        onDeleteCategoria,
-        t,
-    ]);
+    const entityItems = useMemo(
+        () =>
+            categorias.map((cat) => ({
+                id: cat.id,
+                label: cat.nombre,
+                count: cat.productos_count ?? 0,
+                muted: !cat.activa,
+            })),
+        [categorias],
+    );
 
     const estadoOptions = useMemo(
         () =>
@@ -144,17 +76,35 @@ export function CartaToolbar({
     return (
         <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <PillFilters
+                <ScrollableEntityFilters
                     aria-label={t('category_filter_label')}
-                    items={categoriaItems}
-                    value={categoriaId ?? ALL_CATEGORIAS}
-                    clearValue={ALL_CATEGORIAS}
-                    toggleOff
-                    onChange={(value) =>
-                        onCategoriaChange(
-                            value === ALL_CATEGORIAS ? null : value,
-                        )
+                    items={entityItems}
+                    value={categoriaId}
+                    allLabel={t('filters.all')}
+                    allCount={stats.productos}
+                    onChange={onCategoriaChange}
+                    searchPlaceholder={t('category_search', {
+                        defaultValue: 'Buscar categoría…',
+                    })}
+                    canManage={canManageCategorias}
+                    manageLabel={(name) =>
+                        t('row.actions_for_category', { name })
                     }
+                    onEdit={(id) => {
+                        const cat = categorias.find((c) => c.id === id);
+                        if (cat) {
+                            onEditCategoria(cat);
+                        }
+                    }}
+                    onDelete={(id) => {
+                        const cat = categorias.find((c) => c.id === id);
+                        if (cat) {
+                            onDeleteCategoria(cat);
+                        }
+                    }}
+                    editLabel={t('common:actions.edit')}
+                    deleteLabel={t('common:actions.delete')}
+                    className="min-w-0 flex-1"
                 />
 
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

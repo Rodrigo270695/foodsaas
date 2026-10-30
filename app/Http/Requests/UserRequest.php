@@ -205,6 +205,14 @@ class UserRequest extends FormRequest
         }
 
         $tenantKey = (string) $tenantId;
+        $role = (string) $this->input('role', '');
+
+        // Admin siempre ve todas las sedes; no exige selección manual.
+        if (SedeAssignment::isTenantAdminRole($role)) {
+            return [
+                'sede_ids' => ['nullable', 'array'],
+            ];
+        }
 
         if (! SedeAssignment::requiresExplicitAssignment($tenantKey)) {
             return [
