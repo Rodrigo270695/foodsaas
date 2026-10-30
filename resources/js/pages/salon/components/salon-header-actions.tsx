@@ -1,4 +1,5 @@
 import { Copy, LayoutGrid, Plus, RefreshCw } from 'lucide-react';
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,21 @@ type SalonHeaderActionsProps = {
     onNewMesa: () => void;
 };
 
+function ActionTip({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactElement;
+}) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>{children}</TooltipTrigger>
+            <TooltipContent side="bottom">{label}</TooltipContent>
+        </Tooltip>
+    );
+}
+
 export function SalonHeaderActions({
     isLoading,
     mesasLimitReached,
@@ -32,82 +48,90 @@ export function SalonHeaderActions({
 }: SalonHeaderActionsProps) {
     const { t } = useTranslation('salon');
 
+    const newMesaTip = mesasLimitReached
+        ? t('plan_limit.max_mesas')
+        : !hasZonas
+          ? t('mesa_form.no_zonas')
+          : t('actions.new_mesa');
+
     return (
         <div className="flex flex-row flex-wrap items-center justify-end gap-2">
-            <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={onRefresh}
-                disabled={isLoading}
-                aria-label={t('floor.refresh')}
-                className="cursor-pointer"
-            >
-                <RefreshCw
-                    className={cn('size-4', isLoading && 'animate-spin')}
-                    strokeWidth={2.5}
-                />
-            </Button>
-            {canCopy && onCopy ? (
-                <Can permission="salon.create">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onCopy}
-                        className="cursor-pointer gap-2"
-                    >
-                        <Copy className="size-4" strokeWidth={2.5} />
-                        <span className="hidden sm:inline">
-                            {t('actions.copy_sede', {
-                                defaultValue: 'Copiar a sede',
-                            })}
-                        </span>
-                    </Button>
-                </Can>
-            ) : null}
-            <Can permission="salon.create">
+            <ActionTip label={t('floor.refresh')}>
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={onNewZona}
-                    className="cursor-pointer gap-2"
+                    size="icon"
+                    onClick={onRefresh}
+                    disabled={isLoading}
+                    aria-label={t('floor.refresh')}
+                    className="cursor-pointer"
                 >
-                    <LayoutGrid className="size-4" strokeWidth={2.5} />
-                    <span className="hidden sm:inline">
-                        {t('actions.new_zona')}
-                    </span>
+                    <RefreshCw
+                        className={cn('size-4', isLoading && 'animate-spin')}
+                        strokeWidth={2.5}
+                    />
                 </Button>
-            </Can>
+            </ActionTip>
+
+            {canCopy && onCopy ? (
+                <Can permission="salon.create">
+                    <ActionTip
+                        label={t('actions.copy_sede', {
+                            defaultValue: 'Copiar a sede',
+                        })}
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onCopy}
+                            className="cursor-pointer gap-2"
+                        >
+                            <Copy className="size-4" strokeWidth={2.5} />
+                            <span className="hidden sm:inline">
+                                {t('actions.copy_sede', {
+                                    defaultValue: 'Copiar a sede',
+                                })}
+                            </span>
+                        </Button>
+                    </ActionTip>
+                </Can>
+            ) : null}
+
             <Can permission="salon.create">
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <span className="inline-flex">
-                            <Button
-                                type="button"
-                                onClick={onNewMesa}
-                                disabled={mesasLimitReached || !hasZonas}
-                                className="cursor-pointer gap-2"
-                            >
-                                <Plus className="size-4" strokeWidth={2.5} />
-                                <span className="hidden sm:inline">
-                                    {t('actions.new_mesa')}
-                                </span>
-                                <span className="sm:hidden">
-                                    {t('actions.new_mesa_short')}
-                                </span>
-                            </Button>
+                <ActionTip label={t('actions.new_zona')}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onNewZona}
+                        className="cursor-pointer gap-2"
+                    >
+                        <LayoutGrid className="size-4" strokeWidth={2.5} />
+                        <span className="hidden sm:inline">
+                            {t('actions.new_zona')}
                         </span>
-                    </TooltipTrigger>
-                    {mesasLimitReached ? (
-                        <TooltipContent side="bottom" className="max-w-xs">
-                            {t('plan_limit.max_mesas')}
-                        </TooltipContent>
-                    ) : !hasZonas ? (
-                        <TooltipContent side="bottom" className="max-w-xs">
-                            {t('mesa_form.no_zonas')}
-                        </TooltipContent>
-                    ) : null}
-                </Tooltip>
+                    </Button>
+                </ActionTip>
+            </Can>
+
+            <Can permission="salon.create">
+                <ActionTip label={newMesaTip}>
+                    <span className="inline-flex">
+                        <Button
+                            type="button"
+                            onClick={onNewMesa}
+                            disabled={mesasLimitReached || !hasZonas}
+                            className="cursor-pointer gap-2"
+                        >
+                            <Plus className="size-4" strokeWidth={2.5} />
+                            <span className="hidden sm:inline">
+                                {t('actions.new_mesa')}
+                            </span>
+                            <span className="sm:hidden">
+                                {t('actions.new_mesa_short')}
+                            </span>
+                        </Button>
+                    </span>
+                </ActionTip>
             </Can>
         </div>
     );

@@ -73,61 +73,56 @@ export function ActiveSedeSwitcher({
     };
 
     const control: ReactNode = (
-        <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="hidden text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:block">
-                {t('sede_switcher.label', { defaultValue: 'Sede activa' })}
-            </span>
-            <Select
-                value={active.id ?? undefined}
-                onValueChange={switchSede}
-                disabled={switching || !canSwitch}
+        <Select
+            value={active.id ?? undefined}
+            onValueChange={switchSede}
+            disabled={switching || !canSwitch}
+        >
+            <SelectTrigger
+                size="sm"
+                className={cn(
+                    'h-9 min-w-[10.5rem] max-w-[18rem] cursor-pointer gap-1.5 border-[#660033]/25 bg-background shadow-none',
+                    'hover:border-[#660033]/45 focus-visible:border-[#660033]/50 focus-visible:ring-[#660033]/20',
+                    !canSwitch &&
+                        'cursor-default opacity-100 disabled:opacity-100',
+                )}
+                aria-label={t('sede_switcher.label', {
+                    defaultValue: 'Sede activa',
+                })}
             >
-                <SelectTrigger
-                    size="sm"
-                    className={cn(
-                        'h-9 min-w-[10.5rem] max-w-[18rem] cursor-pointer gap-1.5 border-[#660033]/25 bg-background shadow-none',
-                        'hover:border-[#660033]/45 focus-visible:border-[#660033]/50 focus-visible:ring-[#660033]/20',
-                        !canSwitch &&
-                            'cursor-default opacity-100 disabled:opacity-100',
-                    )}
-                    aria-label={t('sede_switcher.label', {
-                        defaultValue: 'Sede activa',
+                <Building2 className="size-3.5 shrink-0 text-[#660033]" />
+                <SelectValue
+                    placeholder={t('sede_switcher.placeholder', {
+                        defaultValue: 'Elige sede',
                     })}
                 >
-                    <Building2 className="size-3.5 shrink-0 text-[#660033]" />
-                    <SelectValue
-                        placeholder={t('sede_switcher.placeholder', {
-                            defaultValue: 'Elige sede',
-                        })}
-                    >
-                        {current ? (
-                            <span className="flex min-w-0 items-center gap-1.5">
-                                <span className="truncate font-medium">
-                                    {current.nombre}
-                                </span>
-                                <span className="hidden shrink-0 text-[11px] text-muted-foreground sm:inline">
-                                    {current.codigo}
-                                </span>
+                    {current ? (
+                        <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="truncate font-medium">
+                                {current.nombre}
                             </span>
-                        ) : null}
-                    </SelectValue>
-                </SelectTrigger>
-                <SelectContent align="end" className="min-w-[14rem]">
-                    {active.sedes.map((sede) => (
-                        <SelectItem key={sede.id} value={sede.id}>
-                            <span className="flex min-w-0 flex-col gap-0.5 py-0.5">
-                                <span className="truncate font-medium">
-                                    {sede.nombre}
-                                </span>
-                                <span className="text-[11px] text-muted-foreground">
-                                    {sede.codigo}
-                                </span>
+                            <span className="hidden shrink-0 text-[11px] text-muted-foreground sm:inline">
+                                {current.codigo}
                             </span>
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
+                        </span>
+                    ) : null}
+                </SelectValue>
+            </SelectTrigger>
+            <SelectContent align="end" className="min-w-[14rem]">
+                {active.sedes.map((sede) => (
+                    <SelectItem key={sede.id} value={sede.id}>
+                        <span className="flex min-w-0 flex-col gap-0.5 py-0.5">
+                            <span className="truncate font-medium">
+                                {sede.nombre}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground">
+                                {sede.codigo}
+                            </span>
+                        </span>
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
     );
 
     return (
@@ -138,7 +133,14 @@ export function ActiveSedeSwitcher({
             )}
         >
             {canSwitch ? (
-                control
+                <Tooltip>
+                    <TooltipTrigger asChild>{control}</TooltipTrigger>
+                    <TooltipContent side="bottom">
+                        {t('sede_switcher.label', {
+                            defaultValue: 'Sede activa',
+                        })}
+                    </TooltipContent>
+                </Tooltip>
             ) : (
                 <Tooltip>
                     <TooltipTrigger asChild>{control}</TooltipTrigger>
@@ -158,7 +160,7 @@ export function ActiveSedeSwitcher({
                             type="button"
                             variant="outline"
                             size="icon"
-                            className="mt-auto size-9 shrink-0 cursor-pointer"
+                            className="size-9 shrink-0 cursor-pointer"
                             onClick={onCopyToSede}
                             aria-label={t('sede_switcher.copy', {
                                 defaultValue: 'Copiar a otra sede',

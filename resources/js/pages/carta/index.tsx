@@ -426,6 +426,7 @@ export default function Index({
                             <DataPagination
                                 meta={paginated}
                                 onPerPageChange={setPerPage}
+                                perPageOptions={[10, 12, 15, 20, 25, 50]}
                                 preservedQuery={{
                                     search: filters.search || undefined,
                                     per_page: filters.per_page,

@@ -142,6 +142,12 @@ export function DataPagination<T>({
 
     const pageRange = buildPageRange(currentPage, totalPages);
 
+    // Si el backend usa un per_page fuera de la lista (ej. 12 en Carta),
+    // Radix Select queda en blanco sin un SelectItem que coincida.
+    const resolvedPerPageOptions = Array.from(
+        new Set([...perPageOptions, meta.per_page].filter((n) => n > 0)),
+    ).sort((a, b) => a - b);
+
     return (
         <nav
             aria-label="Paginación"
@@ -185,16 +191,18 @@ export function DataPagination<T>({
                             <SelectTrigger
                                 id="per-page-select"
                                 size="sm"
-                                className="h-8 w-22 cursor-pointer"
+                                className="h-8 w-[4.75rem] shrink-0 cursor-pointer justify-between gap-1 px-2.5 tabular-nums"
                             >
-                                <SelectValue />
+                                <SelectValue placeholder={String(meta.per_page)}>
+                                    {meta.per_page}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent side="top" align="end">
-                                {perPageOptions.map((opt) => (
+                                {resolvedPerPageOptions.map((opt) => (
                                     <SelectItem
                                         key={opt}
                                         value={String(opt)}
-                                        className="cursor-pointer"
+                                        className="cursor-pointer tabular-nums"
                                     >
                                         {opt}
                                     </SelectItem>

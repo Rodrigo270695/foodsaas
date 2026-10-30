@@ -38,6 +38,11 @@ export {
     ScrollableEntityFilters,
     type EntityFilterItem,
 } from './scrollable-entity-filters';
+export {
+    accentForEntityId,
+    ENTITY_ACCENTS,
+    type EntityAccent,
+} from './entity-accent';
 export { SearchField, type SearchFieldProps } from './search-field';
 export {
     StatBadge,

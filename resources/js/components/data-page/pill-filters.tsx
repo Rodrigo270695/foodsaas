@@ -1,11 +1,18 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import {
+    accentForEntityId,
+    ENTITY_ACCENT_NEUTRAL,
+    type EntityAccent,
+} from './entity-accent';
 
 export type PillFilterItem<TValue extends string> = {
     value: TValue;
     label: string;
     count?: number;
     muted?: boolean;
+    /** Si false, no aplica acento de color (p. ej. “Todos”). */
+    colored?: boolean;
     /** Acciones al lado del pill (menú ⋯, etc.). */
     trailing?: ReactNode;
 };
@@ -19,10 +26,12 @@ export type PillFiltersProps<TValue extends string> = {
     clearValue?: TValue;
     className?: string;
     'aria-label'?: string;
+    /** Colorea cada pill con un acento estable por value. */
+    colored?: boolean;
 };
 
 /**
- * Chips redondos con conteo (zonas, categorías, etc.).
+ * Chips con conteo (zonas, categorías…). Truncan label, touch ≥36–44px.
  */
 export function PillFilters<TValue extends string>({
     items,
@@ -32,6 +41,7 @@ export function PillFilters<TValue extends string>({
     clearValue,
     className,
     'aria-label': ariaLabel,
+    colored = false,
 }: PillFiltersProps<TValue>) {
     return (
         <div
@@ -41,14 +51,20 @@ export function PillFilters<TValue extends string>({
         >
             {items.map((item) => {
                 const selected = value === item.value;
+                const useColor = colored && item.colored !== false;
+                const accent: EntityAccent = useColor
+                    ? accentForEntityId(String(item.value))
+                    : ENTITY_ACCENT_NEUTRAL;
 
                 return (
                     <div
                         key={item.value}
-                        className="inline-flex items-center gap-0.5"
+                        className="inline-flex max-w-full items-center gap-0.5"
                     >
                         <button
                             type="button"
+                            aria-pressed={selected}
+                            title={item.label}
                             onClick={() => {
                                 if (
                                     toggleOff &&
@@ -61,16 +77,35 @@ export function PillFilters<TValue extends string>({
                                 onChange(item.value);
                             }}
                             className={cn(
-                                'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors',
-                                selected
-                                    ? 'border-brand-600 bg-brand-600 text-white'
-                                    : 'border-border/70 bg-background text-foreground hover:bg-muted/50',
-                                item.muted && !selected && 'opacity-60',
+                                'inline-flex h-10 max-w-[14rem] cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors sm:h-9',
+                                'focus-visible:ring-2 focus-visible:ring-[#660033]/30 focus-visible:outline-none',
+                                selected ? accent.selected : accent.idle,
+                                item.muted && !selected && 'opacity-55',
                             )}
                         >
-                            {item.label}
+                            {useColor ? (
+                                <span
+                                    className={cn(
+                                        'size-2 shrink-0 rounded-full',
+                                        selected
+                                            ? 'bg-white/90'
+                                            : accent.dot,
+                                    )}
+                                    aria-hidden
+                                />
+                            ) : null}
+                            <span className="min-w-0 truncate whitespace-nowrap">
+                                {item.label}
+                            </span>
                             {typeof item.count === 'number' ? (
-                                <span className="tabular-nums opacity-80">
+                                <span
+                                    className={cn(
+                                        'shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums leading-none',
+                                        selected
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-black/5 text-foreground/70',
+                                    )}
+                                >
                                     {item.count}
                                 </span>
                             ) : null}
