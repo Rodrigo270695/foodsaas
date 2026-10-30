@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Exports\TenantsXlsxExport;
+use App\Http\Requests\RecoverTenantAdminAccessRequest;
 use App\Http\Requests\TenantRequest;
 use App\Models\Departamento;
 use App\Models\Plan;
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantAdminAccessRecoverer;
 use App\Services\Tenancy\TenantProvisioner;
 use App\Support\Restaurante\RestaurantBrandingUrls;
 use App\Tenancy\TenantManager;
@@ -239,6 +241,51 @@ class TenantController extends Controller
         $manager->flushCacheFor($tenant->fresh() ?? $tenant);
 
         return back()->with('success', 'Tenant actualizado correctamente.');
+    }
+
+    /**
+     * Corrige el correo de login del admin_restaurante y asigna una contraseña
+     * temporal. Devuelve un enlace de bienvenida (~48h) para que el cliente
+     * defina su propia clave.
+     */
+    public function recoverAdminAccess(
+        RecoverTenantAdminAccessRequest $request,
+        Tenant $tenant,
+        TenantAdminAccessRecoverer $recoverer,
+        TenantProvisioner $provisioner,
+    ): RedirectResponse {
+        if ($tenant->estado === 'cancelled') {
+            throw ValidationException::withMessages([
+                'email' => 'No se puede recuperar el acceso de un tenant cancelado.',
+            ]);
+        }
+
+        $data = $request->validated();
+        $mustChange = (bool) ($data['must_change_password'] ?? true);
+
+        $result = $recoverer->recover(
+            $tenant,
+            (string) $data['email'],
+            (string) $data['password'],
+            $mustChange,
+        );
+
+        $bootstrapUrl = $provisioner->issueBootstrapLoginUrl($tenant, $result['user']);
+
+        $message = ($result['created'] ?? false)
+            ? sprintf(
+                'Usuario admin_restaurante creado: %s. Copia el enlace de bienvenida y envíaselo al cliente.',
+                $result['user']->email,
+            )
+            : sprintf(
+                'Acceso del admin actualizado: %s. Copia el enlace de bienvenida y envíaselo al cliente.',
+                $result['user']->email,
+            );
+
+        return back()
+            ->with('success', $message)
+            ->with('copy_url', $bootstrapUrl)
+            ->with('copy_label', 'Enlace de bienvenida (~48h)');
     }
 
     public function suspend(Request $request, Tenant $tenant, TenantManager $manager): RedirectResponse

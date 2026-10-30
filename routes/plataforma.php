@@ -29,6 +29,9 @@ Route::middleware(['auth', 'verified', 'tenant.none'])->prefix('plataforma')->na
         ->post('tenants/{tenant}/provision-schema', [TenantController::class, 'provisionSchema'])
         ->name('tenants.provision-schema');
     Route::middleware('permission:plataforma-tenants.update')
+        ->post('tenants/{tenant}/recover-admin-access', [TenantController::class, 'recoverAdminAccess'])
+        ->name('tenants.recover-admin-access');
+    Route::middleware('permission:plataforma-tenants.update')
         ->match(['put', 'patch'], 'tenants/{tenant}', [TenantController::class, 'update'])
         ->name('tenants.update');
     Route::middleware('permission:plataforma-tenants.delete')

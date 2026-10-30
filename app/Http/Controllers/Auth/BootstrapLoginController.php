@@ -50,12 +50,17 @@ class BootstrapLoginController extends Controller
             'bootstrap_login_expires_at' => null,
         ])->save();
 
-        Auth::guard('web')->login($user->fresh() ?? $user);
+        $fresh = $user->fresh() ?? $user;
+        Auth::guard('web')->login($fresh);
         $request->session()->regenerate();
 
-        return redirect()
-            ->route('security.edit')
-            ->with('success', 'Bienvenido. Elige tu contraseña para entrar a tu restaurante.');
+        if ($fresh->must_change_password === true) {
+            return redirect()
+                ->route('password.change.form')
+                ->with('success', 'Bienvenido. Elige tu contraseña para entrar a tu restaurante.');
+        }
+
+        return redirect()->route('dashboard');
     }
 
     private function resolveBootstrapUser(string $token): ?User

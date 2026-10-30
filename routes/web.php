@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\TenantImpersonationController;
 use Illuminate\Support\Facades\Route;
@@ -20,11 +21,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('impersonate.leave');
 });
 
-Route::middleware(['auth', 'verified', 'tenant.match-user', 'permission:dashboard.view'])->group(function () {
+/*
+| Cambio obligatorio de contraseña (must_change_password).
+| Fuera del middleware force-password-change para evitar redirect loop.
+*/
+Route::middleware(['auth', 'tenant.match-user'])->group(function (): void {
+    Route::get('cuenta/cambiar-password', [ChangePasswordController::class, 'show'])
+        ->name('password.change.form');
+    Route::post('cuenta/cambiar-password', [ChangePasswordController::class, 'update'])
+        ->middleware('throttle:6,1')
+        ->name('password.change.update');
+});
+
+Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-change', 'permission:dashboard.view'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'force-password-change'])->group(function () {
     Route::prefix('geo')->name('geo.')->group(function () {
         Route::get('paises', [GeoController::class, 'paises'])->name('paises');
         Route::get('departamentos', [GeoController::class, 'departamentos'])->name('departamentos');

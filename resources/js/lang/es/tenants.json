@@ -147,21 +147,19 @@
     },
     "recover_admin": {
         "title": "Recuperar acceso del admin",
-        "description": "Crea o corrige el usuario admin_clinica de {{clinic}} (correo + contraseña). Si el tenant se dio de alta a mano y nadie puede entrar, usá esto: aún no existe el usuario hasta que lo guardes aquí.",
+        "description": "Crea o corrige el usuario admin_restaurante de {{clinic}} (correo + contraseña). Si el tenant se dio de alta a mano y nadie puede entrar, usá esto: aún no existe el usuario hasta que lo guardes aquí.",
         "current_email": "Correo actual en el tenant",
         "fields": {
             "email": "Correo válido (login)",
             "password": "Nueva contraseña",
-            "password_hint": "Mínimo 8 caracteres. Compártela por un canal seguro.",
+            "password_hint": "Mínimo 8 caracteres. El cliente la cambiará con el enlace de bienvenida.",
             "password_confirmation": "Confirmar contraseña",
-            "must_change_password": "Obligar a cambiar la contraseña en el próximo inicio de sesión",
-            "notify_client": "Enviar correo y WhatsApp al cliente",
-            "notify_hint": "Correo al email de login. WhatsApp al teléfono de la ficha del tenant ({{phone}})."
+            "must_change_password": "Obligar a cambiar la contraseña en el próximo inicio de sesión"
         },
         "submit": "Guardar acceso",
         "result": {
             "title": "Acceso listo para enviar",
-            "description": "Copia el enlace o reenvíalo al cliente. El toast también tiene «Copiar enlace».",
+            "description": "Copia el enlace y envíaselo al cliente para que defina su contraseña (~48 h).",
             "email": "Correo de ingreso",
             "login": "URL de login",
             "welcome": "Enlace de bienvenida (~48h)",

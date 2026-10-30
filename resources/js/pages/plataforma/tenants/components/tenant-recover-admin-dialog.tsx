@@ -23,14 +23,10 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type RecoverResult = {
     email: string;
     copyUrl: string;
-    warning: string;
-    info: string;
 };
 
 type FlashProps = {
     copy_url?: string | null;
-    warning?: string | null;
-    info?: string | null;
 };
 
 export type TenantRecoverAdminDialogProps = {
@@ -51,7 +47,6 @@ export function TenantRecoverAdminDialog({
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [mustChangePassword, setMustChangePassword] = useState(true);
-    const [notifyClient, setNotifyClient] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [result, setResult] = useState<RecoverResult | null>(null);
@@ -62,7 +57,6 @@ export function TenantRecoverAdminDialog({
             setPassword('');
             setPasswordConfirmation('');
             setMustChangePassword(true);
-            setNotifyClient(true);
             setErrors({});
             setResult(null);
             setCopiedKey(null);
@@ -102,7 +96,6 @@ export function TenantRecoverAdminDialog({
                 password,
                 password_confirmation: passwordConfirmation,
                 must_change_password: mustChangePassword,
-                notify_client: notifyClient,
             },
             {
                 preserveScroll: true,
@@ -115,8 +108,6 @@ export function TenantRecoverAdminDialog({
                     setResult({
                         email: email.trim().toLowerCase(),
                         copyUrl,
-                        warning: typeof flash?.warning === 'string' ? flash.warning : '',
-                        info: typeof flash?.info === 'string' ? flash.info : '',
                     });
                     setPassword('');
                     setPasswordConfirmation('');
@@ -131,8 +122,6 @@ export function TenantRecoverAdminDialog({
             },
         );
     };
-
-    const phoneLabel = tenant?.telefono?.trim() || 'sin teléfono';
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,17 +146,6 @@ export function TenantRecoverAdminDialog({
 
                 {result ? (
                     <div className="space-y-3">
-                        {result.info ? (
-                            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
-                                {result.info}
-                            </p>
-                        ) : null}
-                        {result.warning ? (
-                            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
-                                {result.warning}
-                            </p>
-                        ) : null}
-
                         <CopyRow
                             label={t('recover_admin.result.email')}
                             value={result.email}
@@ -270,28 +248,6 @@ export function TenantRecoverAdminDialog({
                             >
                                 {t('recover_admin.fields.must_change_password')}
                             </Label>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                            <Checkbox
-                                id="recover-notify-client"
-                                checked={notifyClient}
-                                onCheckedChange={(checked) =>
-                                    setNotifyClient(checked === true)
-                                }
-                                className="mt-0.5"
-                            />
-                            <div className="space-y-1">
-                                <Label
-                                    htmlFor="recover-notify-client"
-                                    className="cursor-pointer text-sm font-normal leading-snug"
-                                >
-                                    {t('recover_admin.fields.notify_client')}
-                                </Label>
-                                <p className="text-xs text-muted-foreground">
-                                    {t('recover_admin.fields.notify_hint', { phone: phoneLabel })}
-                                </p>
-                            </div>
                         </div>
 
                         <DialogFooter className="gap-2">

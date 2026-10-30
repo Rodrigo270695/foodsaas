@@ -4,7 +4,7 @@ use App\Http\Controllers\CartaController;
 use App\Http\Controllers\SalonController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user'])
+Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', 'force-password-change'])
     ->group(function (): void {
         Route::prefix('carta')
             ->name('carta.')

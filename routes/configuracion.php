@@ -6,7 +6,7 @@ use App\Http\Controllers\SedeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->prefix('configuracion')->name('configuracion.')->group(function (): void {
+Route::middleware(['auth', 'verified', 'force-password-change'])->prefix('configuracion')->name('configuracion.')->group(function (): void {
     Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.view'])
         ->get('general', [RestaurantSettingController::class, 'show'])
         ->name('general.show');

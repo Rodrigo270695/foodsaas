@@ -144,21 +144,19 @@
     },
     "recover_admin": {
         "title": "Recover admin access",
-        "description": "Create or fix the admin_clinica user for {{clinic}} (email + password). If the tenant was added by hand and nobody can log in, use this: the user does not exist until you save here.",
+        "description": "Create or fix the admin_restaurante user for {{clinic}} (email + password). If the tenant was added by hand and nobody can log in, use this: the user does not exist until you save here.",
         "current_email": "Current email on the tenant",
         "fields": {
             "email": "Valid email (login)",
             "password": "New password",
-            "password_hint": "At least 8 characters. Share it through a secure channel.",
+            "password_hint": "At least 8 characters. The client will change it via the welcome link.",
             "password_confirmation": "Confirm password",
-            "must_change_password": "Require password change on next login",
-            "notify_client": "Email and WhatsApp the client",
-            "notify_hint": "Email goes to the login address. WhatsApp uses the tenant phone ({{phone}})."
+            "must_change_password": "Require password change on next login"
         },
         "submit": "Save access",
         "result": {
             "title": "Access ready to share",
-            "description": "Copy the link or send it to the client. The toast also has “Copy link”.",
+            "description": "Copy the link and send it to the client so they can set their password (~48h).",
             "email": "Login email",
             "login": "Login URL",
             "welcome": "Welcome link (~48h)",
