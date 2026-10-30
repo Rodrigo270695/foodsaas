@@ -1,0 +1,118 @@
+{
+    "title": "Menu",
+    "description": "Menu products organized by categories. Set prices, codes, and visibility for sales and kitchen tickets.",
+    "plan_limit": {
+        "max_productos": "You reached your plan's product limit. Upgrade to add more."
+    },
+    "actions": {
+        "new_product": "New product",
+        "new_product_short": "Product",
+        "new_category": "New category",
+        "new_category_short": "Category",
+        "create_first_product": "Create first product",
+        "create_first_category": "Create first category"
+    },
+    "stats": {
+        "productos": "Products",
+        "activos": "Active",
+        "categorias": "Categories",
+        "matches": "Matches"
+    },
+    "search_placeholder": "Search by name, code, or description...",
+    "filter_label": "Filter by status",
+    "category_filter_label": "Category",
+    "category_all": "All categories",
+    "filters": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+    },
+    "sections": {
+        "categories": "Categories",
+        "categories_hint": "Group your menu. Filter products by category.",
+        "products": "Products"
+    },
+    "columns": {
+        "nombre": "Product",
+        "categoria": "Category",
+        "codigo": "Code",
+        "precio": "Price",
+        "orden": "Order",
+        "estado": "Status",
+        "acciones": "Actions"
+    },
+    "row": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "no_code": "No code",
+        "actions_for_product": "Actions for {{name}}",
+        "actions_for_category": "Actions for {{name}}",
+        "products_count": "{{count}} products",
+        "products_count_one": "1 product"
+    },
+    "empty": {
+        "no_products_title": "No products yet",
+        "no_products_description": "Create categories, then add products to your menu.",
+        "no_results_title": "No results",
+        "no_results_description": "No products match the current filters.",
+        "no_categories_title": "No categories",
+        "no_categories_description": "Create a category to start adding products."
+    },
+    "delete": {
+        "product_confirm": "Delete product \"{{name}}\"? This cannot be undone.",
+        "category_confirm": "Delete category \"{{name}}\"? Only allowed when it has no products."
+    },
+    "aria": {
+        "results_count_one": "{{count}} product found",
+        "results_count_other": "{{count}} products found"
+    },
+    "toast": {
+        "load_error": "Could not load the menu."
+    },
+    "categoria_form": {
+        "title_create": "New category",
+        "title_edit": "Edit category",
+        "description_create": "Group similar items (starters, drinks, etc.).",
+        "description_edit": "Update name, order, or visibility.",
+        "submit_create": "Create category",
+        "submit_edit": "Save changes",
+        "section_basic": "Category details",
+        "section_status": "Status",
+        "fields": {
+            "nombre": "Name",
+            "nombre_placeholder": "E.g. Beverages",
+            "descripcion": "Description",
+            "descripcion_placeholder": "Optional",
+            "orden": "Order",
+            "orden_hint": "Lower numbers appear first on the menu.",
+            "activa": "Active category",
+            "activa_hint": "Inactive categories hide their products in operational lists."
+        }
+    },
+    "producto_form": {
+        "title_create": "New product",
+        "title_edit": "Edit product",
+        "description_create": "Add a menu item with price and category.",
+        "description_edit": "Update details, price, or visibility.",
+        "submit_create": "Create product",
+        "submit_edit": "Save changes",
+        "no_categories": "Create at least one category before adding products.",
+        "section_basic": "Product details",
+        "section_status": "Status",
+        "fields": {
+            "categoria": "Category",
+            "categoria_placeholder": "Select a category",
+            "nombre": "Name",
+            "nombre_placeholder": "E.g. Grilled steak",
+            "codigo": "Code",
+            "codigo_placeholder": "Optional (internal SKU)",
+            "precio": "Price",
+            "descripcion": "Description",
+            "descripcion_placeholder": "Ingredients or customer notes",
+            "orden": "Order",
+            "orden_hint": "Within the category, lower numbers appear first.",
+            "activo": "Active product",
+            "activo_hint": "Inactive products are hidden from sales."
+        }
+    }
+}

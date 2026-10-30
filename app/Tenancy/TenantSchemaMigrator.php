@@ -168,6 +168,10 @@ class TenantSchemaMigrator
                 && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_mode')
                 && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_configurado'),
             '2026_10_30_151000_t013_create_fel_series_table' => Schema::hasTable('fel_series'),
+            '2026_10_30_170000_t014_create_carta_tables' => Schema::hasTable('cat_categorias')
+                && Schema::hasTable('cat_productos'),
+            '2026_10_30_170010_t015_create_salon_tables' => Schema::hasTable('cfg_zonas')
+                && Schema::hasTable('cfg_mesas'),
             default => false,
         };
     }

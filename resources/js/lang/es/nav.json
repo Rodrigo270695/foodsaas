@@ -3,6 +3,7 @@
     "brand_tagline": "Gestión para restaurantes",
     "plan_kicker": "Plan",
     "groups": {
+        "operacion": "Operación",
         "facturacion": "Facturación",
         "configuracion": "Configuración",
         "plataforma_sistema": "Sistema",
@@ -18,6 +19,8 @@
         "usuarios": "Usuarios",
         "general": "General",
         "series": "Series",
+        "carta": "Carta",
+        "salon": "Salón",
         "sedes": "Sedes",
         "platform_settings": "Configuración general",
         "operaciones": "Operaciones",

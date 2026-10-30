@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * @property string $id
+ * @property string $sede_id
+ * @property string $zona_id
+ * @property string $codigo
+ */
+class Mesa extends Model
+{
+    use HasUuids;
+
+    protected $table = 'cfg_mesas';
+
+    protected $fillable = [
+        'sede_id',
+        'zona_id',
+        'codigo',
+        'nombre',
+        'capacidad',
+        'activa',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'capacidad' => 'integer',
+            'activa' => 'boolean',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<Sede, $this>
+     */
+    public function sede(): BelongsTo
+    {
+        return $this->belongsTo(Sede::class, 'sede_id');
+    }
+
+    /**
+     * @return BelongsTo<Zona, $this>
+     */
+    public function zona(): BelongsTo
+    {
+        return $this->belongsTo(Zona::class, 'zona_id');
+    }
+}

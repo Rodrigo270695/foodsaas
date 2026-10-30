@@ -1,0 +1,118 @@
+{
+    "title": "Carta",
+    "description": "Productos del menú organizados por categorías. Define precios, códigos y visibilidad para ventas y comandas.",
+    "plan_limit": {
+        "max_productos": "Alcanzaste el límite de productos de tu plan. Actualiza el plan para agregar más."
+    },
+    "actions": {
+        "new_product": "Nuevo producto",
+        "new_product_short": "Producto",
+        "new_category": "Nueva categoría",
+        "new_category_short": "Categoría",
+        "create_first_product": "Crear primer producto",
+        "create_first_category": "Crear primera categoría"
+    },
+    "stats": {
+        "productos": "Productos",
+        "activos": "Activos",
+        "categorias": "Categorías",
+        "matches": "Coincidencias"
+    },
+    "search_placeholder": "Buscar por nombre, código o descripción...",
+    "filter_label": "Filtrar por estado",
+    "category_filter_label": "Categoría",
+    "category_all": "Todas las categorías",
+    "filters": {
+        "all": "Todos",
+        "active": "Activos",
+        "inactive": "Inactivos"
+    },
+    "sections": {
+        "categories": "Categorías",
+        "categories_hint": "Agrupa tu carta. Puedes filtrar productos por categoría.",
+        "products": "Productos"
+    },
+    "columns": {
+        "nombre": "Producto",
+        "categoria": "Categoría",
+        "codigo": "Código",
+        "precio": "Precio",
+        "orden": "Orden",
+        "estado": "Estado",
+        "acciones": "Acciones"
+    },
+    "row": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "no_code": "Sin código",
+        "actions_for_product": "Acciones para {{name}}",
+        "actions_for_category": "Acciones para {{name}}",
+        "products_count": "{{count}} productos",
+        "products_count_one": "1 producto"
+    },
+    "empty": {
+        "no_products_title": "Aún no hay productos",
+        "no_products_description": "Crea categorías y luego agrega productos a tu carta.",
+        "no_results_title": "Sin resultados",
+        "no_results_description": "Ningún producto coincide con los filtros actuales.",
+        "no_categories_title": "Sin categorías",
+        "no_categories_description": "Crea una categoría para empezar a cargar productos."
+    },
+    "delete": {
+        "product_confirm": "¿Eliminar el producto \"{{name}}\"? Esta acción no se puede deshacer.",
+        "category_confirm": "¿Eliminar la categoría \"{{name}}\"? Solo es posible si no tiene productos."
+    },
+    "aria": {
+        "results_count_one": "{{count}} producto encontrado",
+        "results_count_other": "{{count}} productos encontrados"
+    },
+    "toast": {
+        "load_error": "No se pudo cargar la carta."
+    },
+    "categoria_form": {
+        "title_create": "Nueva categoría",
+        "title_edit": "Editar categoría",
+        "description_create": "Agrupa productos similares (entradas, bebidas, etc.).",
+        "description_edit": "Actualiza nombre, orden o visibilidad de la categoría.",
+        "submit_create": "Crear categoría",
+        "submit_edit": "Guardar cambios",
+        "section_basic": "Datos de la categoría",
+        "section_status": "Estado",
+        "fields": {
+            "nombre": "Nombre",
+            "nombre_placeholder": "Ej. Bebidas",
+            "descripcion": "Descripción",
+            "descripcion_placeholder": "Opcional, visible en algunos canales",
+            "orden": "Orden",
+            "orden_hint": "Menor número aparece primero en la carta.",
+            "activa": "Categoría activa",
+            "activa_hint": "Las categorías inactivas ocultan sus productos en listados operativos."
+        }
+    },
+    "producto_form": {
+        "title_create": "Nuevo producto",
+        "title_edit": "Editar producto",
+        "description_create": "Registra un ítem del menú con precio y categoría.",
+        "description_edit": "Actualiza datos, precio o visibilidad del producto.",
+        "submit_create": "Crear producto",
+        "submit_edit": "Guardar cambios",
+        "no_categories": "Crea al menos una categoría antes de agregar productos.",
+        "section_basic": "Datos del producto",
+        "section_status": "Estado",
+        "fields": {
+            "categoria": "Categoría",
+            "categoria_placeholder": "Selecciona una categoría",
+            "nombre": "Nombre",
+            "nombre_placeholder": "Ej. Lomo saltado",
+            "codigo": "Código",
+            "codigo_placeholder": "Opcional (SKU interno)",
+            "precio": "Precio",
+            "descripcion": "Descripción",
+            "descripcion_placeholder": "Ingredientes o notas para el cliente",
+            "orden": "Orden",
+            "orden_hint": "Dentro de la categoría, menor número aparece primero.",
+            "activo": "Producto activo",
+            "activo_hint": "Los productos inactivos no se muestran en venta."
+        }
+    }
+}

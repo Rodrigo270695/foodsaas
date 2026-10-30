@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support\Plan;
 
+use App\Models\Mesa;
 use App\Models\Plan;
+use App\Models\ProductoCarta;
 use App\Models\Sede;
 use App\Models\Tenant;
 use App\Models\User;
@@ -33,6 +35,8 @@ final class PlanLimits
     private const FEATURE_MODELS = [
         'max_sedes' => Sede::class,
         'max_usuarios' => User::class,
+        'max_productos' => ProductoCarta::class,
+        'max_mesas' => Mesa::class,
     ];
 
     public static function tenant(): ?Tenant

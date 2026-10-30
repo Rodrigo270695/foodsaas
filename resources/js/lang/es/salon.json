@@ -1,0 +1,116 @@
+{
+    "title": "Salón",
+    "description": "Zonas y mesas por sede. Configura capacidad y códigos para comandas y reservas.",
+    "plan_limit": {
+        "max_mesas": "Alcanzaste el límite de mesas de tu plan. Actualiza el plan para agregar más."
+    },
+    "actions": {
+        "new_zona": "Nueva zona",
+        "new_zona_short": "Zona",
+        "new_mesa": "Nueva mesa",
+        "new_mesa_short": "Mesa",
+        "create_first_zona": "Crear primera zona",
+        "create_first_mesa": "Crear primera mesa"
+    },
+    "stats": {
+        "zonas": "Zonas",
+        "mesas": "Mesas",
+        "activas": "Mesas activas",
+        "capacidad": "Capacidad"
+    },
+    "sede_label": "Sede",
+    "filter_label": "Filtrar mesas",
+    "zona_filter_label": "Zona",
+    "zona_all": "Todas las zonas",
+    "filters": {
+        "all": "Todas",
+        "active": "Activas",
+        "inactive": "Inactivas"
+    },
+    "sections": {
+        "zonas": "Zonas",
+        "zonas_hint": "Salón, terraza, barra, etc.",
+        "mesas": "Mesas"
+    },
+    "columns": {
+        "codigo": "Código",
+        "nombre": "Nombre",
+        "zona": "Zona",
+        "capacidad": "Capacidad",
+        "estado": "Estado",
+        "acciones": "Acciones"
+    },
+    "row": {
+        "active": "Activa",
+        "inactive": "Inactiva",
+        "no_name": "Sin nombre",
+        "actions_for_mesa": "Acciones para mesa {{code}}",
+        "actions_for_zona": "Acciones para {{name}}",
+        "mesas_count": "{{count}} mesas",
+        "mesas_count_one": "1 mesa"
+    },
+    "empty": {
+        "no_sede_title": "Sin sede activa",
+        "no_sede_description": "Activa al menos una sede en Configuración › Sedes.",
+        "no_zonas_title": "Sin zonas",
+        "no_zonas_description": "Crea una zona para esta sede antes de registrar mesas.",
+        "no_mesas_title": "Sin mesas",
+        "no_mesas_description": "Agrega mesas a las zonas de esta sede.",
+        "no_results_title": "Sin resultados",
+        "no_results_description": "Ninguna mesa coincide con los filtros actuales."
+    },
+    "delete": {
+        "zona_confirm": "¿Eliminar la zona \"{{name}}\"? Solo es posible si no tiene mesas.",
+        "mesa_confirm": "¿Eliminar la mesa \"{{code}}\"? Esta acción no se puede deshacer."
+    },
+    "aria": {
+        "results_count_one": "{{count}} mesa encontrada",
+        "results_count_other": "{{count}} mesas encontradas"
+    },
+    "toast": {
+        "load_error": "No se pudo cargar el salón."
+    },
+    "zona_form": {
+        "title_create": "Nueva zona",
+        "title_edit": "Editar zona",
+        "description_create": "Define un sector del local (salón, terraza, VIP).",
+        "description_edit": "Actualiza nombre, orden o visibilidad de la zona.",
+        "submit_create": "Crear zona",
+        "submit_edit": "Guardar cambios",
+        "section_basic": "Datos de la zona",
+        "section_status": "Estado",
+        "fields": {
+            "sede": "Sede",
+            "nombre": "Nombre",
+            "nombre_placeholder": "Ej. Terraza",
+            "orden": "Orden",
+            "orden_hint": "Menor número aparece primero en listados.",
+            "activa": "Zona activa",
+            "activa_hint": "Las zonas inactivas ocultan sus mesas en selección."
+        }
+    },
+    "mesa_form": {
+        "title_create": "Nueva mesa",
+        "title_edit": "Editar mesa",
+        "description_create": "Registra código, capacidad y zona de la mesa.",
+        "description_edit": "Actualiza datos o estado de la mesa.",
+        "submit_create": "Crear mesa",
+        "submit_edit": "Guardar cambios",
+        "no_zonas": "Crea al menos una zona en esta sede antes de agregar mesas.",
+        "section_basic": "Datos de la mesa",
+        "section_status": "Estado",
+        "fields": {
+            "sede": "Sede",
+            "zona": "Zona",
+            "zona_placeholder": "Selecciona una zona",
+            "codigo": "Código",
+            "codigo_placeholder": "Ej. T01, M12",
+            "nombre": "Nombre visible",
+            "nombre_hint": "Opcional. Si está vacío se usa el código.",
+            "nombre_placeholder": "Ej. Mesa ventana",
+            "capacidad": "Capacidad",
+            "activa": "Mesa activa",
+            "activa_hint": "Las mesas inactivas no aparecen en comandas ni reservas."
+        }
+    }
+}

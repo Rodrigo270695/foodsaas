@@ -45,6 +45,14 @@ class TenantRolesSeeder extends Seeder
             'description' => 'Gerente de turno.',
             'permissions' => [
                 'dashboard.view',
+                'carta.view',
+                'carta.create',
+                'carta.update',
+                'carta.delete',
+                'salon.view',
+                'salon.create',
+                'salon.update',
+                'salon.delete',
                 'config-general.view',
                 'config-general.update',
                 'series.view',
@@ -56,15 +64,26 @@ class TenantRolesSeeder extends Seeder
         ],
         'cajero' => [
             'description' => 'Caja y ventas.',
-            'permissions' => ['dashboard.view'],
+            'permissions' => [
+                'dashboard.view',
+                'carta.view',
+                'salon.view',
+            ],
         ],
         'mesero' => [
             'description' => 'Mesas y pedidos en sala.',
-            'permissions' => ['dashboard.view'],
+            'permissions' => [
+                'dashboard.view',
+                'carta.view',
+                'salon.view',
+            ],
         ],
         'cocina' => [
             'description' => 'Pedidos en cocina.',
-            'permissions' => ['dashboard.view'],
+            'permissions' => [
+                'dashboard.view',
+                'carta.view',
+            ],
         ],
     ];
 

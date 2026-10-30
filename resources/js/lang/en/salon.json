@@ -1,0 +1,116 @@
+{
+    "title": "Dining room",
+    "description": "Zones and tables per branch. Set capacity and codes for orders and reservations.",
+    "plan_limit": {
+        "max_mesas": "You reached your plan's table limit. Upgrade to add more."
+    },
+    "actions": {
+        "new_zona": "New zone",
+        "new_zona_short": "Zone",
+        "new_mesa": "New table",
+        "new_mesa_short": "Table",
+        "create_first_zona": "Create first zone",
+        "create_first_mesa": "Create first table"
+    },
+    "stats": {
+        "zonas": "Zones",
+        "mesas": "Tables",
+        "activas": "Active tables",
+        "capacidad": "Seating"
+    },
+    "sede_label": "Branch",
+    "filter_label": "Filter tables",
+    "zona_filter_label": "Zone",
+    "zona_all": "All zones",
+    "filters": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+    },
+    "sections": {
+        "zonas": "Zones",
+        "zonas_hint": "Dining room, patio, bar, etc.",
+        "mesas": "Tables"
+    },
+    "columns": {
+        "codigo": "Code",
+        "nombre": "Name",
+        "zona": "Zone",
+        "capacidad": "Capacity",
+        "estado": "Status",
+        "acciones": "Actions"
+    },
+    "row": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "no_name": "No name",
+        "actions_for_mesa": "Actions for table {{code}}",
+        "actions_for_zona": "Actions for {{name}}",
+        "mesas_count": "{{count}} tables",
+        "mesas_count_one": "1 table"
+    },
+    "empty": {
+        "no_sede_title": "No active branch",
+        "no_sede_description": "Enable at least one branch under Settings › Branches.",
+        "no_zonas_title": "No zones",
+        "no_zonas_description": "Create a zone for this branch before adding tables.",
+        "no_mesas_title": "No tables",
+        "no_mesas_description": "Add tables to the zones in this branch.",
+        "no_results_title": "No results",
+        "no_results_description": "No tables match the current filters."
+    },
+    "delete": {
+        "zona_confirm": "Delete zone \"{{name}}\"? Only allowed when it has no tables.",
+        "mesa_confirm": "Delete table \"{{code}}\"? This cannot be undone."
+    },
+    "aria": {
+        "results_count_one": "{{count}} table found",
+        "results_count_other": "{{count}} tables found"
+    },
+    "toast": {
+        "load_error": "Could not load the dining room."
+    },
+    "zona_form": {
+        "title_create": "New zone",
+        "title_edit": "Edit zone",
+        "description_create": "Define an area (dining room, patio, VIP).",
+        "description_edit": "Update name, order, or visibility.",
+        "submit_create": "Create zone",
+        "submit_edit": "Save changes",
+        "section_basic": "Zone details",
+        "section_status": "Status",
+        "fields": {
+            "sede": "Branch",
+            "nombre": "Name",
+            "nombre_placeholder": "E.g. Patio",
+            "orden": "Order",
+            "orden_hint": "Lower numbers appear first in lists.",
+            "activa": "Active zone",
+            "activa_hint": "Inactive zones hide their tables from selection."
+        }
+    },
+    "mesa_form": {
+        "title_create": "New table",
+        "title_edit": "Edit table",
+        "description_create": "Set code, capacity, and zone.",
+        "description_edit": "Update table details or status.",
+        "submit_create": "Create table",
+        "submit_edit": "Save changes",
+        "no_zonas": "Create at least one zone in this branch before adding tables.",
+        "section_basic": "Table details",
+        "section_status": "Status",
+        "fields": {
+            "sede": "Branch",
+            "zona": "Zone",
+            "zona_placeholder": "Select a zone",
+            "codigo": "Code",
+            "codigo_placeholder": "E.g. T01, M12",
+            "nombre": "Display name",
+            "nombre_hint": "Optional. Code is used if empty.",
+            "nombre_placeholder": "E.g. Window table",
+            "capacidad": "Capacity",
+            "activa": "Active table",
+            "activa_hint": "Inactive tables are hidden from orders and reservations."
+        }
+    }
+}

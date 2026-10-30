@@ -14,6 +14,8 @@ import {
     LayoutGrid,
     LineChart,
     MapPin,
+    UtensilsCrossed,
+    Armchair,
     Megaphone,
     MessageCircle,
     Receipt,
@@ -63,6 +65,27 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                 },
             ],
             groups: [
+                {
+                    title: t('groups.operacion'),
+                    icon: UtensilsCrossed,
+                    context: 'tenant',
+                    items: [
+                        {
+                            title: t('items.carta'),
+                            href: '/carta',
+                            icon: UtensilsCrossed,
+                            permission: 'carta.view',
+                            context: 'tenant',
+                        },
+                        {
+                            title: t('items.salon'),
+                            href: '/salon',
+                            icon: Armchair,
+                            permission: 'salon.view',
+                            context: 'tenant',
+                        },
+                    ],
+                },
                 {
                     title: t('groups.facturacion'),
                     icon: Receipt,
