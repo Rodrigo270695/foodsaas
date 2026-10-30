@@ -99,7 +99,7 @@ class RoleController extends Controller
             ],
             'permissions_catalog' => $permissionsCatalog,
             // Demo: bloquear mutaciones (roles por tenant, pero demo es pública).
-            'mutations_locked' => is_public_demo_tenant(),
+            'mutations_locked' => demo_mutations_locked(),
         ]);
     }
 
@@ -219,6 +219,14 @@ class RoleController extends Controller
                 $permissions,
                 static fn (string $name): bool => ClinicAdminScope::isTenantAssignablePermission($name),
             ));
+        } else {
+            // El formulario central no muestra permisos de restaurante (sedes, etc.).
+            // Conservarlos en el rol superadmin para no perderlos al guardar.
+            $preserved = $role->permissions
+                ->pluck('name')
+                ->filter(static fn (string $name): bool => ! ClinicAdminScope::isCentralAssignablePermission($name))
+                ->all();
+            $permissions = array_values(array_unique([...$permissions, ...$preserved]));
         }
 
         // Evitar dejar un rol base de clínica sin permisos (volvería a tumbar
@@ -422,11 +430,11 @@ class RoleController extends Controller
      */
     private function abortIfDemoRolesLocked(): void
     {
-        if (! is_public_demo_tenant()) {
+        if (! demo_mutations_locked()) {
             return;
         }
 
-        abort(403, 'En la clínica demo no se pueden modificar roles ni permisos.');
+        abort(403, __('demo.mutations_blocked'));
     }
 
     /**
@@ -472,17 +480,15 @@ class RoleController extends Controller
      */
     private function buildPermissionsCatalog(Request $request): array
     {
+        $allowed = ClinicAdminScope::assignablePermissionNamesFor($request->user());
+
         $all = Permission::query()
             ->where('guard_name', 'web')
             ->orderBy('name')
-            ->get(['id', 'name']);
-
-        if (ClinicAdminScope::isClinicContext()) {
-            $allowed = ClinicAdminScope::assignablePermissionNamesFor($request->user());
-            $all = $all->filter(
+            ->get(['id', 'name'])
+            ->filter(
                 static fn ($perm): bool => in_array($perm->name, $allowed, true),
             );
-        }
 
         return ClinicAdminScope::groupPermissionsCatalog($all);
     }

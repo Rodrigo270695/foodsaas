@@ -1,6 +1,10 @@
 {
     "title": "Users",
     "description": "Manage central panel accounts (superadmin and platform staff). Restaurant users are managed within each tenant.",
+    "demo_locked": {
+        "description": "Demo restaurant: you can view users but cannot create, edit, or delete accounts (protects the public demo).",
+        "create": "The demo is read-only: you cannot create users."
+    },
     "plan_limit": {
         "max_usuarios": "You reached your plan's user limit. Upgrade your plan to invite more people."
     },
@@ -57,6 +61,7 @@
         "documents": "Documents / CV",
         "actions_for": "Actions for {{name}}",
         "self_locked": "You can't edit or delete your own account from here.",
+        "demo_locked": "Public demo: read-only.",
         "superadmin_locked": "Superadmin accounts are managed from the seeder."
     },
     "empty": {

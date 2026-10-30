@@ -38,6 +38,13 @@ final class ClinicAdminScope
         'in-app-assistant-knowledge',
     ];
 
+    /** Módulos operativos del panel central (staff SaaS), no del restaurante. */
+    private const CENTRAL_ADMIN_MODULES = [
+        'dashboard',
+        'roles',
+        'usuarios',
+    ];
+
     public static function isClinicContext(): bool
     {
         return tenant_id() !== null;
@@ -100,19 +107,39 @@ final class ClinicAdminScope
             return false;
         }
 
+        if (self::isPlatformPermission($permissionName)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static function isPlatformPermission(string $permissionName): bool
+    {
         foreach (self::PLATFORM_PERMISSION_PREFIXES as $prefix) {
             if (str_starts_with($permissionName, $prefix)) {
-                return false;
+                return true;
             }
         }
 
         foreach (self::PLATFORM_PERMISSION_MODULES as $module) {
             if ($permissionName === $module || str_starts_with($permissionName, $module.'.')) {
-                return false;
+                return true;
             }
         }
 
-        return true;
+        return false;
+    }
+
+    public static function isCentralAssignablePermission(string $permissionName): bool
+    {
+        if (self::isPlatformPermission($permissionName)) {
+            return true;
+        }
+
+        [$module] = self::splitPermission($permissionName);
+
+        return in_array($module, self::CENTRAL_ADMIN_MODULES, true);
     }
 
     /**
@@ -141,7 +168,11 @@ final class ClinicAdminScope
             ->orderBy('name');
 
         if (! self::isClinicContext()) {
-            return $query->pluck('name')->values()->all();
+            return $query
+                ->pluck('name')
+                ->filter(static fn (string $name): bool => self::isCentralAssignablePermission($name))
+                ->values()
+                ->all();
         }
 
         return $query

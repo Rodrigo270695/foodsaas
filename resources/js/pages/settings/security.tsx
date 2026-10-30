@@ -13,6 +13,7 @@ import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/security';
+import { useDemoMutationsLocked } from '@/hooks/use-demo-mutations-locked';
 import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
 import ManagePasskeys from '@/components/manage-passkeys';
 import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
@@ -25,6 +26,11 @@ type Props = {
 
 export default function Security(props: Props) {
     const { t } = useTranslation('settings');
+    const demoLocked = useDemoMutationsLocked();
+    const canManageTwoFactor =
+        (props.canManageTwoFactor ?? false) && !demoLocked;
+    const canManagePasskeys =
+        (props.canManagePasskeys ?? false) && !demoLocked;
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
 
@@ -92,6 +98,7 @@ export default function Security(props: Props) {
                                     className="mt-1 block w-full"
                                     autoComplete="current-password"
                                     placeholder={t('security.current_password')}
+                                    disabled={demoLocked}
                                 />
 
                                 <InputError message={errors.current_password} />
@@ -110,6 +117,7 @@ export default function Security(props: Props) {
                                     autoComplete="new-password"
                                     placeholder={t('security.new_password')}
                                     passwordrules={props.passwordRules}
+                                    disabled={demoLocked}
                                 />
 
                                 <InputError message={errors.password} />
@@ -127,6 +135,7 @@ export default function Security(props: Props) {
                                     autoComplete="new-password"
                                     placeholder={t('security.confirm_password')}
                                     passwordrules={props.passwordRules}
+                                    disabled={demoLocked}
                                 />
 
                                 <InputError
@@ -136,7 +145,7 @@ export default function Security(props: Props) {
 
                             <div className="flex items-center gap-4">
                                 <Button
-                                    disabled={processing}
+                                    disabled={processing || demoLocked}
                                     data-test="update-password-button"
                                 >
                                     {t('security.save_password')}
@@ -148,13 +157,13 @@ export default function Security(props: Props) {
             </div>
 
             <ManageTwoFactor
-                canManageTwoFactor={props.canManageTwoFactor}
+                canManageTwoFactor={canManageTwoFactor}
                 requiresConfirmation={props.requiresConfirmation}
                 twoFactorEnabled={props.twoFactorEnabled}
             />
 
             <ManagePasskeys
-                canManagePasskeys={props.canManagePasskeys}
+                canManagePasskeys={canManagePasskeys}
                 passkeys={props.passkeys}
             />
         </>

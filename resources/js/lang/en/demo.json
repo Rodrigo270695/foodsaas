@@ -1,0 +1,4 @@
+{
+    "read_only_banner": "Demo mode: you can explore the system, but cannot create, edit, or delete data.",
+    "settings_hint": "Profile and security settings are disabled on the public demo."
+}

@@ -15,6 +15,7 @@ class PermissionsSeeder extends Seeder
 {
     public const CATALOG = [
         'dashboard' => ['view'],
+        'sedes' => ['view', 'create', 'update', 'delete', 'export', 'bulk-delete'],
         'roles' => ['view', 'create', 'update', 'delete', 'export', 'bulk-delete'],
         'usuarios' => ['view', 'create', 'update', 'delete', 'reset-password', 'export', 'bulk-delete'],
         'plataforma-planes' => ['view', 'create', 'update', 'delete', 'export', 'bulk-delete'],

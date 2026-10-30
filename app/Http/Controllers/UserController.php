@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\UsersXlsxExport;
+use App\Http\Controllers\Concerns\GuardsPublicDemoTenant;
 use App\Http\Controllers\Concerns\RespondsToApiPeruConsulta;
 use App\Http\Requests\UserDocumentsRequest;
 use App\Http\Requests\UserRequest;
@@ -25,7 +26,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserController extends Controller
 {
+    use GuardsPublicDemoTenant;
     use RespondsToApiPeruConsulta;
+
     /**
      * Tamaños de página permitidos en el selector del paginador.
      */
@@ -144,11 +147,15 @@ class UserController extends Controller
             ],
             'roles_catalog' => $rolesCatalog,
             'tenant_roles_filter_catalog' => $tenantRolesFilterCatalog,
+            'mutations_locked' => demo_mutations_locked()
+                && ! PlatformUserDirectory::isCentralList(),
         ]);
     }
 
     public function store(UserRequest $request): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         $data = $request->validated();
 
         $user = User::create([
@@ -186,6 +193,8 @@ class UserController extends Controller
 
     public function update(UserRequest $request, User $user): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         ClinicAdminScope::assertUserAccessible($user);
 
         // No permitimos que un usuario se desactive a sí mismo: dejaría
@@ -254,6 +263,8 @@ class UserController extends Controller
      */
     public function updateDocuments(UserDocumentsRequest $request, User $user): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         ClinicAdminScope::assertUserAccessible($user);
 
         $data = $request->validated();
@@ -351,6 +362,8 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         ClinicAdminScope::assertUserAccessible($user);
 
         if ($request->user()?->id === $user->id) {
@@ -393,6 +406,8 @@ class UserController extends Controller
      */
     public function bulkDestroy(Request $request): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:500'],
             'ids.*' => ['uuid'],

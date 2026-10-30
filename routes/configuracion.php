@@ -1,10 +1,30 @@
 <?php
 
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SedeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('configuracion')->name('configuracion.')->group(function (): void {
+    Route::middleware('permission:sedes.view')
+        ->get('sedes', [SedeController::class, 'index'])
+        ->name('sedes.index');
+    Route::middleware('permission:sedes.export')
+        ->get('sedes/export', [SedeController::class, 'export'])
+        ->name('sedes.export');
+    Route::middleware('permission:sedes.create')
+        ->post('sedes', [SedeController::class, 'store'])
+        ->name('sedes.store');
+    Route::middleware('permission:sedes.bulk-delete')
+        ->delete('sedes/bulk', [SedeController::class, 'bulkDestroy'])
+        ->name('sedes.bulk-destroy');
+    Route::middleware('permission:sedes.update')
+        ->match(['put', 'patch'], 'sedes/{sede}', [SedeController::class, 'update'])
+        ->name('sedes.update');
+    Route::middleware('permission:sedes.delete')
+        ->delete('sedes/{sede}', [SedeController::class, 'destroy'])
+        ->name('sedes.destroy');
+
     Route::middleware('permission:roles.view')
         ->get('roles', [RoleController::class, 'index'])
         ->name('roles.index');

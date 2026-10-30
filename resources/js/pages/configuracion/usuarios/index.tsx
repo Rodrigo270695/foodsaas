@@ -71,6 +71,8 @@ type UsuariosIndexProps = {
     tenant_roles_filter_catalog?: readonly UserRoleOption[];
     list_scope?: 'central' | 'clinic';
     tenants_catalog?: readonly UserTenantCatalogOption[];
+    /** Tenant demo público: solo consulta, sin altas/edición/borrado. */
+    mutations_locked?: boolean;
 };
 
 /**
@@ -113,19 +115,23 @@ export default function Index({
     tenant_roles_filter_catalog = [],
     list_scope = 'clinic',
     tenants_catalog = [],
+    mutations_locked = false,
 }: UsuariosIndexProps) {
     const isCentralList = list_scope === 'central';
     const { t } = useTranslation(['usuarios', 'common']);
     const pageLocale = usePage<{ locale?: string }>().props.locale ?? 'es';
     const { can } = usePermission();
-    const canCreate = can('usuarios.create');
+    const canCreate = !mutations_locked && can('usuarios.create');
     const usersLimitReached = usePlanLimitReached('max_usuarios');
     const canCreateUser = canCreate && !usersLimitReached;
-    const canUpdate = can('usuarios.update');
-    const canDelete = can('usuarios.delete');
+    const canUpdate = !mutations_locked && can('usuarios.update');
+    const canDelete = !mutations_locked && can('usuarios.delete');
     const canExport = can('usuarios.export');
-    const canBulkDelete = can('usuarios.bulk-delete');
-    const showRowActions = canUpdate || canDelete;
+    const canBulkDelete = !mutations_locked && can('usuarios.bulk-delete');
+    const showRowActions =
+        mutations_locked ||
+        can('usuarios.update') ||
+        can('usuarios.delete');
 
     // Necesario para marcar "Tú" en la propia fila y bloquear el delete.
     const page = usePage<{ auth: Auth }>();
@@ -157,6 +163,7 @@ export default function Index({
             'tenant_roles_filter_catalog',
             'tenants_catalog',
             'list_scope',
+            'mutations_locked',
         ],
         errorMessage: t('toast.load_error'),
         storageKey: 'vetsaas.usuarios.prefs',
@@ -482,6 +489,7 @@ export default function Index({
                             onDelete={openDelete}
                             canUpdate={canUpdate}
                             canDelete={canDelete}
+                            demoLocked={mutations_locked}
                         />
                     </div>
                 ),
@@ -496,6 +504,7 @@ export default function Index({
         showRowActions,
         canUpdate,
         canDelete,
+        mutations_locked,
         openEdit,
         openDocuments,
         openDelete,
@@ -511,7 +520,11 @@ export default function Index({
             <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('usuarios:title')}
-                    description={t('usuarios:description')}
+                    description={
+                        mutations_locked
+                            ? t('usuarios:demo_locked.description')
+                            : t('usuarios:description')
+                    }
                     stats={[
                         {
                             label: t('usuarios:stats.total'),
@@ -570,7 +583,10 @@ export default function Index({
                                             <Button
                                                 type="button"
                                                 onClick={openCreate}
-                                                disabled={usersLimitReached}
+                                                disabled={
+                                                    usersLimitReached ||
+                                                    mutations_locked
+                                                }
                                                 className="cursor-pointer gap-2"
                                             >
                                                 <Plus
@@ -586,7 +602,14 @@ export default function Index({
                                             </Button>
                                         </span>
                                     </TooltipTrigger>
-                                    {usersLimitReached ? (
+                                    {mutations_locked ? (
+                                        <TooltipContent
+                                            side="bottom"
+                                            className="max-w-xs"
+                                        >
+                                            {t('usuarios:demo_locked.create')}
+                                        </TooltipContent>
+                                    ) : usersLimitReached ? (
                                         <TooltipContent side="bottom" className="max-w-xs">
                                             {t('usuarios:plan_limit.max_usuarios')}
                                         </TooltipContent>

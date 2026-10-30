@@ -109,6 +109,7 @@ class HandleInertiaRequests extends Middleware
                 'scheme' => TenantSubdomainUrl::scheme(),
                 'login_path' => TenantSubdomainUrl::loginPath(),
             ],
+            'demo_mutations_locked' => demo_mutations_locked(),
             'tenant_impersonation' => static function () use ($request) {
                 $raw = $request->session()->get('tenant_impersonation');
 
@@ -139,6 +140,7 @@ class HandleInertiaRequests extends Middleware
                     'razon_social' => $ctx->razonSocial(),
                     'nombre_comercial' => $ctx->nombreComercial(),
                     'estado' => $ctx->estado(),
+                    'is_demo' => is_public_demo_tenant(),
                 ];
             },
             'plan_limits' => static fn () => PlanLimits::snapshot(),

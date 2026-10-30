@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BlockPublicDemoMutations;
 use App\Http\Middleware\EnsureNoTenant;
 use App\Http\Middleware\EnsureTenant;
 use App\Http\Middleware\HandleAppearance;
@@ -65,6 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             HandleAppearance::class,
+            BlockPublicDemoMutations::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
@@ -91,7 +93,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return $message;
         };
 
-        $supportFacingErrorMessage = static function (\Throwable $e) use ($userFacingHttpMessage): ?string {
+        $supportFacingErrorMessage = static function (Throwable $e) use ($userFacingHttpMessage): ?string {
             $user = Auth::guard('web')->user();
             $isSupport = $user instanceof User && $user->isPlatformSuperadmin();
 
@@ -210,7 +212,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return null;
         });
 
-        $exceptions->renderable(function (\Throwable $e, Request $request) use ($renderInertiaHttpError, $supportFacingErrorMessage) {
+        $exceptions->renderable(function (Throwable $e, Request $request) use ($renderInertiaHttpError, $supportFacingErrorMessage) {
             if ($e instanceof TenantNotFoundException || $e instanceof TenantSuspendedException) {
                 return null;
             }

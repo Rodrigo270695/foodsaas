@@ -14,6 +14,7 @@ declare module '@inertiajs/core' {
             timezone: string;
             auth: Auth;
             sidebarOpen: boolean;
+            demo_mutations_locked?: boolean;
             [key: string]: unknown;
         };
     }

@@ -10,6 +10,10 @@ import tenantsEn from '@/lang/en/tenants.json';
 import tenantsEs from '@/lang/es/tenants.json';
 import planesEn from '@/lang/en/planes.json';
 import planesEs from '@/lang/es/planes.json';
+import sedesEn from '@/lang/en/sedes.json';
+import sedesEs from '@/lang/es/sedes.json';
+import demoEn from '@/lang/en/demo.json';
+import demoEs from '@/lang/es/demo.json';
 import rolesEn from '@/lang/en/roles.json';
 import rolesEs from '@/lang/es/roles.json';
 import usuariosEn from '@/lang/en/usuarios.json';
@@ -43,6 +47,8 @@ const resources = {
         settings: settingsEs,
         legal: legalEs,
         roles: rolesEs,
+        demo: demoEs,
+        sedes: sedesEs,
         usuarios: usuariosEs,
         forms: formsEs,
         planes: planesEs,
@@ -57,6 +63,8 @@ const resources = {
         settings: settingsEn,
         legal: legalEn,
         roles: rolesEn,
+        demo: demoEn,
+        sedes: sedesEn,
         usuarios: usuariosEn,
         forms: formsEn,
         planes: planesEn,
@@ -74,7 +82,7 @@ void i18n
         fallbackLng: DEFAULT_LOCALE,
         supportedLngs: SUPPORTED_LOCALES as unknown as string[],
         defaultNS: 'common',
-        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'subscription-expiry'],
+        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'sedes', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'subscription-expiry'],
         interpolation: {
             escapeValue: false,
         },

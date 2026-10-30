@@ -20,6 +20,8 @@ export type UserRowActionsProps = {
     onDelete: (user: User) => void;
     canUpdate?: boolean;
     canDelete?: boolean;
+    /** Tenant demo: muestra acciones deshabilitadas (solo lectura). */
+    demoLocked?: boolean;
 };
 
 /**
@@ -37,13 +39,17 @@ export function UserRowActions({
     onDelete,
     canUpdate = true,
     canDelete = true,
+    demoLocked = false,
 }: UserRowActionsProps) {
     const { t } = useTranslation(['usuarios', 'common']);
 
     const isSelf = currentUserId === user.id;
     const isSuperadmin = user.roles.some((r) => r.name === 'superadmin');
-    const showEdit = canUpdate;
-    const showDelete = canDelete && !isSelf && !isSuperadmin;
+    const showEditMenu = canUpdate || demoLocked;
+    const showDeleteMenu =
+        (canDelete && !isSelf && !isSuperadmin) ||
+        (demoLocked && !isSelf && !isSuperadmin);
+    const mutatingDisabled = demoLocked;
 
     const handleCopy = async () => {
         try {
@@ -82,11 +88,16 @@ export function UserRowActions({
                     {t('usuarios:row.copy_email')}
                 </DropdownMenuItem>
 
-                {(showEdit || showDelete) && <DropdownMenuSeparator />}
+                {(showEditMenu || showDeleteMenu) && <DropdownMenuSeparator />}
 
-                {showEdit && (
+                {showEditMenu && (
                     <DropdownMenuItem
-                        onSelect={() => onEdit(user)}
+                        disabled={mutatingDisabled}
+                        onSelect={() => {
+                            if (!mutatingDisabled) {
+                                onEdit(user);
+                            }
+                        }}
                         className="cursor-pointer gap-2"
                     >
                         <Pencil className="size-4" strokeWidth={2.25} />
@@ -94,9 +105,14 @@ export function UserRowActions({
                     </DropdownMenuItem>
                 )}
 
-                {showEdit && (
+                {showEditMenu && (
                     <DropdownMenuItem
-                        onSelect={() => onDocuments(user)}
+                        disabled={mutatingDisabled}
+                        onSelect={() => {
+                            if (!mutatingDisabled) {
+                                onDocuments(user);
+                            }
+                        }}
                         className="cursor-pointer gap-2"
                     >
                         <FileStack className="size-4" strokeWidth={2.25} />
@@ -104,9 +120,14 @@ export function UserRowActions({
                     </DropdownMenuItem>
                 )}
 
-                {showDelete && (
+                {showDeleteMenu && (
                     <DropdownMenuItem
-                        onSelect={() => onDelete(user)}
+                        disabled={mutatingDisabled}
+                        onSelect={() => {
+                            if (!mutatingDisabled) {
+                                onDelete(user);
+                            }
+                        }}
                         className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                     >
                         <Trash2 className="size-4" strokeWidth={2.25} />
@@ -114,7 +135,20 @@ export function UserRowActions({
                     </DropdownMenuItem>
                 )}
 
-                {(isSelf || isSuperadmin) && (
+                {demoLocked && (
+                    <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            disabled
+                            className="gap-2 text-xs text-muted-foreground"
+                        >
+                            <Lock className="size-3.5" strokeWidth={2.25} />
+                            {t('usuarios:row.demo_locked')}
+                        </DropdownMenuItem>
+                    </>
+                )}
+
+                {(isSelf || isSuperadmin) && !demoLocked && (
                     <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\Tenant;
+use App\Support\Tenancy\ClinicAdminScope;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
@@ -51,7 +51,7 @@ class TenantRolesSeeder extends Seeder
 
         $adminPermissions = array_values(array_filter(
             $validPermissionNames,
-            static fn (string $name): bool => ! str_starts_with($name, 'plataforma-'),
+            static fn (string $name): bool => ClinicAdminScope::isTenantAssignablePermission($name),
         ));
 
         $previousTeam = getPermissionsTeamId();

@@ -2,7 +2,7 @@
     "title": "Roles y permisos",
     "description": "Define qué puede hacer cada tipo de usuario en la plataforma central. Los roles operativos del restaurante (admin, cajero, etc.) se gestionan dentro de cada tenant, no aquí.",
     "demo_locked": {
-        "description": "Clínica demo: puedes consultar roles, pero no crearlos ni cambiar permisos (afectarían a otras clínicas)."
+        "description": "Restaurante demo: puedes consultar roles, pero no crearlos ni cambiar permisos."
     },
     "actions": {
         "new": "Nuevo rol",

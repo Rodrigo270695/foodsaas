@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
 import type { Auth } from '@/types';
+import { useDemoMutationsLocked } from '@/hooks/use-demo-mutations-locked';
 import { send } from '@/routes/verification';
 
 type PageProps = {
@@ -30,6 +31,7 @@ export default function Profile({
     status?: string;
 }) {
     const { t } = useTranslation(['settings', 'common']);
+    const demoLocked = useDemoMutationsLocked();
     const { auth } = usePage<PageProps>().props;
     const user = auth.user;
 
@@ -86,6 +88,8 @@ export default function Profile({
                                     name="name"
                                     required
                                     autoComplete="name"
+                                    disabled={demoLocked}
+                                    readOnly={demoLocked}
                                     placeholder={t(
                                         'settings:profile.name_placeholder',
                                     )}
@@ -110,6 +114,8 @@ export default function Profile({
                                     name="email"
                                     required
                                     autoComplete="username"
+                                    disabled={demoLocked}
+                                    readOnly={demoLocked}
                                     placeholder={t(
                                         'settings:profile.email_placeholder',
                                     )}
@@ -150,7 +156,7 @@ export default function Profile({
 
                             <div className="flex items-center gap-4">
                                 <Button
-                                    disabled={processing}
+                                    disabled={processing || demoLocked}
                                     data-test="update-profile-button"
                                 >
                                     {t('common:actions.save')}

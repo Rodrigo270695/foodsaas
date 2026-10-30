@@ -1,6 +1,10 @@
 {
     "title": "Usuarios",
     "description": "Administra cuentas del panel central (superadmin y staff de plataforma). Los usuarios de cada restaurante se gestionan en el tenant correspondiente.",
+    "demo_locked": {
+        "description": "Restaurante demo: puedes consultar usuarios, pero no crear, editar ni eliminar cuentas (protege la demo pública).",
+        "create": "La demo es solo lectura: no se pueden crear usuarios."
+    },
     "plan_limit": {
         "max_usuarios": "Alcanzaste el límite de usuarios de tu plan. Actualiza el plan para invitar a más personas."
     },
@@ -57,6 +61,7 @@
         "documents": "Documentos / CV",
         "actions_for": "Acciones para {{name}}",
         "self_locked": "No puedes editar o eliminar tu propia cuenta desde aquí.",
+        "demo_locked": "Demo pública: solo lectura.",
         "superadmin_locked": "Las cuentas de superadmin se gestionan desde el seeder."
     },
     "empty": {

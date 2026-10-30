@@ -64,7 +64,35 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                 {
                     title: t('groups.configuracion'),
                     icon: Cog,
-                    context: 'both',
+                    context: 'tenant',
+                    items: [
+                        {
+                            title: t('items.sedes'),
+                            href: '/configuracion/sedes',
+                            icon: MapPin,
+                            permission: 'sedes.view',
+                            context: 'tenant',
+                        },
+                        {
+                            title: t('items.roles'),
+                            href: '/configuracion/roles',
+                            icon: ShieldCheck,
+                            permission: 'roles.view',
+                            context: 'tenant',
+                        },
+                        {
+                            title: t('items.usuarios'),
+                            href: '/configuracion/usuarios',
+                            icon: UserCog,
+                            permission: 'usuarios.view',
+                            context: 'tenant',
+                        },
+                    ],
+                },
+                {
+                    title: t('groups.configuracion'),
+                    icon: Cog,
+                    context: 'central',
                     items: [
                         {
                             title: t('items.roles'),

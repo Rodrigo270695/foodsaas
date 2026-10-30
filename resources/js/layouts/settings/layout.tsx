@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useDemoMutationsLocked } from '@/hooks/use-demo-mutations-locked';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
@@ -13,7 +14,8 @@ import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    const { t } = useTranslation(['settings', 'common']);
+    const { t } = useTranslation(['settings', 'common', 'demo']);
+    const demoLocked = useDemoMutationsLocked();
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
     const sidebarNavItems: NavItem[] = useMemo(
@@ -41,7 +43,11 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         <div className="px-4 py-6">
             <Heading
                 title={t('settings:title')}
-                description={t('settings:description')}
+                description={
+                    demoLocked
+                        ? t('demo:settings_hint')
+                        : t('settings:description')
+                }
             />
 
             <div className="flex flex-col lg:flex-row lg:space-x-12">
