@@ -69,4 +69,9 @@ class Tenant extends Model
     {
         return $this->hasMany(User::class, 'tenant_id');
     }
+
+    public function sedes(): HasMany
+    {
+        return $this->hasMany(Sede::class, 'tenant_id');
+    }
 }

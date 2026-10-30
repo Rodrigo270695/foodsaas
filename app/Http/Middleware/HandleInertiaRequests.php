@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Support\Plan\PlanLimits;
 use App\Support\Tenancy\TenantSubdomainUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -140,6 +141,7 @@ class HandleInertiaRequests extends Middleware
                     'estado' => $ctx->estado(),
                 ];
             },
+            'plan_limits' => static fn () => PlanLimits::snapshot(),
         ];
     }
 

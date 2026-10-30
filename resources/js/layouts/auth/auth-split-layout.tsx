@@ -7,6 +7,7 @@ import AuthGreeting from '@/components/auth/auth-greeting';
 import AuthHeader from '@/components/auth/auth-header';
 import { useClinicBranding } from '@/hooks/use-clinic-branding';
 import type { AuthLayoutProps } from '@/types';
+import type { TenantShared } from '@/types/tenancy';
 
 const PAGES_WITH_OWN_CARD = new Set([
     'auth/login',
@@ -24,15 +25,27 @@ export default function AuthSplitLayout({
 }: AuthLayoutProps) {
     const page = usePage();
     const brandName = page.props.name as string;
+    const tenant = page.props.tenant as TenantShared | null;
     const branding = useClinicBranding();
     const skipFormCard = PAGES_WITH_OWN_CARD.has(page.component);
     const isLogin = page.component === 'auth/login';
+
+    const tenantDisplayName = tenant
+        ? (tenant.nombre_comercial || tenant.razon_social).trim()
+        : '';
+    const tenantTitle = tenantDisplayName
+        ? `${tenantDisplayName}.`
+        : title;
+    const tenantDescription = tenant
+        ? 'Ingresa con tu cuenta para gestionar mesas, comandas, cocina y caja.'
+        : description;
+    const headerBrand = tenantDisplayName || brandName;
 
     return (
         <div className="relative isolate flex min-h-svh flex-col overflow-hidden bg-background text-foreground">
             <AuthAuroraBackground />
             <AuthHeader
-                brandName={brandName}
+                brandName={headerBrand}
                 logoUrl={branding?.logo_url}
                 logoKey={branding?.updated_at ?? undefined}
             />
@@ -49,8 +62,8 @@ export default function AuthSplitLayout({
                 <article className="relative z-10 mx-auto w-full max-w-md">
                     <AuthGreeting
                         compact={isLogin}
-                        title={title}
-                        description={description}
+                        title={tenantTitle}
+                        description={tenantDescription}
                     />
                     {skipFormCard ? children : <AuthFormCard>{children}</AuthFormCard>}
                 </article>

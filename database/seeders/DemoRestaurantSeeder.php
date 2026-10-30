@@ -6,6 +6,7 @@ use App\Models\Distrito;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantDefaultSedeProvisioner;
 use App\Services\Tenancy\TenantProvisioner;
 use App\Support\Subscriptions\SubscriptionCiclo;
 use Illuminate\Database\Seeder;
@@ -75,6 +76,8 @@ class DemoRestaurantSeeder extends Seeder
         } catch (\Throwable $e) {
             $this->command?->warn('Schema demo: '.$e->getMessage());
         }
+
+        app(TenantDefaultSedeProvisioner::class)->ensureDefaultSede($tenant->fresh());
 
         $user = User::query()->updateOrCreate(
             [

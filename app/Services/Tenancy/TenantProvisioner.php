@@ -128,6 +128,8 @@ class TenantProvisioner
         (new TenantRolesSeeder)->seedForTenant((string) $tenant->id);
 
         app(RestaurantSettingsBootstrap::class)->ensureDefaultRow($tenant);
+
+        app(TenantDefaultSedeProvisioner::class)->ensureDefaultSede($tenant);
     }
 
     public function createInitialSubscription(Tenant $tenant, Plan $plan, string $ciclo = SubscriptionCiclo::MENSUAL): Subscription
