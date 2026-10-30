@@ -51,6 +51,9 @@ class RestaurantSettingRequest extends FormRequest
             'precio_incluye_igv' => ['required', 'boolean'],
             'ticket_ancho_mm' => ['required', Rule::in(TicketAnchoMm::ALLOWED)],
             'emite_comprobantes_sunat' => ['required', 'boolean'],
+            'apisunat_token' => ['nullable', 'string', 'max:8192'],
+            'apisunat_mode' => ['nullable', Rule::in(['sandbox', 'produccion'])],
+            'clear_apisunat' => ['nullable', 'boolean'],
 
             ...$horarioRules,
         ];
@@ -75,6 +78,8 @@ class RestaurantSettingRequest extends FormRequest
             'precio_incluye_igv' => 'precio incluye IGV',
             'ticket_ancho_mm' => 'ancho del ticket térmico',
             'emite_comprobantes_sunat' => 'emisión de comprobantes SUNAT',
+            'apisunat_token' => 'token de APISUNAT',
+            'apisunat_mode' => 'modo de APISUNAT',
             'horario_atencion' => 'horario de atención',
         ];
 
@@ -126,6 +131,7 @@ class RestaurantSettingRequest extends FormRequest
             'precio_incluye_igv' => $this->boolean('precio_incluye_igv'),
             'emite_comprobantes_sunat' => $this->boolean('emite_comprobantes_sunat'),
             'clear_logo' => $this->boolean('clear_logo'),
+            'clear_apisunat' => $this->boolean('clear_apisunat'),
             'horario_atencion' => is_array($horario) ? $horario : [],
             'web_url' => $this->filled('web_url') ? $this->string('web_url')->toString() : null,
             'distrito_id' => $this->filled('distrito_id') ? $this->integer('distrito_id') : null,

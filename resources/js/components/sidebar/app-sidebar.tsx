@@ -9,12 +9,14 @@ import {
     Cog,
     Database,
     Gauge,
+    Hash,
     KeyRound,
     LayoutGrid,
     LineChart,
     MapPin,
     Megaphone,
     MessageCircle,
+    Receipt,
     Repeat,
     Server,
     ShieldCheck,
@@ -61,6 +63,20 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                 },
             ],
             groups: [
+                {
+                    title: t('groups.facturacion'),
+                    icon: Receipt,
+                    context: 'tenant',
+                    items: [
+                        {
+                            title: t('items.series'),
+                            href: '/facturacion/series',
+                            icon: Hash,
+                            permission: 'series.view',
+                            context: 'tenant',
+                        },
+                    ],
+                },
                 {
                     title: t('groups.configuracion'),
                     icon: Cog,

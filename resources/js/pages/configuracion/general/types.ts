@@ -53,6 +53,8 @@ export type RestaurantSetting = {
     precio_incluye_igv: boolean;
     ticket_ancho_mm: string;
     emite_comprobantes_sunat: boolean;
+    apisunat_mode: 'sandbox' | 'produccion';
+    apisunat_configurado: boolean;
     horario_atencion: HorarioAtencion;
     updated_at: string | null;
     actualizado_por: {

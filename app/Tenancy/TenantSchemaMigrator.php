@@ -160,6 +160,14 @@ class TenantSchemaMigrator
     {
         return match ($migration) {
             '2026_10_29_200010_t010_create_cfg_restaurant_settings_table' => Schema::hasTable('cfg_restaurant_settings'),
+            '2026_10_30_140000_t011_extend_cfg_restaurant_settings_for_general' => Schema::hasTable('cfg_restaurant_settings')
+                && Schema::hasColumn('cfg_restaurant_settings', 'logo_path')
+                && Schema::hasColumn('cfg_restaurant_settings', 'horario_atencion'),
+            '2026_10_30_150000_t012_add_apisunat_to_cfg_restaurant_settings' => Schema::hasTable('cfg_restaurant_settings')
+                && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_token_enc')
+                && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_mode')
+                && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_configurado'),
+            '2026_10_30_151000_t013_create_fel_series_table' => Schema::hasTable('fel_series'),
             default => false,
         };
     }

@@ -37,6 +37,9 @@ use Throwable;
  * @property bool $precio_incluye_igv
  * @property string $ticket_ancho_mm
  * @property bool $emite_comprobantes_sunat
+ * @property ?string $apisunat_token_enc
+ * @property string $apisunat_mode
+ * @property bool $apisunat_configurado
  * @property array<string, mixed> $horario_atencion
  * @property ?string $color_primario
  * @property ?int $updated_by_id
@@ -81,9 +84,16 @@ class RestaurantSetting extends Model
         'precio_incluye_igv',
         'ticket_ancho_mm',
         'emite_comprobantes_sunat',
+        'apisunat_token_enc',
+        'apisunat_mode',
+        'apisunat_configurado',
         'horario_atencion',
         'color_primario',
         'updated_by_id',
+    ];
+
+    protected $hidden = [
+        'apisunat_token_enc',
     ];
 
     protected $appends = ['logo_url'];
@@ -94,6 +104,7 @@ class RestaurantSetting extends Model
             'horario_atencion' => 'array',
             'precio_incluye_igv' => 'boolean',
             'emite_comprobantes_sunat' => 'boolean',
+            'apisunat_configurado' => 'boolean',
             'igv_porcentaje' => 'decimal:2',
             'igv_alimentos_porcentaje' => 'decimal:2',
             'distrito_id' => 'integer',

@@ -43,7 +43,16 @@ class TenantRolesSeeder extends Seeder
         ],
         'gerente' => [
             'description' => 'Gerente de turno.',
-            'permissions' => ['dashboard.view', 'config-general.view', 'config-general.update', 'roles.view', 'usuarios.view'],
+            'permissions' => [
+                'dashboard.view',
+                'config-general.view',
+                'config-general.update',
+                'series.view',
+                'series.create',
+                'series.update',
+                'roles.view',
+                'usuarios.view',
+            ],
         ],
         'cajero' => [
             'description' => 'Caja y ventas.',

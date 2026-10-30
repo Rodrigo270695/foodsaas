@@ -6,12 +6,15 @@ use App\Http\Controllers\Concerns\GuardsPublicDemoTenant;
 use App\Http\Requests\RestaurantSettingRequest;
 use App\Models\Departamento;
 use App\Models\RestaurantSetting;
+use App\Models\User;
 use App\Support\Caja\TicketAnchoMm;
 use App\Support\Plan\PlanCapabilities;
 use App\Support\Restaurante\HorarioAtencion;
 use App\Tenancy\TenantManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -98,6 +101,13 @@ class RestaurantSettingController extends Controller
         ]);
 
         $this->applyLogo($setting, $request, $tenants);
+
+        $user = Auth::user();
+        $isPlatformSuperadmin = $user instanceof User && $user->isPlatformSuperadmin();
+        if ($planPermiteFacturaElectronica && $isPlatformSuperadmin && $this->hasApisunatColumns()) {
+            $this->applyApisunatToken($setting, $data);
+        }
+
         $setting->save();
 
         return back()->with(['success' => 'Configuración actualizada correctamente.']);
@@ -149,6 +159,28 @@ class RestaurantSettingController extends Controller
     }
 
     /**
+     * @param  array<string, mixed>  $data
+     */
+    private function applyApisunatToken(RestaurantSetting $setting, array $data): void
+    {
+        if (($data['clear_apisunat'] ?? false) === true) {
+            $setting->apisunat_token_enc = null;
+            $setting->apisunat_configurado = false;
+
+            return;
+        }
+
+        if (! empty($data['apisunat_mode'])) {
+            $setting->apisunat_mode = $data['apisunat_mode'];
+        }
+
+        if (! empty($data['apisunat_token'])) {
+            $setting->apisunat_token_enc = Crypt::encryptString((string) $data['apisunat_token']);
+            $setting->apisunat_configurado = true;
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function presentSetting(RestaurantSetting $setting, bool $planPermiteFacturaElectronica): array
@@ -185,6 +217,12 @@ class RestaurantSettingController extends Controller
             'precio_incluye_igv' => (bool) $setting->precio_incluye_igv,
             'ticket_ancho_mm' => $setting->ticketAnchoMm(),
             'emite_comprobantes_sunat' => $planPermiteFacturaElectronica && (bool) $setting->emite_comprobantes_sunat,
+            'apisunat_mode' => $planPermiteFacturaElectronica && $this->hasApisunatColumns()
+                ? ($setting->apisunat_mode ?? 'sandbox')
+                : 'sandbox',
+            'apisunat_configurado' => $planPermiteFacturaElectronica
+                && $this->hasApisunatColumns()
+                && (bool) $setting->apisunat_configurado,
             'horario_atencion' => $setting->horarioAtencionNormalizado(),
             'updated_at' => $setting->updated_at?->toIso8601String(),
             'actualizado_por' => $setting->actualizadoPor ? [
@@ -193,5 +231,17 @@ class RestaurantSettingController extends Controller
                 'email' => $setting->actualizadoPor->email,
             ] : null,
         ];
+    }
+
+    private function hasApisunatColumns(): bool
+    {
+        try {
+            return Schema::hasTable('cfg_restaurant_settings')
+                && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_token_enc')
+                && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_mode')
+                && Schema::hasColumn('cfg_restaurant_settings', 'apisunat_configurado');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

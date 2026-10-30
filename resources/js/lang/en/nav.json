@@ -3,6 +3,7 @@
     "brand_tagline": "Restaurant management",
     "plan_kicker": "Plan",
     "groups": {
+        "facturacion": "Billing",
         "configuracion": "Settings",
         "plataforma_sistema": "System",
         "plataforma_reportes": "Reports",
@@ -16,6 +17,7 @@
         "roles": "Roles",
         "usuarios": "Users",
         "general": "General",
+        "series": "Series",
         "sedes": "Branches",
         "platform_settings": "General settings",
         "operaciones": "Operations",

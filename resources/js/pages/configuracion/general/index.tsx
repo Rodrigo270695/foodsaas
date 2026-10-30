@@ -4,7 +4,10 @@ import {
     Building2,
     CheckCircle2,
     Clock3,
+    Eye,
+    EyeOff,
     Info,
+    KeyRound,
     Loader2,
     Palette,
     Phone,
@@ -12,6 +15,7 @@ import {
     Save,
     ShieldCheck,
     Store,
+    Trash2,
     XCircle,
 } from 'lucide-react';
 import {
@@ -89,6 +93,8 @@ type FormState = {
     precio_incluye_igv: boolean;
     ticket_ancho_mm: TicketAnchoMm;
     emite_comprobantes_sunat: boolean;
+    apisunat_token: string;
+    apisunat_mode: 'sandbox' | 'produccion';
     horario_atencion: HorarioAtencion;
 };
 
@@ -124,6 +130,8 @@ const buildInitialState = (setting: RestaurantSetting): FormState => ({
     precio_incluye_igv: setting.precio_incluye_igv,
     ticket_ancho_mm: normalizeTicketAncho(setting.ticket_ancho_mm),
     emite_comprobantes_sunat: setting.emite_comprobantes_sunat,
+    apisunat_token: '',
+    apisunat_mode: setting.apisunat_mode === 'produccion' ? 'produccion' : 'sandbox',
     horario_atencion: {
         ...defaultHorario(),
         ...(setting.horario_atencion ?? {}),
@@ -163,6 +171,8 @@ const resolveErrorTab = (errors: Record<string, string>): GeneralTab => {
                 'precio_incluye_igv',
                 'ticket_ancho_mm',
                 'emite_comprobantes_sunat',
+                'apisunat_token',
+                'apisunat_mode',
             ].includes(key),
         )
     ) {
@@ -180,7 +190,7 @@ export default function Index({
     mutations_locked = false,
 }: ConfiguracionGeneralProps) {
     const { t } = useTranslation(['general', 'common']);
-    const { can } = usePermission();
+    const { can, isSuperadmin } = usePermission();
     const canUpdate = can('config-general.update') && !mutations_locked;
 
     const [data, setDataInternal] = useState<FormState>(() =>
@@ -189,6 +199,8 @@ export default function Index({
     const [activeTab, setActiveTab] = useState<GeneralTab>('identidad');
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [clearLogo, setClearLogo] = useState(false);
+    const [clearApisunat, setClearApisunat] = useState(false);
+    const [showApisunatToken, setShowApisunatToken] = useState(false);
     const [geo, setGeo] = useState<GeoCascadeValue>(() =>
         buildInitialGeo(setting),
     );
@@ -205,6 +217,8 @@ export default function Index({
         setGeo(buildInitialGeo(setting));
         setLogoFile(null);
         setClearLogo(false);
+        setClearApisunat(false);
+        setShowApisunatToken(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setting.updated_at]);
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -265,6 +279,14 @@ export default function Index({
             horario_atencion: JSON.stringify(data.horario_atencion),
             clear_logo: clearLogo ? 1 : 0,
         };
+
+        if (isSuperadmin) {
+            payload.clear_apisunat = clearApisunat ? 1 : 0;
+            payload.apisunat_mode = data.apisunat_mode;
+            if (data.apisunat_token) {
+                payload.apisunat_token = data.apisunat_token;
+            }
+        }
 
         if (logoFile) {
             payload.logo = logoFile;
@@ -863,6 +885,259 @@ export default function Index({
                                         }
                                     />
                                 </div>
+
+                                {plan_permite_factura_electronica &&
+                                    !isSuperadmin && (
+                                        <div className="sm:col-span-2">
+                                            <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/20">
+                                                        <KeyRound
+                                                            className="size-4"
+                                                            strokeWidth={2}
+                                                        />
+                                                    </span>
+                                                    <div>
+                                                        <p className="text-sm font-semibold">
+                                                            {t(
+                                                                'fields.apisunat_title',
+                                                            )}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {t(
+                                                                'fields.apisunat_tenant_hint',
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <span
+                                                        className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ${
+                                                            setting.apisunat_configurado
+                                                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                                                                : 'bg-amber-50 text-amber-700 ring-amber-200'
+                                                        }`}
+                                                    >
+                                                        {setting.apisunat_configurado ? (
+                                                            <>
+                                                                <CheckCircle2 className="size-3" />
+                                                                {t(
+                                                                    'fields.apisunat_status_configured',
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <XCircle className="size-3" />
+                                                                {t(
+                                                                    'fields.apisunat_status_pending',
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                {plan_permite_factura_electronica &&
+                                    isSuperadmin && (
+                                        <div className="sm:col-span-2">
+                                            <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                                                <div className="mb-3 flex items-center gap-2">
+                                                    <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/20">
+                                                        <KeyRound
+                                                            className="size-4"
+                                                            strokeWidth={2}
+                                                        />
+                                                    </span>
+                                                    <div>
+                                                        <p className="text-sm font-semibold">
+                                                            {t(
+                                                                'fields.apisunat_title',
+                                                            )}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {t(
+                                                                'fields.apisunat_superadmin_hint',
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/20">
+                                                        <ShieldCheck className="size-3" />
+                                                        {t(
+                                                            'fields.apisunat_superadmin_badge',
+                                                        )}
+                                                    </span>
+                                                    {setting.apisunat_configurado ? (
+                                                        <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
+                                                            <CheckCircle2 className="size-3" />
+                                                            {t(
+                                                                'fields.apisunat_status_configured',
+                                                            )}
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+
+                                                <div className="flex flex-col gap-3">
+                                                    <FormField
+                                                        id="apisunat-mode"
+                                                        label={t(
+                                                            'fields.apisunat_mode',
+                                                        )}
+                                                        error={
+                                                            errors.apisunat_mode
+                                                        }
+                                                        hint={
+                                                            data.apisunat_mode ===
+                                                            'produccion'
+                                                                ? t(
+                                                                      'fields.apisunat_mode_produccion_hint',
+                                                                  )
+                                                                : t(
+                                                                      'fields.apisunat_mode_sandbox_hint',
+                                                                  )
+                                                        }
+                                                    >
+                                                        <Select
+                                                            value={
+                                                                data.apisunat_mode
+                                                            }
+                                                            onValueChange={(
+                                                                v,
+                                                            ) =>
+                                                                setData(
+                                                                    'apisunat_mode',
+                                                                    v as
+                                                                        | 'sandbox'
+                                                                        | 'produccion',
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                !canUpdate
+                                                            }
+                                                        >
+                                                            <SelectTrigger id="apisunat-mode">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="sandbox">
+                                                                    {t(
+                                                                        'fields.apisunat_mode_sandbox',
+                                                                    )}
+                                                                </SelectItem>
+                                                                <SelectItem value="produccion">
+                                                                    {t(
+                                                                        'fields.apisunat_mode_produccion',
+                                                                    )}
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </FormField>
+
+                                                    <FormField
+                                                        id="apisunat-token"
+                                                        label={
+                                                            setting.apisunat_configurado
+                                                                ? t(
+                                                                      'fields.apisunat_token_replace',
+                                                                  )
+                                                                : t(
+                                                                      'fields.apisunat_token',
+                                                                  )
+                                                        }
+                                                        error={
+                                                            errors.apisunat_token
+                                                        }
+                                                        hint={t(
+                                                            'fields.apisunat_token_hint',
+                                                        )}
+                                                    >
+                                                        <div className="relative">
+                                                            <Input
+                                                                id="apisunat-token"
+                                                                type={
+                                                                    showApisunatToken
+                                                                        ? 'text'
+                                                                        : 'password'
+                                                                }
+                                                                value={
+                                                                    data.apisunat_token
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        'apisunat_token',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder={
+                                                                    setting.apisunat_configurado
+                                                                        ? '••••••••••••••••'
+                                                                        : 'eyJhbGciOiJIUzI1NiIs...'
+                                                                }
+                                                                className="pr-10 font-mono text-xs"
+                                                                disabled={
+                                                                    !canUpdate ||
+                                                                    clearApisunat
+                                                                }
+                                                                autoComplete="off"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setShowApisunatToken(
+                                                                        (v) =>
+                                                                            !v,
+                                                                    )
+                                                                }
+                                                                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                                                                tabIndex={-1}
+                                                                aria-label={
+                                                                    showApisunatToken
+                                                                        ? t(
+                                                                              'fields.apisunat_token_hide',
+                                                                          )
+                                                                        : t(
+                                                                              'fields.apisunat_token_show',
+                                                                          )
+                                                                }
+                                                            >
+                                                                {showApisunatToken ? (
+                                                                    <EyeOff className="size-4" />
+                                                                ) : (
+                                                                    <Eye className="size-4" />
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </FormField>
+
+                                                    {setting.apisunat_configurado &&
+                                                    canUpdate ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setClearApisunat(
+                                                                    (v) => !v,
+                                                                )
+                                                            }
+                                                            className={`inline-flex items-center gap-1.5 self-start rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                                                                clearApisunat
+                                                                    ? 'bg-destructive/10 text-destructive ring-1 ring-destructive/30 hover:bg-destructive/20'
+                                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-destructive'
+                                                            }`}
+                                                        >
+                                                            <Trash2 className="size-3.5" />
+                                                            {clearApisunat
+                                                                ? t(
+                                                                      'fields.apisunat_clear_cancel',
+                                                                  )
+                                                                : t(
+                                                                      'fields.apisunat_clear',
+                                                                  )}
+                                                        </button>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                             </FormSection>
                         </SectionCard>
                     </TabsContent>
