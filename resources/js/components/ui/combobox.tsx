@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Loader2, Trash2, X } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ export type ComboboxOption = {
     label: string;
     /** Texto extra para filtrar (p. ej. DNI) sin mostrarlo distinto del label. */
     keywords?: string;
+    /** Si false, oculta el botón eliminar de esta opción. */
+    deletable?: boolean;
 };
 
 function normalizeForSearch(value: string): string {
@@ -62,6 +64,9 @@ export type ComboboxProps = {
     creatable?: boolean;
     /** Si se define, muestra «crear» en búsqueda sin resultados y delega al padre (p. ej. alta de producto). */
     onCreateOption?: (query: string) => void;
+    /** Muestra papelera por opción (p. ej. borrar área creada por error). */
+    onDeleteOption?: (value: string) => void;
+    deleteOptionLabel?: (option: ComboboxOption) => string;
     id?: string;
     name?: string;
     className?: string;
@@ -99,6 +104,8 @@ export function Combobox({
     creatable = false,
     createOptionLabel,
     onCreateOption,
+    onDeleteOption,
+    deleteOptionLabel,
     id,
     name,
     className,
@@ -267,36 +274,68 @@ export function Combobox({
                             </CommandGroup>
                         ) : null}
                         <CommandGroup>
-                            {options.map((opt) => (
-                                <CommandItem
-                                    key={opt.value}
-                                    value={`${opt.label} ${opt.keywords ?? ''} ${opt.value}`}
-                                    keywords={
-                                        opt.keywords
-                                            ? [opt.keywords]
-                                            : undefined
-                                    }
-                                    onSelect={() => {
-                                        onChange(
-                                            opt.value === value
-                                                ? null
-                                                : opt.value,
-                                        );
-                                        setOpen(false);
-                                    }}
-                                    className="cursor-pointer"
-                                >
-                                    <Check
-                                        className={cn(
-                                            'mr-2 size-4',
-                                            opt.value === value
-                                                ? 'opacity-100'
-                                                : 'opacity-0',
-                                        )}
-                                    />
-                                    {opt.label}
-                                </CommandItem>
-                            ))}
+                            {options.map((opt) => {
+                                const showDelete =
+                                    onDeleteOption != null &&
+                                    opt.deletable !== false;
+
+                                return (
+                                    <CommandItem
+                                        key={opt.value}
+                                        value={`${opt.label} ${opt.keywords ?? ''} ${opt.value}`}
+                                        keywords={
+                                            opt.keywords
+                                                ? [opt.keywords]
+                                                : undefined
+                                        }
+                                        onSelect={() => {
+                                            onChange(
+                                                opt.value === value
+                                                    ? null
+                                                    : opt.value,
+                                            );
+                                            setOpen(false);
+                                        }}
+                                        className="group/item cursor-pointer"
+                                    >
+                                        <Check
+                                            className={cn(
+                                                'mr-2 size-4 shrink-0',
+                                                opt.value === value
+                                                    ? 'opacity-100'
+                                                    : 'opacity-0',
+                                            )}
+                                        />
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {opt.label}
+                                        </span>
+                                        {showDelete ? (
+                                            <button
+                                                type="button"
+                                                aria-label={
+                                                    deleteOptionLabel?.(opt) ??
+                                                    `Eliminar ${opt.label}`
+                                                }
+                                                className="ml-2 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground opacity-70 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none group-data-[selected=true]/item:opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    onDeleteOption(opt.value);
+                                                }}
+                                                onPointerDown={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                }}
+                                            >
+                                                <Trash2
+                                                    className="size-3.5"
+                                                    strokeWidth={2.25}
+                                                />
+                                            </button>
+                                        ) : null}
+                                    </CommandItem>
+                                );
+                            })}
                         </CommandGroup>
                     </CommandList>
                 </Command>

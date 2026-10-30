@@ -8,6 +8,7 @@ const carta = {
     builder: () => ({ url: `${base}/armar` }),
     areas: {
         store: () => ({ url: `${base}/areas` }),
+        destroy: (id: string | number) => ({ url: `${base}/areas/${id}` }),
     },
     categorias: {
         store: () => ({ url: `${base}/categorias` }),

@@ -20,6 +20,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:carta.create')
                     ->post('areas', [CartaController::class, 'storeArea'])
                     ->name('areas.store');
+                Route::middleware('permission:carta.delete')
+                    ->delete('areas/{areaCarta}', [CartaController::class, 'destroyArea'])
+                    ->name('areas.destroy');
 
                 Route::middleware('permission:carta.create')
                     ->post('categorias', [CartaController::class, 'storeCategoria'])

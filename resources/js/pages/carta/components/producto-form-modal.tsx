@@ -176,6 +176,32 @@ export function ProductoFormModal({
         );
     };
 
+    const deleteArea = (areaId: string) => {
+        const area = areas.find((a) => a.id === areaId);
+        if (!area) {
+            return;
+        }
+
+        if (
+            !window.confirm(
+                t('producto_form.fields.area_delete_confirm', {
+                    name: area.nombre,
+                }),
+            )
+        ) {
+            return;
+        }
+
+        router.delete(carta.areas.destroy(areaId).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (data.area_id === areaId) {
+                    setData('area_id', '');
+                }
+            },
+        });
+    };
+
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const onSuccess = () => {
@@ -312,7 +338,8 @@ export function ProductoFormModal({
                         id="producto-area"
                         label={t('producto_form.fields.area')}
                         error={errors.area_id}
-                        hint={t('producto_form.fields.area_hint')}
+                        info={t('producto_form.fields.area_info')}
+                        infoLabel={t('producto_form.fields.area_info_label')}
                     >
                         <Combobox
                             id="producto-area"
@@ -335,6 +362,12 @@ export function ProductoFormModal({
                                 })
                             }
                             onCreateOption={createArea}
+                            onDeleteOption={deleteArea}
+                            deleteOptionLabel={(opt) =>
+                                t('producto_form.fields.area_delete', {
+                                    name: opt.label,
+                                })
+                            }
                             loading={creatingArea}
                             disabled={processing}
                             clearable

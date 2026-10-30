@@ -151,6 +151,21 @@ class CartaController extends Controller
         ]);
     }
 
+    public function destroyArea(AreaCarta $areaCarta): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+
+        if ($areaCarta->productos()->exists()) {
+            throw ValidationException::withMessages([
+                'area' => 'No se puede eliminar un área con productos asignados. Cámbiales el área primero.',
+            ]);
+        }
+
+        $areaCarta->delete();
+
+        return back()->with('success', 'Área eliminada correctamente.');
+    }
+
     public function storeCategoria(CategoriaCartaRequest $request): RedirectResponse
     {
         $this->tenantIdOrAbort();
