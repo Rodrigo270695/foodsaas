@@ -16,11 +16,9 @@ export type PageHeaderProps = {
 /**
  * Cabecera de página estándar para listados / CRUDs.
  *
- * Estructura responsive:
- * - Mobile: título arriba, descripción debajo, badges en wrap, acción full-width al final.
- * - Desktop: título + descripción a la izquierda, acción a la derecha en la misma fila.
- *
- * Los badges van debajo del título y aceptan icon + label + value + variant.
+ * - Sticky al hacer scroll (dentro del área de contenido del layout).
+ * - Descripción oculta en móvil (`sm+`); título y acciones siempre visibles.
+ * - Desktop: título + descripción a la izquierda, acción a la derecha.
  */
 export function PageHeader({
     title,
@@ -32,7 +30,7 @@ export function PageHeader({
     return (
         <header
             className={cn(
-                'flex flex-col gap-4 border-b border-border/60 pb-5',
+                'sticky top-0 z-20 border-b border-border/60 bg-background/95 pt-1 pb-4 backdrop-blur-md supports-backdrop-filter:bg-background/85',
                 className,
             )}
         >
@@ -42,27 +40,27 @@ export function PageHeader({
                         {title}
                     </h1>
 
-                    {description && (
-                        <p className="text-sm leading-relaxed text-muted-foreground">
+                    {description ? (
+                        <p className="hidden text-sm leading-relaxed text-muted-foreground sm:block">
                             {description}
                         </p>
-                    )}
+                    ) : null}
                 </div>
 
-                {action && (
+                {action ? (
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:self-start">
                         {action}
                     </div>
-                )}
+                ) : null}
             </div>
 
-            {stats.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
+            {stats.length > 0 ? (
+                <div className="mt-4 flex flex-wrap items-center gap-1.5">
                     {stats.map((stat) => (
                         <StatBadge key={stat.label} {...stat} />
                     ))}
                 </div>
-            )}
+            ) : null}
         </header>
     );
 }
