@@ -3,6 +3,7 @@
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TenantController;
+use App\Http\Controllers\TenantImpersonationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'tenant.none'])->prefix('plataforma')->name('plataforma.')->group(function (): void {
@@ -33,6 +34,9 @@ Route::middleware(['auth', 'verified', 'tenant.none'])->prefix('plataforma')->na
     Route::middleware('permission:plataforma-tenants.delete')
         ->delete('tenants/{tenant}', [TenantController::class, 'destroy'])
         ->name('tenants.destroy');
+    Route::middleware('permission:plataforma-tenants.impersonate')
+        ->post('tenants/{tenant}/impersonate', [TenantImpersonationController::class, 'start'])
+        ->name('tenants.impersonate');
 
     Route::middleware('permission:plataforma-planes.view')
         ->get('planes', [PlanController::class, 'index'])

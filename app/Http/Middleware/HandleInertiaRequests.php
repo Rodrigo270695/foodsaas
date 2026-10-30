@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Support\Tenancy\TenantSubdomainUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -103,11 +104,27 @@ class HandleInertiaRequests extends Middleware
             },
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'tenancy' => [
-                'root_domain' => (string) config('tenant.root_domain'),
-                'scheme' => (string) config('tenant.scheme', 'https'),
-                'login_path' => '/login',
+                'root_domain' => TenantSubdomainUrl::rootDomain(),
+                'scheme' => TenantSubdomainUrl::scheme(),
+                'login_path' => TenantSubdomainUrl::loginPath(),
             ],
-            'tenant' => function () use ($request) {
+            'tenant_impersonation' => static function () use ($request) {
+                $raw = $request->session()->get('tenant_impersonation');
+
+                if (! is_array($raw) || empty($raw['tenant_id'])) {
+                    return null;
+                }
+
+                return [
+                    'tenant_label' => is_string($raw['tenant_label'] ?? null)
+                        ? $raw['tenant_label']
+                        : '',
+                    'started_at' => is_string($raw['started_at'] ?? null)
+                        ? $raw['started_at']
+                        : null,
+                ];
+            },
+            'tenant' => function () {
                 $ctx = tenant();
 
                 if ($ctx === null) {

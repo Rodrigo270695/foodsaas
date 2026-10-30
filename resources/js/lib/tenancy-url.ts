@@ -2,7 +2,7 @@ import { usePage } from '@inertiajs/react';
 import type { TenancyShared } from '@/types/tenancy';
 
 const DEFAULT_TENANCY: TenancyShared = {
-    root_domain: 'vetsaas.test',
+    root_domain: 'foodsaas.test',
     scheme: 'https',
     login_path: '/login',
 };
@@ -22,9 +22,6 @@ export function useTenancy(): TenancyShared {
     return DEFAULT_TENANCY;
 }
 
-/**
- * URL absoluta del subdominio de una clínica.
- */
 export function tenantSubdomainUrl(
     slug: string,
     tenancy: TenancyShared,

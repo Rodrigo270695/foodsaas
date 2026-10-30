@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use App\Tenancy\TenantManager;
 use Closure;
 use Illuminate\Http\Request;
@@ -22,6 +23,18 @@ class MatchUserTenant
 
         $hostTenantId = $this->manager->check() ? $this->manager->current()?->id() : null;
         $userTenantId = $user->tenant_id;
+
+        if ($hostTenantId !== null
+            && $userTenantId === null
+            && $user instanceof User
+            && $user->isPlatformSuperadmin()) {
+            $imp = $request->session()->get('tenant_impersonation');
+            if (is_array($imp)
+                && isset($imp['tenant_id'])
+                && (string) $imp['tenant_id'] === (string) $hostTenantId) {
+                return $next($request);
+            }
+        }
 
         if ($hostTenantId === $userTenantId) {
             return $next($request);

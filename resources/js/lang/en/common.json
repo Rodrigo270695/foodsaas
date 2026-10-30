@@ -23,6 +23,16 @@
         "forbidden_title": "Access denied",
         "forbidden_body": "You do not have permission to view this page."
     },
+    "impersonation": {
+        "banner_title": "Support mode (impersonation)",
+        "banner_body": "You are operating in {{restaurant}} with your superadmin account. End support mode when you are done.",
+        "banner_body_short": "Operating in {{restaurant}} as superadmin.",
+        "banner_leave": "Leave support mode",
+        "banner_leave_short": "Leave",
+        "banner_fallback_restaurant": "this restaurant",
+        "chip_label": "Support · {{restaurant}}",
+        "minimize": "Hide notice"
+    },
     "http_errors": {
         "cta_dashboard": "Go to Dashboard",
         "cta_login": "Go to login",
