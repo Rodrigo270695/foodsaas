@@ -22,6 +22,7 @@ class TenantSubscriptionController extends Controller
         'max_usuarios',
         'max_productos',
         'max_mesas',
+        'max_comprobantes_mes',
         'max_pedidos_mes',
     ];
 

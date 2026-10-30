@@ -35,13 +35,17 @@
     },
     "usage": {
         "title": "Plan usage",
-        "subtitle": "Current consumption against your plan limits.",
+        "subtitle": "Restaurant totals (all branches) against your plan limits.",
         "of": "{{used}} of {{limit}}",
         "unlimited": "Unlimited",
+        "unlimited_with_used": "{{used}} · Unlimited",
         "remaining": "{{count}} remaining",
         "remaining_zero": "No quota left",
         "pct": "{{pct}}%",
-        "coming_soon": "Order counting will be available with the sales module."
+        "total_all_sedes": "Total across all branches",
+        "comprobantes_month": "Issued this month",
+        "coming_soon": "Order counting will be available with the sales module.",
+        "comprobantes_soon": "Issued e-invoices will show here. The documents table is not active yet."
     },
     "semaphore": {
         "green": "Normal",
@@ -65,6 +69,7 @@
         "max_usuarios": "Users",
         "max_productos": "Products",
         "max_mesas": "Tables",
+        "max_comprobantes_mes": "Vouchers / month",
         "max_pedidos_mes": "Orders / month"
     },
     "modules": {

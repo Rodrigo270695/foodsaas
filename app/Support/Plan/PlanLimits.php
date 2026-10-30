@@ -29,6 +29,7 @@ final class PlanLimits
         'max_productos',
         'max_mesas',
         'max_pedidos_mes',
+        'max_comprobantes_mes',
     ];
 
     /** @var array<string, class-string> */
@@ -90,13 +91,22 @@ final class PlanLimits
 
     public static function currentCount(string $feature, ?Tenant $tenant = null): int
     {
-        $model = self::FEATURE_MODELS[$feature] ?? null;
-
-        if ($model === null) {
-            return 0;
-        }
-
         try {
+            if ($feature === 'max_comprobantes_mes') {
+                return self::countComprobantesMesActual();
+            }
+
+            if ($feature === 'max_pedidos_mes') {
+                // Contador real cuando exista el módulo de ventas / pedidos.
+                return 0;
+            }
+
+            $model = self::FEATURE_MODELS[$feature] ?? null;
+
+            if ($model === null) {
+                return 0;
+            }
+
             if ($feature === 'max_usuarios' || $feature === 'max_sedes') {
                 $tenantId = $tenant?->id ?? self::tenant()?->id;
 
@@ -113,6 +123,7 @@ final class PlanLimits
                 return Sede::query()->where('tenant_id', $tenantId)->count();
             }
 
+            // Productos / mesas: total del tenant (todas las sedes del schema).
             if (! self::tableExistsForModel($model)) {
                 return 0;
             }
@@ -123,6 +134,36 @@ final class PlanLimits
 
             return 0;
         }
+    }
+
+    /**
+     * Comprobantes electrónicos emitidos en el mes calendario actual (tenant schema).
+     * Si aún no existe `fel_documents`, retorna 0.
+     */
+    private static function countComprobantesMesActual(): int
+    {
+        if (! Schema::hasTable('fel_documents')) {
+            return 0;
+        }
+
+        $from = now()->startOfMonth();
+        $to = now()->endOfMonth();
+
+        $query = DB::table('fel_documents');
+
+        if (Schema::hasColumn('fel_documents', 'emitido_at')) {
+            return (int) $query
+                ->whereBetween('emitido_at', [$from, $to])
+                ->count();
+        }
+
+        if (Schema::hasColumn('fel_documents', 'created_at')) {
+            return (int) $query
+                ->whereBetween('created_at', [$from, $to])
+                ->count();
+        }
+
+        return (int) $query->count();
     }
 
     public static function wouldExceed(

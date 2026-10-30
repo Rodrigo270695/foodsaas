@@ -35,13 +35,17 @@
     },
     "usage": {
         "title": "Uso de tu plan",
-        "subtitle": "Consumo actual frente a los límites de tu plan.",
+        "subtitle": "Totales del restaurante (todas las sedes) frente a los límites de tu plan.",
         "of": "{{used}} de {{limit}}",
         "unlimited": "Ilimitado",
+        "unlimited_with_used": "{{used}} · Ilimitado",
         "remaining": "Restan {{count}}",
         "remaining_zero": "Sin cupo",
         "pct": "{{pct}}%",
-        "coming_soon": "El conteo de pedidos estará disponible con el módulo de ventas."
+        "total_all_sedes": "Total en todas las sedes",
+        "comprobantes_month": "Emitidos este mes",
+        "coming_soon": "El conteo de pedidos estará disponible con el módulo de ventas.",
+        "comprobantes_soon": "Cuando emitas CPE aparecerán aquí. La tabla de documentos aún no está activa."
     },
     "semaphore": {
         "green": "Normal",
@@ -65,6 +69,7 @@
         "max_usuarios": "Usuarios",
         "max_productos": "Productos",
         "max_mesas": "Mesas",
+        "max_comprobantes_mes": "Comprobantes / mes",
         "max_pedidos_mes": "Pedidos / mes"
     },
     "modules": {

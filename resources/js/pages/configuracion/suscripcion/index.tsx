@@ -6,6 +6,7 @@ import {
     CreditCard,
     Gem,
     MapPin,
+    ReceiptText,
     ShoppingBag,
     Users,
     XCircle,
@@ -81,8 +82,31 @@ const FEATURE_ICONS: Record<
     max_usuarios: Users,
     max_productos: Boxes,
     max_mesas: Armchair,
+    max_comprobantes_mes: ReceiptText,
     max_pedidos_mes: ShoppingBag,
 };
+
+function usageFooterHint(
+    feature: string,
+    t: (key: string) => string,
+): string {
+    if (feature === 'max_pedidos_mes') {
+        return t('usage.coming_soon');
+    }
+    if (feature === 'max_comprobantes_mes') {
+        return t('usage.comprobantes_month');
+    }
+    if (
+        feature === 'max_mesas' ||
+        feature === 'max_productos' ||
+        feature === 'max_usuarios' ||
+        feature === 'max_sedes'
+    ) {
+        return t('usage.total_all_sedes');
+    }
+
+    return '';
+}
 
 function money(value: number | null | undefined): string {
     if (value === null || value === undefined) {
@@ -455,7 +479,7 @@ export default function SuscripcionIndex({
                                 </p>
                             </div>
 
-                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3">
                                 {usage.map((row) => {
                                     const Icon =
                                         FEATURE_ICONS[row.feature] ??
@@ -470,6 +494,17 @@ export default function SuscripcionIndex({
                                         `features.${row.feature}`,
                                         { defaultValue: row.feature },
                                     );
+                                    const hint = usageFooterHint(
+                                        row.feature,
+                                        t,
+                                    );
+                                    const remainingLabel = row.unlimited
+                                        ? t('usage.unlimited')
+                                        : row.remaining === 0
+                                          ? t('usage.remaining_zero')
+                                          : t('usage.remaining', {
+                                                count: row.remaining ?? 0,
+                                            });
 
                                     return (
                                         <article
@@ -505,7 +540,12 @@ export default function SuscripcionIndex({
 
                                             <p className="mt-3 text-sm font-medium tabular-nums">
                                                 {row.unlimited
-                                                    ? t('usage.unlimited')
+                                                    ? t(
+                                                          'usage.unlimited_with_used',
+                                                          {
+                                                              used: row.used,
+                                                          },
+                                                      )
                                                     : t('usage.of', {
                                                           used: row.used,
                                                           limit:
@@ -528,35 +568,38 @@ export default function SuscripcionIndex({
                                                     className={cn(
                                                         'h-full rounded-full transition-all duration-500',
                                                         row.unlimited
-                                                            ? 'bg-muted-foreground/25'
+                                                            ? 'w-full bg-muted-foreground/20'
                                                             : barClass(
                                                                   row.semaphore,
                                                               ),
                                                     )}
-                                                    style={{
-                                                        width: row.unlimited
-                                                            ? '100%'
-                                                            : `${pct}%`,
-                                                    }}
+                                                    style={
+                                                        row.unlimited
+                                                            ? undefined
+                                                            : {
+                                                                  width: `${pct}%`,
+                                                              }
+                                                    }
                                                 />
                                             </div>
 
                                             <p className="mt-2 text-xs text-muted-foreground">
                                                 {row.feature ===
                                                 'max_pedidos_mes'
-                                                    ? t('usage.coming_soon')
-                                                    : row.unlimited
-                                                      ? t('usage.unlimited')
-                                                      : row.remaining === 0
-                                                        ? t(
-                                                              'usage.remaining_zero',
-                                                          )
-                                                        : t('usage.remaining', {
-                                                              count:
-                                                                  row.remaining ??
-                                                                  0,
-                                                          })}
+                                                    ? hint
+                                                    : hint
+                                                      ? `${hint} · ${remainingLabel}`
+                                                      : remainingLabel}
                                             </p>
+                                            {row.feature ===
+                                                'max_comprobantes_mes' &&
+                                            row.used === 0 ? (
+                                                <p className="mt-1 text-[11px] text-muted-foreground/80">
+                                                    {t(
+                                                        'usage.comprobantes_soon',
+                                                    )}
+                                                </p>
+                                            ) : null}
                                         </article>
                                     );
                                 })}
