@@ -79,6 +79,9 @@ export function CartaToolbar({
                     browseLabel={t('category_browse', {
                         defaultValue: 'Ver todas',
                     })}
+                    manageBrowseLabel={t('category_manage', {
+                        defaultValue: 'Gestionar',
+                    })}
                     canManage={canManageCategorias}
                     manageLabel={(name) =>
                         t('row.actions_for_category', { name })

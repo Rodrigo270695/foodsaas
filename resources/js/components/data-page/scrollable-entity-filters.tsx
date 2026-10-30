@@ -43,6 +43,8 @@ type ScrollableEntityFiltersProps = {
     'aria-label'?: string;
     searchPlaceholder?: string;
     browseLabel?: string;
+    /** Texto del botón cuando se puede editar/eliminar. */
+    manageBrowseLabel?: string;
     canManage?: boolean;
     manageLabel?: (name: string) => string;
     onEdit?: (id: string) => void;
@@ -340,6 +342,7 @@ export function ScrollableEntityFilters({
     'aria-label': ariaLabel,
     searchPlaceholder = 'Buscar…',
     browseLabel = 'Ver todas',
+    manageBrowseLabel = 'Gestionar',
     canManage = false,
     manageLabel,
     onEdit,
@@ -358,6 +361,9 @@ export function ScrollableEntityFilters({
     );
 
     const useCompact = isMobile || items.length > MANY_THRESHOLD;
+    const canAct = canManage && Boolean(onEdit || onDelete);
+    // Con pocas pills también hace falta un acceso a editar/eliminar.
+    const showBrowse = useCompact || canAct;
 
     const pick = (id: string | null) => {
         onChange(id);
@@ -366,7 +372,7 @@ export function ScrollableEntityFilters({
     };
 
     const manageSelected =
-        canManage && selected && (onEdit || onDelete) ? (
+        canAct && selected ? (
             <ManageMenu
                 label={selected.label}
                 manageLabel={manageLabel}
@@ -377,7 +383,13 @@ export function ScrollableEntityFilters({
             />
         ) : null;
 
-    const browseButton = (
+    const browseTriggerLabel = canAct
+        ? useCompact
+            ? `${manageBrowseLabel} (${items.length})`
+            : manageBrowseLabel
+        : `${browseLabel} (${items.length})`;
+
+    const browseButton = showBrowse ? (
         <Popover
             open={open}
             onOpenChange={(next) => {
@@ -392,14 +404,16 @@ export function ScrollableEntityFilters({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-10 shrink-0 cursor-pointer gap-1.5 rounded-full px-3 sm:h-9"
+                    className="h-10 shrink-0 cursor-pointer gap-1.5 rounded-full border-dashed px-3 sm:h-9"
                     aria-expanded={open}
                     aria-haspopup="listbox"
+                    aria-label={browseTriggerLabel}
                 >
+                    {canAct ? (
+                        <Pencil className="size-3.5 opacity-70" />
+                    ) : null}
                     <span className="max-w-[9rem] truncate">
-                        {useCompact
-                            ? `${browseLabel} (${items.length})`
-                            : browseLabel}
+                        {browseTriggerLabel}
                     </span>
                     <ChevronsUpDown className="size-3.5 opacity-60" />
                 </Button>
@@ -408,6 +422,11 @@ export function ScrollableEntityFilters({
                 align="start"
                 className="w-[min(100vw-2rem,22rem)] p-2"
             >
+                <p className="mb-2 px-1 text-xs text-muted-foreground">
+                    {canAct
+                        ? 'Elige una para filtrar, o usa ⋯ para editar / eliminar.'
+                        : 'Elige una opción de la lista.'}
+                </p>
                 <EntityPickerList
                     items={items}
                     value={value}
@@ -418,7 +437,7 @@ export function ScrollableEntityFilters({
                     onQueryChange={setQuery}
                     searchPlaceholder={searchPlaceholder}
                     onPick={pick}
-                    canManage={canManage}
+                    canManage={canAct}
                     manageLabel={manageLabel}
                     onEdit={onEdit}
                     onDelete={onDelete}
@@ -427,7 +446,7 @@ export function ScrollableEntityFilters({
                 />
             </PopoverContent>
         </Popover>
-    );
+    ) : null;
 
     if (useCompact) {
         return (
@@ -494,6 +513,7 @@ export function ScrollableEntityFilters({
                     />
                 ))}
             </div>
+            {browseButton}
             {manageSelected}
         </div>
     );

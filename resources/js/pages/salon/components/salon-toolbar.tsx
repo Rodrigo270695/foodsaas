@@ -76,6 +76,9 @@ export function SalonToolbar({
                     browseLabel={t('zona_browse', {
                         defaultValue: 'Ver todas',
                     })}
+                    manageBrowseLabel={t('zona_manage', {
+                        defaultValue: 'Gestionar',
+                    })}
                     canManage={canManage}
                     manageLabel={(name) =>
                         t('row.actions_for_zona', { name })
