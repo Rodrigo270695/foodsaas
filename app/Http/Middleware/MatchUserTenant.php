@@ -44,7 +44,9 @@ class MatchUserTenant
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        abort(403, $this->buildMessage($hostTenantId, $userTenantId));
+        return redirect()
+            ->route('login')
+            ->with('error', $this->buildMessage($hostTenantId, $userTenantId));
     }
 
     private function buildMessage(?string $hostTenantId, ?string $userTenantId): string

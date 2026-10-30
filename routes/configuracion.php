@@ -7,15 +7,21 @@ use App\Http\Controllers\TenantSubscriptionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'force-password-change'])->prefix('configuracion')->name('configuracion.')->group(function (): void {
-    Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.view'])
+Route::middleware([
+    'auth',
+    'verified',
+    'tenant.required',
+    'tenant.match-user',
+    'force-password-change',
+])->prefix('configuracion')->name('configuracion.')->group(function (): void {
+    Route::middleware('permission:config-general.view')
         ->get('general', [RestaurantSettingController::class, 'show'])
         ->name('general.show');
-    Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.update'])
+    Route::middleware('permission:config-general.update')
         ->match(['put', 'patch'], 'general', [RestaurantSettingController::class, 'update'])
         ->name('general.update');
 
-    Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.view'])
+    Route::middleware('permission:config-general.view')
         ->get('suscripcion', [TenantSubscriptionController::class, 'show'])
         ->name('suscripcion.show');
 

@@ -3,7 +3,6 @@
 use App\Http\Controllers\Auth\BootstrapLoginController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::middleware(['tenant.required'])->group(function (): void {
     Route::get('/auth/bienvenida/{token}', [BootstrapLoginController::class, 'show'])
@@ -15,19 +14,10 @@ Route::middleware(['tenant.required'])->group(function (): void {
         ->middleware(['throttle:20,1'])
         ->name('tenant.auth.bootstrap.store');
 
+    // Misma política que el host central: sin sesión → login (sin interstitial).
     Route::get('/', function () {
-        if (Auth::check()) {
-            return redirect()->route('dashboard');
-        }
-
-        $ctx = tenant();
-
-        return Inertia::render('tenant/welcome', [
-            'restaurant' => [
-                'slug' => $ctx?->slug,
-                'razon_social' => $ctx?->razonSocial(),
-                'nombre_comercial' => $ctx?->nombreComercial(),
-            ],
-        ]);
+        return Auth::check()
+            ? redirect()->route('dashboard')
+            : redirect()->route('login');
     })->name('tenant.home');
 });

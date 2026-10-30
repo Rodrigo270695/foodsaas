@@ -16,7 +16,7 @@ class PublicMenuController extends Controller
 
     /**
      * Carta pública por slug (QR / link compartido).
-     * Solo publicada (o staff autenticado puede ver borrador).
+     * Anónimos: solo publicada. Staff con carta.view: puede ver borrador.
      */
     public function show(Request $request, string $slug): Response
     {
@@ -34,23 +34,19 @@ class PublicMenuController extends Controller
             abort(404);
         }
 
+        $canPreviewDraft = $request->user()?->can('carta.view') === true;
+
+        if (! $menu->publicada && ! $canPreviewDraft) {
+            abort(404);
+        }
+
         $logo = RestaurantSetting::current()->logo_url
             ?: RestaurantBrandingUrls::default();
-
-        $isStaff = $request->user() !== null;
-        if (! $menu->publicada && ! $isStaff) {
-            return Inertia::render('carta/public-menu', [
-                'carta' => null,
-                'logo_url' => $logo,
-                'unpublished' => true,
-                'nombre' => $menu->nombre,
-            ]);
-        }
 
         return Inertia::render('carta/public-menu', [
             'carta' => $menu,
             'logo_url' => $logo,
-            'unpublished' => false,
+            'unpublished' => ! $menu->publicada,
             'nombre' => $menu->nombre,
         ]);
     }

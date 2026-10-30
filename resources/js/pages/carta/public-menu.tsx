@@ -9,29 +9,27 @@ type PublicMenuProps = {
     carta: MenuCartaDetail | null;
     logo_url: string | null;
     unpublished: boolean;
-    nombre: string;
+    nombre?: string;
 };
 
 export default function PublicMenu({
     carta,
     logo_url,
     unpublished,
-    nombre,
 }: PublicMenuProps) {
-    if (unpublished || !carta) {
+    if (!carta) {
         return (
             <>
-                <Head title={nombre || 'Carta'} />
+                <Head title="Carta" />
                 <div className="mx-auto flex min-h-svh w-full max-w-lg flex-col items-center justify-center gap-4 px-4 py-10 text-center">
                     <div className="flex size-14 items-center justify-center rounded-2xl bg-[#660033]/10 text-[#660033]">
                         <Lock className="size-6" />
                     </div>
                     <h1 className="text-xl font-semibold">
-                        Carta aún no publicada
+                        Carta no disponible
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                        El restaurante debe activar «Publicar carta» para que el
-                        enlace y el QR funcionen para clientes.
+                        El enlace no es válido o la carta aún no está publicada.
                     </p>
                     <Button type="button" variant="outline" asChild>
                         <Link href="/">
@@ -48,6 +46,12 @@ export default function PublicMenu({
         <>
             <Head title={carta.nombre} />
             <div className="mx-auto w-full max-w-[210mm] px-3 py-6 sm:px-0 sm:py-10">
+                {unpublished ? (
+                    <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-800 dark:text-amber-200 print:hidden">
+                        Vista previa (no publicada). Los clientes no ven este
+                        enlace hasta que publiques la carta.
+                    </p>
+                ) : null}
                 <MenuDocument
                     title={carta.nombre}
                     description={carta.descripcion}

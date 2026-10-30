@@ -52,7 +52,7 @@ Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-chan
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 });
 
-Route::middleware(['auth', 'verified', 'force-password-change'])->group(function () {
+Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-change'])->group(function () {
     Route::prefix('geo')->name('geo.')->group(function () {
         Route::get('paises', [GeoController::class, 'paises'])->name('paises');
         Route::get('departamentos', [GeoController::class, 'departamentos'])->name('departamentos');
