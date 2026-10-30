@@ -135,6 +135,7 @@
             "modulo_delivery": "Delivery propio y menú online.",
             "modulo_reservas": "Reservas de mesas y calendario.",
             "modulo_reportes": "Reportes avanzados de ventas y operación.",
+            "modulo_whatsapp": "Vincula WhatsApp para enviar boletas y facturas al cliente. OpenWA se configura después.",
             "boletas_electronicas": "Emite boletas de venta electrónicas.",
             "facturas_electronicas": "Emite facturas electrónicas (RUC).",
             "guias_remision": "Emite guías de remisión electrónicas.",

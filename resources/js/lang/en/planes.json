@@ -135,6 +135,7 @@
             "modulo_delivery": "Own delivery and online menu.",
             "modulo_reservas": "Table reservations and calendar.",
             "modulo_reportes": "Advanced sales and operations reports.",
+            "modulo_whatsapp": "Link WhatsApp to send boletas and invoices to the customer. OpenWA is configured later.",
             "boletas_electronicas": "Issue electronic sales receipts.",
             "facturas_electronicas": "Issue electronic invoices (RUC).",
             "guias_remision": "Issue electronic dispatch guides.",

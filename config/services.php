@@ -35,4 +35,32 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | API Perú (consulta DNI RENIEC / RUC SUNAT vía apiperu.dev)
+    |--------------------------------------------------------------------------
+    |
+    | Credenciales solo en servidor. El panel llama a un endpoint Laravel
+    | que consulta la API (nunca expongas el token al browser).
+    |
+    */
+    'apiperu' => [
+        'base_url' => env('APIPERU_BASE_URL', 'https://apiperu.dev/api'),
+        'token' => env('APIPERU_TOKEN'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | APISUNAT / Lucode (consulta DNI y RUC — respaldo)
+    |--------------------------------------------------------------------------
+    |
+    | Si apiperu.dev agota cuota o no responde. Si no hay
+    | APISUNAT_LOOKUP_TOKEN, se intenta el token APISUNAT del restaurante (FEL).
+    |
+    */
+    'apisunat_lookup' => [
+        'base_url' => env('APISUNAT_LOOKUP_BASE_URL', 'https://dev.apisunat.pe/api/v1'),
+        'token' => env('APISUNAT_LOOKUP_TOKEN'),
+    ],
+
 ];
