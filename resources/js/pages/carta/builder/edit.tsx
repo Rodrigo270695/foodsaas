@@ -8,7 +8,7 @@ import {
     Plus,
     Save,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,7 @@ import { FondoPicker } from './components/fondo-picker';
 import { MenuCanvas } from './components/menu-canvas';
 import { MenuQrPanel } from './components/menu-qr-panel';
 import type { TipografiaId } from './lib/tipografias';
-import type {
-    BuilderProducto,
-    FondoPreset,
-    MenuCartaDetail,
-} from './types';
+import type { BuilderProducto, FondoPreset } from './types';
 
 type EditProps = {
     carta: MenuCartaDetail;
@@ -56,11 +52,6 @@ export default function BuilderEdit({
     const [fondo, setFondo] = useState<FondoPreset>(
         initial.fondo_preset || 'cream',
     );
-    const [fondoImagenUrl, setFondoImagenUrl] = useState<string | null>(
-        initial.fondo_imagen_url ?? null,
-    );
-    const [fondoFile, setFondoFile] = useState<File | null>(null);
-    const [clearFondoImagen, setClearFondoImagen] = useState(false);
     const [tipografia, setTipografia] = useState<TipografiaId | string>(
         initial.tipografia || 'serif',
     );
@@ -69,24 +60,6 @@ export default function BuilderEdit({
     const [publicada, setPublicada] = useState(initial.publicada);
     const [paginas, setPaginas] = useState(initial.paginas);
     const [saving, setSaving] = useState(false);
-
-    const [localFondoPreview, setLocalFondoPreview] = useState<string | null>(
-        null,
-    );
-
-    useEffect(() => {
-        if (!fondoFile) {
-            setLocalFondoPreview(null);
-            return;
-        }
-        const url = URL.createObjectURL(fondoFile);
-        setLocalFondoPreview(url);
-        return () => URL.revokeObjectURL(url);
-    }, [fondoFile]);
-
-    const previewFondoUrl = clearFondoImagen
-        ? null
-        : (localFondoPreview ?? fondoImagenUrl);
 
     const [pageItems, setPageItems] = useState<Record<number, string[]>>(() => {
         const map: Record<number, string[]> = {};
@@ -171,61 +144,35 @@ export default function BuilderEdit({
             pages[String(p)] = pageItems[p] ?? [];
         }
 
-        const payload: Record<string, unknown> = {
-            nombre,
-            descripcion: initial.descripcion,
-            fondo_preset: fondo,
-            tipografia,
-            color_texto: colorTexto.trim() || null,
-            paginas,
-            publicada,
-            vigente_desde: initial.vigente_desde,
-            vigente_hasta: initial.vigente_hasta,
-            clear_fondo_imagen: clearFondoImagen,
-            _method: 'patch',
-        };
-        if (fondoFile) {
-            payload.fondo_imagen = fondoFile;
-        }
-
-        router.post(carta.menus.update(initial.id).url, payload, {
-            forceFormData: true,
-            preserveScroll: true,
-            onSuccess: () => {
-                setFondoFile(null);
-                setClearFondoImagen(false);
-                // El flash de syncItems («Canvas guardado.») es el único toast.
-                router.put(
-                    carta.menus.syncItems(initial.id).url,
-                    { pages },
-                    {
-                        preserveScroll: true,
-                        onFinish: () => setSaving(false),
-                        onSuccess: () => {
-                            // Refresca URL de fondo tras upload.
-                            if (fondoFile || clearFondoImagen) {
-                                router.reload({
-                                    only: ['carta'],
-                                    onSuccess: (page) => {
-                                        const next = (
-                                            page.props as {
-                                                carta?: MenuCartaDetail;
-                                            }
-                                        ).carta;
-                                        if (next) {
-                                            setFondoImagenUrl(
-                                                next.fondo_imagen_url ?? null,
-                                            );
-                                        }
-                                    },
-                                });
-                            }
-                        },
-                    },
-                );
+        router.patch(
+            carta.menus.update(initial.id).url,
+            {
+                nombre,
+                descripcion: initial.descripcion,
+                fondo_preset: fondo,
+                tipografia,
+                color_texto: colorTexto.trim() || null,
+                paginas,
+                publicada,
+                vigente_desde: initial.vigente_desde,
+                vigente_hasta: initial.vigente_hasta,
             },
-            onError: () => setSaving(false),
-        });
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // El flash de syncItems («Canvas guardado.») es el único toast.
+                    router.put(
+                        carta.menus.syncItems(initial.id).url,
+                        { pages },
+                        {
+                            preserveScroll: true,
+                            onFinish: () => setSaving(false),
+                        },
+                    );
+                },
+                onError: () => setSaving(false),
+            },
+        );
     };
 
     const printPdf = () => {
@@ -363,7 +310,6 @@ export default function BuilderEdit({
                                 page={page}
                                 pages={paginas}
                                 fondo={fondo}
-                                fondoImagenUrl={previewFondoUrl}
                                 tipografia={tipografia}
                                 colorTexto={colorTexto || null}
                                 logoUrl={logo_url}
@@ -417,18 +363,6 @@ export default function BuilderEdit({
                             onChange={(v) =>
                                 startTransition(() => setFondo(v))
                             }
-                            customImageUrl={
-                                clearFondoImagen ? null : fondoImagenUrl
-                            }
-                            pendingFile={fondoFile}
-                            onPickCustom={(file) => {
-                                setFondoFile(file);
-                                setClearFondoImagen(false);
-                            }}
-                            onClearCustom={() => {
-                                setFondoFile(null);
-                                setClearFondoImagen(true);
-                            }}
                         />
 
                         <EstiloCartaControls

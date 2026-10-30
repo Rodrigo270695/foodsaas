@@ -4,7 +4,6 @@ import type { FondoPreset } from '../types';
 
 export type CartaStyleInput = {
     fondo?: FondoPreset | string | null;
-    fondoImagenUrl?: string | null;
     tipografia?: string | null;
     colorTexto?: string | null;
 };
@@ -36,7 +35,6 @@ export function resolveCartaStyle(input: CartaStyleInput) {
         textColor: customColor,
         mutedColor: customColor ? withAlpha(customColor, 0.65) : null,
         accentColor: customColor ? customColor : null,
-        backgroundImageUrl: input.fondoImagenUrl?.trim() || null,
         canvasClass: theme.canvasClass,
         textClass: customColor ? undefined : theme.textClass,
         mutedClass: customColor ? undefined : theme.mutedClass,

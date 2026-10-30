@@ -78,7 +78,6 @@ export default function Preview({
                     title={menu.nombre}
                     description={menu.descripcion}
                     fondo={menu.fondo_preset || 'cream'}
-                    fondoImagenUrl={menu.fondo_imagen_url}
                     tipografia={menu.tipografia}
                     colorTexto={menu.color_texto}
                     logoUrl={logo_url}

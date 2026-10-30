@@ -10,7 +10,6 @@ type MenuDocumentProps = {
     title: string;
     description?: string | null;
     fondo: FondoPreset | string;
-    fondoImagenUrl?: string | null;
     tipografia?: string | null;
     colorTexto?: string | null;
     logoUrl: string | null;
@@ -25,7 +24,6 @@ export function MenuDocument({
     title,
     description,
     fondo,
-    fondoImagenUrl = null,
     tipografia = 'serif',
     colorTexto = null,
     logoUrl,
@@ -38,11 +36,10 @@ export function MenuDocument({
 
     const style = resolveCartaStyle({
         fondo,
-        fondoImagenUrl,
         tipografia,
         colorTexto,
     });
-    const { theme, darkTheme } = style;
+    const { darkTheme } = style;
     const mark = watermarkUrl;
 
     const byPage = new Map<number, BuilderItem[]>();
@@ -58,13 +55,6 @@ export function MenuDocument({
     const sheetStyle: CSSProperties = {
         fontFamily: style.fontFamily,
         color: style.textColor ?? undefined,
-        ...(style.backgroundImageUrl
-            ? {
-                  backgroundImage: `linear-gradient(${darkTheme ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.72)'}, ${darkTheme ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.72)'}), url(${style.backgroundImageUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-              }
-            : {}),
     };
 
     return (
@@ -85,7 +75,7 @@ export function MenuDocument({
                             'menu-print-page relative mx-auto w-full overflow-hidden rounded-sm border shadow-md',
                             'min-h-[297mm] max-w-[210mm] print:min-h-0 print:max-w-none print:rounded-none print:border-0 print:shadow-none',
                             'print:break-after-page print:break-inside-avoid',
-                            !style.backgroundImageUrl && style.canvasClass,
+                            style.canvasClass,
                             style.textClass,
                         )}
                         style={sheetStyle}

@@ -52,7 +52,6 @@ export default function PublicMenu({
                     title={carta.nombre}
                     description={carta.descripcion}
                     fondo={carta.fondo_preset || 'cream'}
-                    fondoImagenUrl={carta.fondo_imagen_url}
                     tipografia={carta.tipografia}
                     colorTexto={carta.color_texto}
                     logoUrl={logo_url}

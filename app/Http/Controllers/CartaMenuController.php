@@ -102,33 +102,18 @@ class CartaMenuController extends Controller
         $this->assertMenuSede($menuCarta);
 
         $data = $request->validated();
-        unset($data['fondo_imagen'], $data['clear_fondo_imagen']);
 
         if ($menuCarta->nombre !== $data['nombre']) {
             $data['slug'] = MenuCarta::uniqueSlug((string) $data['nombre'], $menuCarta->id);
         }
 
-        $disk = Storage::disk('public');
-
-        if ($request->boolean('clear_fondo_imagen')) {
-            if (is_string($menuCarta->fondo_imagen_path) && $menuCarta->fondo_imagen_path !== '') {
-                if ($disk->exists($menuCarta->fondo_imagen_path)) {
-                    $disk->delete($menuCarta->fondo_imagen_path);
-                }
+        // Fondos solo por color (presets). Limpia imagen legacy si existía.
+        if (is_string($menuCarta->fondo_imagen_path) && $menuCarta->fondo_imagen_path !== '') {
+            $disk = Storage::disk('public');
+            if ($disk->exists($menuCarta->fondo_imagen_path)) {
+                $disk->delete($menuCarta->fondo_imagen_path);
             }
             $data['fondo_imagen_path'] = null;
-        }
-
-        if ($request->hasFile('fondo_imagen')) {
-            $previous = $menuCarta->fondo_imagen_path;
-            $path = $request->file('fondo_imagen')->store(
-                'cartas/fondos/'.($menuCarta->sede_id ?? 'sede'),
-                'public',
-            );
-            $data['fondo_imagen_path'] = $path;
-            if (is_string($previous) && $previous !== '' && $previous !== $path && $disk->exists($previous)) {
-                $disk->delete($previous);
-            }
         }
 
         $menuCarta->update($data);

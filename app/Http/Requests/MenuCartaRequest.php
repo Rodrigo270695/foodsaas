@@ -28,8 +28,6 @@ class MenuCartaRequest extends FormRequest
                 'string',
                 Rule::in(['cream', 'ink', 'brand', 'paper', 'sunset']),
             ],
-            'fondo_imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
-            'clear_fondo_imagen' => ['sometimes', 'boolean'],
             'tipografia' => [
                 'nullable',
                 'string',
@@ -55,7 +53,6 @@ class MenuCartaRequest extends FormRequest
             'nombre' => 'nombre',
             'descripcion' => 'descripción',
             'fondo_preset' => 'fondo',
-            'fondo_imagen' => 'imagen de fondo',
             'tipografia' => 'tipografía',
             'color_texto' => 'color de texto',
             'paginas' => 'páginas',
@@ -94,7 +91,6 @@ class MenuCartaRequest extends FormRequest
             'fondo_preset' => $this->input('fondo_preset') ?: 'cream',
             'tipografia' => $tipografia !== '' ? $tipografia : 'serif',
             'color_texto' => $color !== '' ? $color : null,
-            'clear_fondo_imagen' => $this->boolean('clear_fondo_imagen'),
             'paginas' => $this->filled('paginas') ? (int) $this->input('paginas') : 1,
             'publicada' => $this->boolean('publicada'),
         ]);

@@ -18,7 +18,6 @@ type MenuCanvasProps = {
     page: number;
     pages: number;
     fondo: FondoPreset;
-    fondoImagenUrl?: string | null;
     tipografia?: string | null;
     colorTexto?: string | null;
     logoUrl: string | null;
@@ -35,7 +34,6 @@ export function MenuCanvas({
     page,
     pages,
     fondo,
-    fondoImagenUrl = null,
     tipografia = 'serif',
     colorTexto = null,
     logoUrl,
@@ -49,11 +47,10 @@ export function MenuCanvas({
     useCartaFont(tipografia);
     const style = resolveCartaStyle({
         fondo,
-        fondoImagenUrl,
         tipografia,
         colorTexto,
     });
-    const { theme, darkTheme } = style;
+    const { theme } = style;
     const [dragOver, setDragOver] = useState(false);
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
@@ -62,20 +59,13 @@ export function MenuCanvas({
     const sheetStyle: CSSProperties = {
         fontFamily: style.fontFamily,
         color: style.textColor ?? undefined,
-        ...(style.backgroundImageUrl
-            ? {
-                  backgroundImage: `linear-gradient(${darkTheme ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.75)'}, ${darkTheme ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.75)'}), url(${style.backgroundImageUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-              }
-            : {}),
     };
 
     return (
         <div
             className={cn(
                 'relative mx-auto flex min-h-[32rem] w-full max-w-xl flex-col overflow-hidden rounded-3xl border shadow-xl transition-[filter,transform,opacity] duration-500 ease-out',
-                !style.backgroundImageUrl && theme.canvasClass,
+                theme.canvasClass,
                 style.textClass,
                 dragOver && 'scale-[1.01] ring-2 ring-brand-500/40',
                 draggingIndex !== null &&
