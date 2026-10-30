@@ -341,8 +341,8 @@ export default function Index({
                     }
                     className="gap-5"
                 >
-                    <div className="overflow-x-auto pb-1">
-                        <TabsList className="grid h-auto min-w-[36rem] grid-cols-3 gap-2 bg-transparent p-0">
+                    <div className="sticky top-0 z-30 -mx-2 border-b border-transparent bg-background/95 px-2 py-2 backdrop-blur-md supports-backdrop-filter:bg-background/85">
+                        <TabsList className="grid h-auto w-full grid-cols-3 gap-2 bg-transparent p-0">
                             <TabsTrigger
                                 value="identidad"
                                 className="group h-auto min-h-18 cursor-pointer justify-start gap-3 border-border/70 bg-card/70 p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md data-[state=active]:border-sky-400 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-950 dark:data-[state=active]:bg-sky-950/40 dark:data-[state=active]:text-sky-100"
