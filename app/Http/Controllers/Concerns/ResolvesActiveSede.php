@@ -11,8 +11,11 @@ trait ResolvesActiveSede
     {
         $id = ActiveSedeContext::id();
         if ($id === null || $id === '') {
+            // `nombre` para que el error sea visible en modales de carta/salón
+            // que no tienen campo sede_id.
             throw ValidationException::withMessages([
-                'sede_id' => 'No hay sede activa. Crea o activa una sede en Configuración.',
+                'nombre' => 'No hay sede activa. Crea una sede en Configuración → Sedes o recarga la página e inténtalo de nuevo.',
+                'sede_id' => 'No hay sede activa.',
             ]);
         }
 

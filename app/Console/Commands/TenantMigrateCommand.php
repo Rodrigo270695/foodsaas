@@ -42,6 +42,35 @@ class TenantMigrateCommand extends Command
             return self::FAILURE;
         }
 
+        $wipe = (bool) $this->option('wipe');
+        $replay = (bool) $this->option('replay');
+
+        if ($wipe) {
+            $this->error('PELIGRO: --wipe hace DROP SCHEMA CASCADE y borra TODOS los datos del tenant.');
+            $this->warn('En producción esto es irreversible sin backup.');
+
+            if (app()->environment('production')) {
+                $this->error('Bloqueado en production. Restaura desde backup; no uses --wipe aquí.');
+
+                return self::FAILURE;
+            }
+
+            if (! $this->confirm('¿Confirmas borrar y recrear el/los schema(s) '.implode(', ', $schemas).'?', false)) {
+                $this->info('Cancelado. No se borró nada.');
+
+                return self::SUCCESS;
+            }
+        }
+
+        if ($replay && ! $wipe) {
+            $this->warn('--replay re-ejecuta migraciones tenant. Preferible solo en local y sin datos críticos.');
+            if (! $this->confirm('¿Continuar con --replay?', false)) {
+                $this->info('Cancelado.');
+
+                return self::SUCCESS;
+            }
+        }
+
         $failed = 0;
 
         foreach ($schemas as $schema) {
@@ -49,8 +78,8 @@ class TenantMigrateCommand extends Command
             $code = $migrator->migrate(
                 $schema,
                 $this->output,
-                (bool) $this->option('wipe'),
-                (bool) $this->option('replay'),
+                $wipe,
+                $replay,
             );
 
             if ($code !== TenantSchemaMigrator::EXIT_SUCCESS) {

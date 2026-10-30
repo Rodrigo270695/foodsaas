@@ -148,6 +148,14 @@ export function CategoriaFormModal({
             }
         >
             <div className="flex flex-col gap-5">
+                {(errors as Partial<Record<string, string>>).sede_id ? (
+                    <p
+                        className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                        role="alert"
+                    >
+                        {(errors as Partial<Record<string, string>>).sede_id}
+                    </p>
+                ) : null}
                 <FormSection index={0} title={t('categoria_form.section_basic')} columns={2}>
                     <FormField
                         id="categoria-nombre"

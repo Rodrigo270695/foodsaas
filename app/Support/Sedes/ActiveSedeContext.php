@@ -7,13 +7,15 @@ namespace App\Support\Sedes;
 use App\Models\Sede;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
  * Sede operativa activa (sesión) + sedes accesibles por el usuario.
  *
  * - admin_restaurante / superadmin: todas las sedes activas del tenant.
- * - resto: solo las asignadas en sede_user.
+ * - resto: solo las asignadas en sede_user (si no tiene ninguna y hay
+ *   una sola sede activa, se auto-asigna para no bloquear la operación).
  */
 final class ActiveSedeContext
 {
@@ -22,6 +24,16 @@ final class ActiveSedeContext
     public static function tablesReady(): bool
     {
         try {
+            // `sedes` vive en public. Con search_path tenant-first,
+            // Schema::hasTable('sedes') mira solo current_schema() y falla.
+            $row = DB::selectOne(
+                "select to_regclass('public.sedes') as reg",
+            );
+
+            if ($row !== null && $row->reg !== null) {
+                return true;
+            }
+
             return Schema::hasTable('sedes');
         } catch (\Throwable) {
             return false;
@@ -64,10 +76,24 @@ final class ActiveSedeContext
             ->orderBy('nombre');
 
         if (! self::userSeesAllSedes($user)) {
-            $assigned = $user->sedes()->pluck('sedes.id')->all();
+            $assigned = $user->sedes()->pluck('sedes.id')->map(fn ($id) => (string) $id)->all();
+
+            if ($assigned === []) {
+                $sole = SedeAssignment::soleActiveSedeId($tenantId);
+                if ($sole !== null) {
+                    try {
+                        $user->sedes()->syncWithoutDetaching([$sole]);
+                    } catch (\Throwable) {
+                        // no bloquear lectura
+                    }
+                    $assigned = [$sole];
+                }
+            }
+
             if ($assigned === []) {
                 return [];
             }
+
             $query->whereIn('id', $assigned);
         }
 
@@ -122,8 +148,6 @@ final class ActiveSedeContext
     }
 
     /**
-     * Payload Inertia compartido.
-     *
      * @return array{id: string|null, sedes: list<array{id: string, nombre: string, codigo: string}>, can_switch: bool}|null
      */
     public static function sharedPayload(?User $user = null): ?array

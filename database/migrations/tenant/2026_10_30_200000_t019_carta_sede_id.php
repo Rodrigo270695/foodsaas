@@ -66,11 +66,11 @@ return new class extends TenantMigration
             $blueprint->index('sede_id', $table.'_sede_id_index');
         });
 
-        // FK a public.sedes (mismo patrón que cfg_zonas).
+        // RESTRICT: borrar una sede no debe cascader y vaciar la carta.
         DB::statement(
             "ALTER TABLE {$table}
              ADD CONSTRAINT {$table}_sede_id_foreign
-             FOREIGN KEY (sede_id) REFERENCES public.sedes (id) ON DELETE CASCADE",
+             FOREIGN KEY (sede_id) REFERENCES public.sedes (id) ON DELETE RESTRICT",
         );
     }
 };

@@ -6,7 +6,7 @@ namespace App\Support\Sedes;
 
 use App\Models\Sede;
 use App\Models\User;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Asignación usuario ↔ sede.
@@ -21,7 +21,12 @@ final class SedeAssignment
     public static function tablesReady(): bool
     {
         try {
-            return Schema::hasTable('sedes') && Schema::hasTable('sede_user');
+            // Tablas en public; hasTable() con search_path tenant-first falla.
+            $row = DB::selectOne(
+                "select to_regclass('public.sedes') as sedes, to_regclass('public.sede_user') as sede_user",
+            );
+
+            return $row !== null && $row->sedes !== null && $row->sede_user !== null;
         } catch (\Throwable) {
             return false;
         }
@@ -200,7 +205,7 @@ final class SedeAssignment
     public static function catalogForTenant(?string $tenantId = null): array
     {
         $tenantId = self::resolveTenantId($tenantId);
-        if ($tenantId === null || ! Schema::hasTable('sedes')) {
+        if ($tenantId === null || ! self::tablesReady()) {
             return [];
         }
 
