@@ -23,9 +23,25 @@ export {
     type FilterChipTone,
     type FilterChipsProps,
 } from './filter-chips';
+export {
+    InlineStats,
+    type InlineStat,
+    type InlineStatsProps,
+} from './inline-stats';
 export { PageHeader, type PageHeaderProps, type PageHeaderStat } from './page-header';
+export {
+    PillFilters,
+    type PillFilterItem,
+    type PillFiltersProps,
+} from './pill-filters';
+export { SearchField, type SearchFieldProps } from './search-field';
 export {
     StatBadge,
     type StatBadgeProps,
     type StatBadgeVariant,
 } from './stat-badge';
+export {
+    StatusPills,
+    type StatusPillOption,
+    type StatusPillsProps,
+} from './status-pills';

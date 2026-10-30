@@ -34,7 +34,7 @@ export function ProductoCard({
         <article
             className={cn(
                 'group relative flex flex-col overflow-hidden rounded-2xl border bg-card/90 shadow-sm transition-all duration-200',
-                'hover:-translate-y-0.5 hover:shadow-md',
+                'hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-ring/40',
                 producto.activo
                     ? 'border-border/70 hover:border-brand-400/40'
                     : 'border-border/50 opacity-80',
@@ -69,14 +69,6 @@ export function ProductoCard({
                                 </span>
                             ) : null}
                         </div>
-                        <h3 className="text-base font-semibold leading-snug text-foreground">
-                            {producto.nombre}
-                        </h3>
-                        {producto.codigo ? (
-                            <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                                {producto.codigo}
-                            </p>
-                        ) : null}
                     </div>
 
                     {showActions ? (
@@ -127,31 +119,41 @@ export function ProductoCard({
                     ) : null}
                 </div>
 
-                {producto.descripcion ? (
-                    <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                        {producto.descripcion}
-                    </p>
-                ) : (
-                    <p className="text-sm text-muted-foreground/60">—</p>
-                )}
-
-                <div className="mt-auto flex items-end justify-between gap-2 border-t border-border/50 pt-3">
-                    <p className="text-lg font-semibold tabular-nums tracking-tight text-brand-700 dark:text-brand-300">
-                        {priceLabel}
-                    </p>
-                    {canUpdate ? (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onEdit(producto)}
-                            className="cursor-pointer gap-1.5"
-                        >
-                            <Pencil className="size-3.5" strokeWidth={2.25} />
-                            {t('common:actions.edit')}
-                        </Button>
+                <button
+                    type="button"
+                    disabled={!canUpdate}
+                    onClick={() => {
+                        if (canUpdate) {
+                            onEdit(producto);
+                        }
+                    }}
+                    className={cn(
+                        'flex flex-1 flex-col gap-2 rounded-lg text-left outline-none',
+                        canUpdate
+                            ? 'cursor-pointer'
+                            : 'cursor-default',
+                    )}
+                >
+                    <h3 className="text-base font-semibold leading-snug text-foreground">
+                        {producto.nombre}
+                    </h3>
+                    {producto.codigo ? (
+                        <p className="font-mono text-[11px] text-muted-foreground">
+                            {producto.codigo}
+                        </p>
                     ) : null}
-                </div>
+                    {producto.descripcion ? (
+                        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                            {producto.descripcion}
+                        </p>
+                    ) : null}
+
+                    <div className="mt-auto border-t border-border/50 pt-3">
+                        <p className="text-lg font-semibold tabular-nums tracking-tight text-brand-700 dark:text-brand-300">
+                            {priceLabel}
+                        </p>
+                    </div>
+                </button>
             </div>
         </article>
     );

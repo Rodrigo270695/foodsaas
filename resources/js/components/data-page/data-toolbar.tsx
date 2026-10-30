@@ -1,6 +1,5 @@
-import { Loader2, Search, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/components/data-page/search-field';
 import { cn } from '@/lib/utils';
 
 export type DataToolbarProps = {
@@ -21,13 +20,7 @@ export type DataToolbarProps = {
 
 /**
  * Toolbar superior de una página de listado.
- * Combina un input de búsqueda con icono + slot opcional para filtros extra.
- *
- * - Cuando `isSearching` es `true`, el ícono se convierte en spinner para
- *   indicar al usuario que la consulta está en curso (útil con miles de filas).
- *
- * Layout: el buscador va solo en la primera fila; los selects/filtros debajo,
- * en una fila que puede hacer wrap sin desalinear el search.
+ * Combina SearchField + slot opcional para filtros extra.
  */
 export function DataToolbar({
     search,
@@ -41,38 +34,14 @@ export function DataToolbar({
 }: DataToolbarProps) {
     return (
         <div className={cn('flex w-full flex-col gap-3', className)}>
-            <div className={cn('relative w-full sm:max-w-sm', searchWrapperClassName)}>
-                {isSearching ? (
-                    <Loader2
-                        className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 animate-spin text-primary"
-                        aria-hidden="true"
-                        strokeWidth={2.25}
-                    />
-                ) : (
-                    <Search
-                        className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground/90"
-                        aria-hidden="true"
-                        strokeWidth={2.25}
-                    />
-                )}
-                <Input
-                    type="search"
-                    value={search}
-                    onChange={(event) => onSearchChange(event.target.value)}
-                    placeholder={placeholder}
-                    className="h-10 pr-10 pl-10 [&::-webkit-search-cancel-button]:hidden"
-                />
-                {search.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => onSearchChange('')}
-                        aria-label="Limpiar búsqueda"
-                        className="absolute top-1/2 right-2.5 z-10 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    >
-                        <X className="size-3.5" strokeWidth={2.5} />
-                    </button>
-                )}
-            </div>
+            <SearchField
+                value={search}
+                onValueChange={onSearchChange}
+                placeholder={placeholder}
+                isSearching={isSearching}
+                className={cn('sm:max-w-sm', searchWrapperClassName)}
+                inputClassName="h-10"
+            />
 
             {children ? (
                 <div
