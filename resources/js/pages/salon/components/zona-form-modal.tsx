@@ -1,8 +1,16 @@
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FormField, FormModal, FormSection, SedeFormField } from '@/components/forms';
+import {
+    FormField,
+    FormModal,
+    FormSection,
+    OrdenInput,
+    resolveOrdenValue,
+    SedeFormField,
+    type OrdenValue,
+} from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -15,22 +23,25 @@ export type ZonaFormModalProps = {
     zona: ZonaSalon | null;
     sedes: readonly SedeOpcion[];
     defaultSedeId: string;
+    /** Siguiente orden sugerido al crear. */
+    suggestedOrden?: number;
 };
 
 type ZonaFormData = {
     sede_id: string;
     nombre: string;
-    orden: number;
+    orden: OrdenValue;
     activa: boolean;
 };
 
 const buildInitialData = (
     zona: ZonaSalon | null,
     defaultSedeId: string,
+    suggestedOrden: number,
 ): ZonaFormData => ({
     sede_id: zona?.sede_id ?? defaultSedeId,
     nombre: zona?.nombre ?? '',
-    orden: zona?.orden ?? 0,
+    orden: zona ? zona.orden : suggestedOrden,
     activa: zona?.activa ?? true,
 });
 
@@ -43,28 +54,33 @@ export function ZonaFormModal({
     zona,
     sedes,
     defaultSedeId,
+    suggestedOrden = 1,
 }: ZonaFormModalProps) {
     const { t } = useTranslation(['salon', 'common']);
     const isEdit = zona !== null;
+    const nextOrden = Math.max(1, suggestedOrden);
 
-    const emptyForm = buildInitialData(null, defaultSedeId);
-    const { data, setData, post, patch, processing, errors, reset, clearErrors } =
+    const emptyForm = buildInitialData(null, defaultSedeId, nextOrden);
+    const { data, setData, errors, reset, clearErrors } =
         useForm<ZonaFormData>(emptyForm);
+    const [saving, setSaving] = useState(false);
 
     const initialSnapshotRef = useRef<ZonaFormData>(emptyForm);
-    const canSubmit = isFormValid(data) && !processing;
+    const canSubmit = isFormValid(data) && !saving;
 
     useEffect(() => {
         if (open) {
-            const initial = buildInitialData(zona, defaultSedeId);
+            const initial = buildInitialData(zona, defaultSedeId, nextOrden);
             initialSnapshotRef.current = initial;
-            (Object.keys(initial) as Array<keyof ZonaFormData>).forEach((key) => {
-                setData(key, initial[key]);
-            });
+            (Object.keys(initial) as Array<keyof ZonaFormData>).forEach(
+                (key) => {
+                    setData(key, initial[key]);
+                },
+            );
             clearErrors();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, zona?.id, defaultSedeId]);
+    }, [open, zona?.id, defaultSedeId, nextOrden]);
 
     const isDirty = useMemo(() => {
         const initial = initialSnapshotRef.current;
@@ -86,34 +102,44 @@ export function ZonaFormModal({
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        const orden = resolveOrdenValue(
+            data.orden,
+            isEdit ? (zona?.orden ?? nextOrden) : nextOrden,
+        );
+        const body = { ...data, orden };
+
         const onSuccess = () => {
             reset();
             clearErrors();
             onOpenChange(false);
         };
 
-        if (isEdit && zona) {
-            patch(salon.zonas.update(zona.id).url, {
-                preserveScroll: true,
-                onSuccess,
-            });
+        const visit = {
+            preserveScroll: true,
+            onStart: () => setSaving(true),
+            onFinish: () => setSaving(false),
+            onSuccess,
+        };
 
+        if (isEdit && zona) {
+            router.patch(salon.zonas.update(zona.id).url, body, visit);
             return;
         }
 
-        post(salon.zonas.store().url, {
-            preserveScroll: true,
-            onSuccess,
-        });
+        router.post(salon.zonas.store().url, body, visit);
     };
 
     return (
         <FormModal
             open={open}
             onOpenChange={handleClose}
-            title={isEdit ? t('zona_form.title_edit') : t('zona_form.title_create')}
+            title={
+                isEdit ? t('zona_form.title_edit') : t('zona_form.title_create')
+            }
             description={
-                isEdit ? t('zona_form.description_edit') : t('zona_form.description_create')
+                isEdit
+                    ? t('zona_form.description_edit')
+                    : t('zona_form.description_create')
             }
             size="md"
             onSubmit={onSubmit}
@@ -123,7 +149,7 @@ export function ZonaFormModal({
                         type="button"
                         variant="outline"
                         onClick={() => handleClose(false)}
-                        disabled={processing}
+                        disabled={saving}
                         className="cursor-pointer"
                     >
                         {t('common:actions.cancel')}
@@ -133,16 +159,25 @@ export function ZonaFormModal({
                         disabled={!canSubmit}
                         className="cursor-pointer gap-2 disabled:cursor-not-allowed"
                     >
-                        {processing && (
-                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        {saving && (
+                            <Loader2
+                                className="size-4 animate-spin"
+                                aria-hidden="true"
+                            />
                         )}
-                        {isEdit ? t('zona_form.submit_edit') : t('zona_form.submit_create')}
+                        {isEdit
+                            ? t('zona_form.submit_edit')
+                            : t('zona_form.submit_create')}
                     </Button>
                 </>
             }
         >
             <div className="flex flex-col gap-5">
-                <FormSection index={0} title={t('zona_form.section_basic')} columns={2}>
+                <FormSection
+                    index={0}
+                    title={t('zona_form.section_basic')}
+                    columns={2}
+                >
                     <div className="sm:col-span-2">
                         <SedeFormField
                             id="zona-sede"
@@ -167,7 +202,9 @@ export function ZonaFormModal({
                             id="zona-nombre"
                             value={data.nombre}
                             onChange={(e) => setData('nombre', e.target.value)}
-                            placeholder={t('zona_form.fields.nombre_placeholder')}
+                            placeholder={t(
+                                'zona_form.fields.nombre_placeholder',
+                            )}
                             autoFocus
                         />
                     </FormField>
@@ -178,15 +215,13 @@ export function ZonaFormModal({
                         error={errors.orden}
                         hint={t('zona_form.fields.orden_hint')}
                     >
-                        <Input
+                        <OrdenInput
                             id="zona-orden"
-                            type="number"
-                            min={0}
-                            max={9999}
                             value={data.orden}
-                            onChange={(e) =>
-                                setData('orden', Number.parseInt(e.target.value, 10) || 0)
+                            fallbackOnEmpty={
+                                isEdit ? (zona?.orden ?? nextOrden) : nextOrden
                             }
+                            onChange={(v) => setData('orden', v)}
                         />
                     </FormField>
                 </FormSection>
@@ -211,7 +246,9 @@ export function ZonaFormModal({
                         </div>
                     </label>
                     {errors.activa ? (
-                        <p className="text-xs text-destructive">{errors.activa}</p>
+                        <p className="text-xs text-destructive">
+                            {errors.activa}
+                        </p>
                     ) : null}
                 </FormSection>
             </div>

@@ -57,6 +57,10 @@ type CartaIndexProps = {
     stats: CartaStats;
     plan_productos_reached?: boolean;
     copy_targets?: ActiveSedeOption[];
+    /** Siguiente orden de producto por categoría. */
+    next_producto_orden_by_categoria?: Record<string, number>;
+    /** Siguiente orden al crear categoría. */
+    next_categoria_orden?: number;
 };
 
 type ModalState =
@@ -77,6 +81,8 @@ export default function Index({
     stats,
     plan_productos_reached = false,
     copy_targets = [],
+    next_producto_orden_by_categoria = {},
+    next_categoria_orden = 1,
 }: CartaIndexProps) {
     const { t } = useTranslation(['carta', 'common']);
     const { can } = usePermission();
@@ -110,6 +116,8 @@ export default function Index({
                 'stats',
                 'plan_productos_reached',
                 'copy_targets',
+                'next_producto_orden_by_categoria',
+                'next_categoria_orden',
             ],
             errorMessage: t('toast.load_error'),
             storageKey: 'foodsaas.carta.prefs',
@@ -544,6 +552,7 @@ export default function Index({
                 categoria={
                     modal.type === 'category-edit' ? modal.categoria : null
                 }
+                suggestedOrden={next_categoria_orden}
             />
 
             <ProductoFormModal
@@ -562,6 +571,7 @@ export default function Index({
                 categorias={categorias}
                 areas={areas}
                 defaultCategoriaId={defaultCategoriaForProduct}
+                nextOrdenByCategoria={next_producto_orden_by_categoria}
             />
 
             <CopyToSedeModal

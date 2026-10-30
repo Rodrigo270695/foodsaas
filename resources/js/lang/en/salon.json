@@ -114,7 +114,7 @@
             "nombre": "Name",
             "nombre_placeholder": "E.g. Patio",
             "orden": "Order",
-            "orden_hint": "Lower numbers appear first in lists.",
+            "orden_hint": "Next order is suggested automatically; you can edit it. Lower numbers appear first.",
             "activa": "Active zone",
             "activa_hint": "Inactive zones hide their tables from selection."
         }

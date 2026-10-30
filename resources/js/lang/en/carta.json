@@ -173,7 +173,7 @@
             "descripcion": "Description",
             "descripcion_placeholder": "Optional",
             "orden": "Order",
-            "orden_hint": "Lower numbers appear first on the menu.",
+            "orden_hint": "Next order is suggested automatically; you can edit it. Lower numbers appear first.",
             "activa": "Active category",
             "activa_hint": "Inactive categories hide their products in operational lists."
         }
@@ -215,7 +215,7 @@
             "imagen_hint": "JPG, PNG or WebP · max 2 MB",
             "imagen_pick": "Choose image",
             "orden": "Order",
-            "orden_hint": "Within the category, lower numbers appear first.",
+            "orden_hint": "Next order in the category is suggested; you can edit it. Lower numbers appear first.",
             "activo": "Active product",
             "activo_hint": "Inactive products are hidden from sales.",
             "control_inventario": "Inventory control",

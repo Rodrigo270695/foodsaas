@@ -121,7 +121,7 @@
             "nombre": "Nombre",
             "nombre_placeholder": "Ej. Terraza",
             "orden": "Orden",
-            "orden_hint": "Menor número aparece primero en listados.",
+            "orden_hint": "Se sugiere el siguiente automáticamente; puedes editarlo. Menor número aparece primero.",
             "activa": "Zona activa",
             "activa_hint": "Las zonas inactivas ocultan sus mesas en selección."
         }

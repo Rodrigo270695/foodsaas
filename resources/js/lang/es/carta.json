@@ -185,7 +185,7 @@
             "descripcion": "Descripción",
             "descripcion_placeholder": "Opcional, visible en algunos canales",
             "orden": "Orden",
-            "orden_hint": "Menor número aparece primero en la carta.",
+            "orden_hint": "Se sugiere el siguiente automáticamente; puedes editarlo. Menor número aparece primero.",
             "activa": "Categoría activa",
             "activa_hint": "Las categorías inactivas ocultan sus productos en listados operativos."
         }
@@ -227,7 +227,7 @@
             "imagen_hint": "JPG, PNG o WebP · máx. 2 MB",
             "imagen_pick": "Elegir imagen",
             "orden": "Orden",
-            "orden_hint": "Dentro de la categoría, menor número aparece primero.",
+            "orden_hint": "Se sugiere el siguiente en la categoría; puedes editarlo. Menor número aparece primero.",
             "activo": "Producto activo",
             "activo_hint": "Los productos inactivos no se muestran en venta.",
             "control_inventario": "Control de inventario",

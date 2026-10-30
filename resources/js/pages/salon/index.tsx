@@ -406,6 +406,11 @@ export default function Index({
                 zona={modal.type === 'zona-edit' ? modal.zona : null}
                 sedes={sedeForForms}
                 defaultSedeId={sedeId}
+                suggestedOrden={
+                    zonas.length === 0
+                        ? 1
+                        : Math.max(...zonas.map((z) => z.orden), 0) + 1
+                }
             />
 
             <MesaFormModal

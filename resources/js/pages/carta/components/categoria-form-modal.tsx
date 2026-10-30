@@ -1,6 +1,6 @@
 import { router, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     FormField,
@@ -62,11 +62,12 @@ export function CategoriaFormModal({
     const isEdit = categoria !== null;
     const nextOrden = Math.max(1, suggestedOrden);
 
-    const { data, setData, processing, errors, reset, clearErrors } =
+    const { data, setData, errors, reset, clearErrors } =
         useForm<CategoriaFormData>(emptyForm(nextOrden));
+    const [saving, setSaving] = useState(false);
 
     const initialSnapshotRef = useRef<CategoriaFormData>(emptyForm(nextOrden));
-    const canSubmit = isFormValid(data) && !processing;
+    const canSubmit = isFormValid(data) && !saving;
 
     useEffect(() => {
         if (open) {
@@ -114,19 +115,19 @@ export function CategoriaFormModal({
             onOpenChange(false);
         };
 
-        if (isEdit && categoria) {
-            router.patch(carta.categorias.update(categoria.id).url, body, {
-                preserveScroll: true,
-                onSuccess,
-            });
+        const visit = {
+            preserveScroll: true,
+            onStart: () => setSaving(true),
+            onFinish: () => setSaving(false),
+            onSuccess,
+        };
 
+        if (isEdit && categoria) {
+            router.patch(carta.categorias.update(categoria.id).url, body, visit);
             return;
         }
 
-        router.post(carta.categorias.store().url, body, {
-            preserveScroll: true,
-            onSuccess,
-        });
+        router.post(carta.categorias.store().url, body, visit);
     };
 
     return (
@@ -151,7 +152,7 @@ export function CategoriaFormModal({
                         type="button"
                         variant="outline"
                         onClick={() => handleClose(false)}
-                        disabled={processing}
+                        disabled={saving}
                         className="cursor-pointer"
                     >
                         {t('common:actions.cancel')}
@@ -161,7 +162,7 @@ export function CategoriaFormModal({
                         disabled={!canSubmit}
                         className="cursor-pointer gap-2 disabled:cursor-not-allowed"
                     >
-                        {processing && (
+                        {saving && (
                             <Loader2
                                 className="size-4 animate-spin"
                                 aria-hidden="true"

@@ -137,7 +137,7 @@ export function ProductoFormModal({
         categorias[0]?.id ??
         '';
 
-    const { data, setData, processing, errors, reset, clearErrors } =
+    const { data, setData, errors, reset, clearErrors } =
         useForm<ProductoFormData>(
             emptyForm(fallbackCategoria, nextOrdenByCategoria),
         );
@@ -146,9 +146,10 @@ export function ProductoFormModal({
         emptyForm(fallbackCategoria, nextOrdenByCategoria),
     );
     const [creatingArea, setCreatingArea] = useState(false);
+    const [saving, setSaving] = useState(false);
     const ordenTouchedRef = useRef(false);
     const canSubmit =
-        isFormValid(data) && !processing && categorias.length > 0;
+        isFormValid(data) && !saving && categorias.length > 0;
 
     const suggestedOrden = suggestedProductoOrden(
         data.categoria_id || fallbackCategoria,
@@ -265,6 +266,8 @@ export function ProductoFormModal({
         const payload = {
             forceFormData: true,
             preserveScroll: true,
+            onStart: () => setSaving(true),
+            onFinish: () => setSaving(false),
             onSuccess,
         };
 
@@ -317,7 +320,7 @@ export function ProductoFormModal({
                         type="button"
                         variant="outline"
                         onClick={() => handleClose(false)}
-                        disabled={processing}
+                        disabled={saving}
                         className="cursor-pointer"
                     >
                         {t('common:actions.cancel')}
@@ -327,7 +330,7 @@ export function ProductoFormModal({
                         disabled={!canSubmit}
                         className="cursor-pointer gap-2 disabled:cursor-not-allowed"
                     >
-                        {processing && (
+                        {saving && (
                             <Loader2
                                 className="size-4 animate-spin"
                                 aria-hidden="true"
@@ -381,7 +384,7 @@ export function ProductoFormModal({
                                     );
                                 }
                             }}
-                            disabled={processing || categorias.length === 0}
+                            disabled={saving || categorias.length === 0}
                         >
                             <SelectTrigger
                                 id="producto-categoria"
@@ -445,7 +448,7 @@ export function ProductoFormModal({
                                 })
                             }
                             loading={creatingArea}
-                            disabled={processing}
+                            disabled={saving}
                             clearable
                         />
                     </FormField>
@@ -535,7 +538,7 @@ export function ProductoFormModal({
                             file={data.imagen}
                             pendingRemoval={data.clear_imagen}
                             error={errors.imagen}
-                            disabled={processing}
+                            disabled={saving}
                             onSelect={(file) => {
                                 setData('imagen', file);
                                 setData('clear_imagen', false);
@@ -593,7 +596,7 @@ export function ProductoFormModal({
                                     v as ControlInventario,
                                 )
                             }
-                            disabled={processing}
+                            disabled={saving}
                         >
                             <SelectTrigger id="producto-control" className="w-full">
                                 <SelectValue />
