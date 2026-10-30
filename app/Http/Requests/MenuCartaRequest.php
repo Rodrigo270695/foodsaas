@@ -28,6 +28,20 @@ class MenuCartaRequest extends FormRequest
                 'string',
                 Rule::in(['cream', 'ink', 'brand', 'paper', 'sunset']),
             ],
+            'fondo_imagen' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'clear_fondo_imagen' => ['sometimes', 'boolean'],
+            'tipografia' => [
+                'nullable',
+                'string',
+                'max:60',
+                Rule::in([
+                    'serif', 'system', 'inter', 'roboto', 'open-sans', 'lato',
+                    'montserrat', 'poppins', 'raleway', 'nunito', 'source-sans',
+                    'playfair', 'merriweather', 'lora', 'pt-serif', 'libre-baskerville',
+                    'oswald', 'rubik', 'work-sans', 'dm-sans', 'cormorant',
+                ]),
+            ],
+            'color_texto' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'paginas' => ['nullable', 'integer', 'min:1', 'max:8'],
             'publicada' => ['sometimes', 'boolean'],
             'vigente_desde' => ['nullable', 'date'],
@@ -41,6 +55,9 @@ class MenuCartaRequest extends FormRequest
             'nombre' => 'nombre',
             'descripcion' => 'descripción',
             'fondo_preset' => 'fondo',
+            'fondo_imagen' => 'imagen de fondo',
+            'tipografia' => 'tipografía',
+            'color_texto' => 'color de texto',
             'paginas' => 'páginas',
             'publicada' => 'publicada',
             'vigente_desde' => 'vigente desde',
@@ -68,10 +85,16 @@ class MenuCartaRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $color = trim((string) $this->input('color_texto', ''));
+        $tipografia = trim((string) $this->input('tipografia', ''));
+
         $this->merge([
             'nombre' => trim((string) $this->input('nombre', '')),
             'descripcion' => trim((string) $this->input('descripcion', '')) ?: null,
             'fondo_preset' => $this->input('fondo_preset') ?: 'cream',
+            'tipografia' => $tipografia !== '' ? $tipografia : 'serif',
+            'color_texto' => $color !== '' ? $color : null,
+            'clear_fondo_imagen' => $this->boolean('clear_fondo_imagen'),
             'paginas' => $this->filled('paginas') ? (int) $this->input('paginas') : 1,
             'publicada' => $this->boolean('publicada'),
         ]);

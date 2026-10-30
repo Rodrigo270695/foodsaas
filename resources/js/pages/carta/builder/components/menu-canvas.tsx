@@ -1,11 +1,12 @@
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrecio } from '../../lib/format-precio';
+import { useCartaFont } from '../hooks/use-carta-font';
+import { resolveCartaStyle } from '../lib/carta-style';
 import { withCategoriaHeadings } from '../lib/group-by-categoria';
-import { resolveFondo } from '../lib/fondos';
 import type { BuilderProducto, FondoPreset } from '../types';
 
 type CanvasEntry = {
@@ -17,6 +18,9 @@ type MenuCanvasProps = {
     page: number;
     pages: number;
     fondo: FondoPreset;
+    fondoImagenUrl?: string | null;
+    tipografia?: string | null;
+    colorTexto?: string | null;
     logoUrl: string | null;
     items: CanvasEntry[];
     isDraggingOver?: boolean;
@@ -31,6 +35,9 @@ export function MenuCanvas({
     page,
     pages,
     fondo,
+    fondoImagenUrl = null,
+    tipografia = 'serif',
+    colorTexto = null,
     logoUrl,
     items,
     onDropProducto,
@@ -39,22 +46,42 @@ export function MenuCanvas({
     onReorder,
 }: MenuCanvasProps) {
     const { t } = useTranslation('carta');
-    const theme = resolveFondo(fondo);
+    useCartaFont(tipografia);
+    const style = resolveCartaStyle({
+        fondo,
+        fondoImagenUrl,
+        tipografia,
+        colorTexto,
+    });
+    const { theme, darkTheme } = style;
     const [dragOver, setDragOver] = useState(false);
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
     const rows = useMemo(() => withCategoriaHeadings(items), [items]);
-    const darkTheme = theme.id === 'brand' || theme.id === 'ink';
+
+    const sheetStyle: CSSProperties = {
+        fontFamily: style.fontFamily,
+        color: style.textColor ?? undefined,
+        ...(style.backgroundImageUrl
+            ? {
+                  backgroundImage: `linear-gradient(${darkTheme ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.75)'}, ${darkTheme ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.75)'}), url(${style.backgroundImageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+              }
+            : {}),
+    };
 
     return (
         <div
             className={cn(
                 'relative mx-auto flex min-h-[32rem] w-full max-w-xl flex-col overflow-hidden rounded-3xl border shadow-xl transition-[filter,transform,opacity] duration-500 ease-out',
-                theme.canvasClass,
+                !style.backgroundImageUrl && theme.canvasClass,
+                style.textClass,
                 dragOver && 'scale-[1.01] ring-2 ring-brand-500/40',
                 draggingIndex !== null &&
                     '[&_.canvas-idle]:blur-[1.5px] [&_.canvas-idle]:opacity-70',
             )}
+            style={sheetStyle}
             onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(true);
@@ -83,33 +110,37 @@ export function MenuCanvas({
                 setDraggingIndex(null);
             }}
         >
-            {logoUrl ? (
-                <img
-                    src={logoUrl}
-                    alt=""
-                    aria-hidden
-                    className="pointer-events-none absolute top-1/2 left-1/2 size-48 -translate-x-1/2 -translate-y-1/2 opacity-[0.07] select-none"
-                />
-            ) : null}
-
             <header
                 className={cn(
-                    'relative z-10 border-b px-6 py-5 transition-opacity duration-300',
-                    theme.textClass,
+                    'relative z-10 flex items-start justify-between gap-3 border-b px-6 py-5 transition-opacity duration-300',
                     darkTheme ? 'border-white/15' : 'border-black/10',
                 )}
             >
-                <p
-                    className={cn(
-                        'text-[10px] font-semibold tracking-[0.2em] uppercase',
-                        theme.mutedClass,
-                    )}
-                >
-                    {t('builder.page_label', { page, pages })}
-                </p>
-                <h2 className="mt-1 font-serif text-2xl tracking-tight sm:text-3xl">
-                    {title}
-                </h2>
+                <div className="min-w-0 flex-1">
+                    <p
+                        className={cn(
+                            'text-[10px] font-semibold tracking-[0.2em] uppercase',
+                            style.mutedClass,
+                        )}
+                        style={
+                            style.mutedColor
+                                ? { color: style.mutedColor }
+                                : undefined
+                        }
+                    >
+                        {t('builder.page_label', { page, pages })}
+                    </p>
+                    <h2 className="mt-1 text-2xl tracking-tight sm:text-3xl">
+                        {title}
+                    </h2>
+                </div>
+                {logoUrl ? (
+                    <img
+                        src={logoUrl}
+                        alt=""
+                        className="size-12 shrink-0 object-contain sm:size-14"
+                    />
+                ) : null}
             </header>
 
             <div className="relative z-10 flex flex-1 flex-col gap-2 p-4 sm:p-6">
@@ -117,10 +148,15 @@ export function MenuCanvas({
                     <div
                         className={cn(
                             'flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed px-4 py-16 text-center transition-colors duration-300',
-                            theme.mutedClass,
+                            style.mutedClass,
                             darkTheme ? 'border-white/25' : 'border-black/15',
                             dragOver && 'bg-black/5',
                         )}
+                        style={
+                            style.mutedColor
+                                ? { color: style.mutedColor }
+                                : undefined
+                        }
                     >
                         <p className="text-sm font-medium">
                             {t('builder.drop_empty')}
@@ -135,12 +171,9 @@ export function MenuCanvas({
                             return (
                                 <div
                                     key={row.key}
-                                    className={cn(
-                                        'mt-2 flex items-end gap-3 pt-2 first:mt-0 first:pt-0',
-                                        theme.textClass,
-                                    )}
+                                    className="mt-2 flex items-end gap-3 pt-2 first:mt-0 first:pt-0"
                                 >
-                                    <h3 className="font-serif text-lg tracking-tight sm:text-xl">
+                                    <h3 className="text-lg tracking-tight sm:text-xl">
                                         {row.label}
                                     </h3>
                                     <span
@@ -181,7 +214,6 @@ export function MenuCanvas({
                                     darkTheme
                                         ? 'border-white/10 bg-white/5'
                                         : 'border-black/5 bg-white/40',
-                                    theme.textClass,
                                 )}
                             >
                                 <div className="size-14 shrink-0 overflow-hidden rounded-xl bg-black/10">
@@ -201,8 +233,15 @@ export function MenuCanvas({
                                         <span
                                             className={cn(
                                                 'shrink-0 tabular-nums text-sm font-semibold',
-                                                theme.accentClass,
+                                                style.accentClass,
                                             )}
+                                            style={
+                                                style.accentColor
+                                                    ? {
+                                                          color: style.accentColor,
+                                                      }
+                                                    : undefined
+                                            }
                                         >
                                             {formatPrecio(
                                                 entry.producto.precio,
@@ -213,8 +252,15 @@ export function MenuCanvas({
                                         <p
                                             className={cn(
                                                 'mt-0.5 line-clamp-2 text-xs',
-                                                theme.mutedClass,
+                                                style.mutedClass,
                                             )}
+                                            style={
+                                                style.mutedColor
+                                                    ? {
+                                                          color: style.mutedColor,
+                                                      }
+                                                    : undefined
+                                            }
                                         >
                                             {entry.producto.descripcion}
                                         </p>

@@ -7,11 +7,10 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { resolveDocumentBrand } from '@/lib/document-brand';
 import { capturePwaInstallPrompt } from '@/lib/pwa-install';
 import { recoverPwaBoot } from '@/lib/pwa-boot';
 import '@/lib/i18n';
-
-const appName = import.meta.env.VITE_APP_NAME || 'FoodSaaS';
 
 if (typeof window !== 'undefined') {
     initializeTheme();
@@ -20,7 +19,10 @@ if (typeof window !== 'undefined') {
 }
 
 void createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => {
+        const brand = resolveDocumentBrand();
+        return title ? `${title} - ${brand}` : brand;
+    },
     layout: (name) => {
         switch (true) {
             case name.startsWith('auth/'):

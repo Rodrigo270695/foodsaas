@@ -1,17 +1,22 @@
+import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { formatPrecio } from '../../lib/format-precio';
+import { useCartaFont } from '../hooks/use-carta-font';
+import { resolveCartaStyle } from '../lib/carta-style';
 import { withCategoriaHeadings } from '../lib/group-by-categoria';
-import { resolveFondo } from '../lib/fondos';
 import type { BuilderItem, FondoPreset } from '../types';
 
 type MenuDocumentProps = {
     title: string;
     description?: string | null;
     fondo: FondoPreset | string;
+    fondoImagenUrl?: string | null;
+    tipografia?: string | null;
+    colorTexto?: string | null;
     logoUrl: string | null;
     pages: number;
     items: BuilderItem[];
-    /** Marca de agua siempre centrada en cada hoja. */
+    /** Marca de agua centrada (opcional; por defecto no se usa el logo de cabecera). */
     watermarkUrl?: string | null;
     className?: string;
 };
@@ -20,15 +25,25 @@ export function MenuDocument({
     title,
     description,
     fondo,
+    fondoImagenUrl = null,
+    tipografia = 'serif',
+    colorTexto = null,
     logoUrl,
     pages,
     items,
-    watermarkUrl,
+    watermarkUrl = null,
     className,
 }: MenuDocumentProps) {
-    const theme = resolveFondo(fondo || 'cream');
-    const mark = watermarkUrl || logoUrl;
-    const darkTheme = theme.id === 'brand' || theme.id === 'ink';
+    useCartaFont(tipografia);
+
+    const style = resolveCartaStyle({
+        fondo,
+        fondoImagenUrl,
+        tipografia,
+        colorTexto,
+    });
+    const { theme, darkTheme } = style;
+    const mark = watermarkUrl;
 
     const byPage = new Map<number, BuilderItem[]>();
     for (let p = 1; p <= pages; p += 1) {
@@ -39,6 +54,18 @@ export function MenuDocument({
         list.push(item);
         byPage.set(item.pagina, list);
     }
+
+    const sheetStyle: CSSProperties = {
+        fontFamily: style.fontFamily,
+        color: style.textColor ?? undefined,
+        ...(style.backgroundImageUrl
+            ? {
+                  backgroundImage: `linear-gradient(${darkTheme ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.72)'}, ${darkTheme ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.72)'}), url(${style.backgroundImageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+              }
+            : {}),
+    };
 
     return (
         <div
@@ -58,45 +85,65 @@ export function MenuDocument({
                             'menu-print-page relative mx-auto w-full overflow-hidden rounded-sm border shadow-md',
                             'min-h-[297mm] max-w-[210mm] print:min-h-0 print:max-w-none print:rounded-none print:border-0 print:shadow-none',
                             'print:break-after-page print:break-inside-avoid',
-                            theme.canvasClass,
-                            theme.textClass,
+                            !style.backgroundImageUrl && style.canvasClass,
+                            style.textClass,
                         )}
+                        style={sheetStyle}
                     >
                         {mark ? (
                             <img
                                 src={mark}
                                 alt=""
                                 aria-hidden
-                                className="pointer-events-none absolute top-1/2 left-1/2 z-0 size-[min(55%,18rem)] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.1] select-none print:opacity-[0.12]"
+                                className="pointer-events-none absolute top-1/2 left-1/2 z-0 size-[min(55%,18rem)] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.08] select-none print:opacity-[0.1]"
                             />
                         ) : null}
 
                         <header
                             className={cn(
-                                'relative z-10 border-b px-8 py-8 sm:px-10',
+                                'relative z-10 flex items-start justify-between gap-4 border-b px-8 py-8 sm:px-10',
                                 darkTheme ? 'border-white/15' : 'border-black/10',
                             )}
                         >
-                            <p
-                                className={cn(
-                                    'text-[10px] font-semibold tracking-[0.25em] uppercase',
-                                    theme.mutedClass,
-                                )}
-                            >
-                                Página {page} de {pages}
-                            </p>
-                            <h1 className="mt-2 font-serif text-3xl tracking-tight sm:text-4xl">
-                                {title}
-                            </h1>
-                            {description ? (
+                            <div className="min-w-0 flex-1">
                                 <p
                                     className={cn(
-                                        'mt-2 max-w-lg text-sm',
-                                        theme.mutedClass,
+                                        'text-[10px] font-semibold tracking-[0.25em] uppercase',
+                                        style.mutedClass,
                                     )}
+                                    style={
+                                        style.mutedColor
+                                            ? { color: style.mutedColor }
+                                            : undefined
+                                    }
                                 >
-                                    {description}
+                                    Página {page} de {pages}
                                 </p>
+                                <h1 className="mt-2 text-3xl tracking-tight sm:text-4xl">
+                                    {title}
+                                </h1>
+                                {description ? (
+                                    <p
+                                        className={cn(
+                                            'mt-2 max-w-lg text-sm',
+                                            style.mutedClass,
+                                        )}
+                                        style={
+                                            style.mutedColor
+                                                ? { color: style.mutedColor }
+                                                : undefined
+                                        }
+                                    >
+                                        {description}
+                                    </p>
+                                ) : null}
+                            </div>
+                            {logoUrl ? (
+                                <img
+                                    src={logoUrl}
+                                    alt=""
+                                    className="size-14 shrink-0 object-contain sm:size-16 print:size-16"
+                                />
                             ) : null}
                         </header>
 
@@ -105,8 +152,13 @@ export function MenuDocument({
                                 <p
                                     className={cn(
                                         'py-16 text-center text-sm',
-                                        theme.mutedClass,
+                                        style.mutedClass,
                                     )}
+                                    style={
+                                        style.mutedColor
+                                            ? { color: style.mutedColor }
+                                            : undefined
+                                    }
                                 >
                                     Sin platos en esta página.
                                 </p>
@@ -118,7 +170,7 @@ export function MenuDocument({
                                                 key={row.key}
                                                 className="mt-5 flex items-end gap-3 first:mt-0"
                                             >
-                                                <h2 className="font-serif text-xl tracking-tight sm:text-2xl">
+                                                <h2 className="text-xl tracking-tight sm:text-2xl">
                                                     {row.label}
                                                 </h2>
                                                 <span
@@ -162,8 +214,15 @@ export function MenuDocument({
                                                     <span
                                                         className={cn(
                                                             'tabular-nums font-semibold',
-                                                            theme.accentClass,
+                                                            style.accentClass,
                                                         )}
+                                                        style={
+                                                            style.accentColor
+                                                                ? {
+                                                                      color: style.accentColor,
+                                                                  }
+                                                                : undefined
+                                                        }
                                                     >
                                                         {formatPrecio(
                                                             item.producto
@@ -175,8 +234,15 @@ export function MenuDocument({
                                                     <p
                                                         className={cn(
                                                             'mt-1 text-sm',
-                                                            theme.mutedClass,
+                                                            style.mutedClass,
                                                         )}
+                                                        style={
+                                                            style.mutedColor
+                                                                ? {
+                                                                      color: style.mutedColor,
+                                                                  }
+                                                                : undefined
+                                                        }
                                                     >
                                                         {
                                                             item.producto

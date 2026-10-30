@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +14,7 @@ use Illuminate\Support\Str;
  * @property string $id
  * @property string $nombre
  * @property string $slug
+ * @property-read ?string $fondo_imagen_url
  */
 class MenuCarta extends Model
 {
@@ -26,11 +28,16 @@ class MenuCarta extends Model
         'slug',
         'descripcion',
         'fondo_preset',
+        'fondo_imagen_path',
+        'tipografia',
+        'color_texto',
         'paginas',
         'publicada',
         'vigente_desde',
         'vigente_hasta',
     ];
+
+    protected $appends = ['fondo_imagen_url'];
 
     protected function casts(): array
     {
@@ -40,6 +47,15 @@ class MenuCarta extends Model
             'vigente_desde' => 'date',
             'vigente_hasta' => 'date',
         ];
+    }
+
+    protected function fondoImagenUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): ?string => $this->fondo_imagen_path
+                ? asset('storage/'.ltrim((string) $this->fondo_imagen_path, '/'))
+                : null,
+        );
     }
 
     /**

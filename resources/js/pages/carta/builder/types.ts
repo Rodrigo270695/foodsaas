@@ -1,3 +1,5 @@
+import type { TipografiaId } from './lib/tipografias';
+
 export type FondoPreset = 'cream' | 'ink' | 'brand' | 'paper' | 'sunset';
 
 export type BuilderProducto = {
@@ -28,6 +30,10 @@ export type MenuCartaRow = {
     slug: string;
     descripcion: string | null;
     fondo_preset: FondoPreset;
+    fondo_imagen_path?: string | null;
+    fondo_imagen_url?: string | null;
+    tipografia?: TipografiaId | string | null;
+    color_texto?: string | null;
     paginas: number;
     publicada: boolean;
     vigente_desde: string | null;

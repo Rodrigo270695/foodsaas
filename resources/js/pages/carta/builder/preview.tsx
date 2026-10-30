@@ -3,6 +3,7 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { resolveDocumentBrand } from '@/lib/document-brand';
 import BlankLayout from '@/layouts/blank-layout';
 import carta from '../carta-routes';
 import { MenuDocument } from './components/menu-document';
@@ -22,19 +23,26 @@ export default function Preview({
     const { t } = useTranslation('carta');
 
     useEffect(() => {
+        // El callback global de Inertia añade « - {tenant|FoodSaaS}».
+        // Forzamos el brand del tenant por si el título se resolvió antes.
+        document.title = `${menu.nombre} - ${resolveDocumentBrand()}`;
+    }, [menu.nombre]);
+
+    useEffect(() => {
         if (!auto_print) {
             return;
         }
         const timer = window.setTimeout(() => {
+            document.title = `${menu.nombre} - ${resolveDocumentBrand()}`;
             window.print();
         }, 400);
 
         return () => window.clearTimeout(timer);
-    }, [auto_print]);
+    }, [auto_print, menu.nombre]);
 
     return (
         <>
-            <Head title={`${menu.nombre} · ${t('builder.pdf')}`} />
+            <Head title={menu.nombre} />
 
             <div className="mx-auto flex w-full max-w-[210mm] flex-col gap-4 px-3 py-4 print:p-0 sm:px-0 sm:py-8">
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/60 bg-white/90 px-3 py-2 shadow-sm print:hidden">
@@ -70,8 +78,10 @@ export default function Preview({
                     title={menu.nombre}
                     description={menu.descripcion}
                     fondo={menu.fondo_preset || 'cream'}
+                    fondoImagenUrl={menu.fondo_imagen_url}
+                    tipografia={menu.tipografia}
+                    colorTexto={menu.color_texto}
                     logoUrl={logo_url}
-                    watermarkUrl={logo_url}
                     pages={menu.paginas}
                     items={menu.items}
                 />
