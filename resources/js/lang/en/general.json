@@ -1,7 +1,7 @@
 {
     "title": "General settings",
-    "description": "Tax identity, logo, billing and opening hours for your restaurant.",
-    "description_for": "General data for {{name}}: identity, logo, billing and hours.",
+    "description": "Tax identity, logo and billing for your restaurant. Opening hours are set on each location.",
+    "description_for": "General data for {{name}}: identity, logo and billing.",
     "actions": {
         "save": "Save changes",
         "saved": "Saved"

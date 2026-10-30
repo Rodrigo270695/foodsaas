@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Concerns;
 
 /**
- * Bloquea altas/edición/borrado en el tenant público slug `demo`.
+ * Bloquea altas/edición/borrado del menú Configuración en el tenant demo.
  */
 trait GuardsPublicDemoTenant
 {
     protected function abortIfPublicDemoMutationsLocked(string $message): void
     {
-        if (! demo_mutations_locked()) {
+        if (! demo_config_locked()) {
             return;
         }
 
@@ -18,6 +18,6 @@ trait GuardsPublicDemoTenant
 
     protected function demoMutationsLockedForClinic(): bool
     {
-        return demo_mutations_locked();
+        return demo_config_locked();
     }
 }

@@ -3,7 +3,6 @@ import { Head, router } from '@inertiajs/react';
 import {
     Building2,
     CheckCircle2,
-    Clock3,
     Eye,
     EyeOff,
     Info,
@@ -58,22 +57,10 @@ import general from './general-routes';
 import type {
     ConfiguracionGeneralProps,
     GeneralTab,
-    HorarioAtencion,
-    HorarioDiaKey,
     IgvAfectacion,
     RestaurantSetting,
     TicketAnchoMm,
 } from './types';
-
-const HORARIO_DIAS: readonly HorarioDiaKey[] = [
-    'lun',
-    'mar',
-    'mie',
-    'jue',
-    'vie',
-    'sab',
-    'dom',
-];
 
 const TICKET_ANCHOS: readonly TicketAnchoMm[] = ['56', '57', '58', '80'];
 
@@ -95,15 +82,7 @@ type FormState = {
     emite_comprobantes_sunat: boolean;
     apisunat_token: string;
     apisunat_mode: 'sandbox' | 'produccion';
-    horario_atencion: HorarioAtencion;
 };
-
-const defaultHorario = (): HorarioAtencion =>
-    HORARIO_DIAS.reduce((acc, dia) => {
-        acc[dia] = { abierto: true, abre: '11:00', cierra: '23:00' };
-
-        return acc;
-    }, {} as HorarioAtencion);
 
 const normalizeTicketAncho = (value: string | null | undefined): TicketAnchoMm =>
     TICKET_ANCHOS.includes(value as TicketAnchoMm)
@@ -132,10 +111,6 @@ const buildInitialState = (setting: RestaurantSetting): FormState => ({
     emite_comprobantes_sunat: setting.emite_comprobantes_sunat,
     apisunat_token: '',
     apisunat_mode: setting.apisunat_mode === 'produccion' ? 'produccion' : 'sandbox',
-    horario_atencion: {
-        ...defaultHorario(),
-        ...(setting.horario_atencion ?? {}),
-    },
 });
 
 const buildInitialGeo = (setting: RestaurantSetting): GeoCascadeValue => {
@@ -156,10 +131,6 @@ const buildInitialGeo = (setting: RestaurantSetting): GeoCascadeValue => {
 
 const resolveErrorTab = (errors: Record<string, string>): GeneralTab => {
     const keys = Object.keys(errors);
-
-    if (keys.some((key) => key.startsWith('horario_atencion'))) {
-        return 'horarios';
-    }
 
     if (
         keys.some((key) =>
@@ -243,19 +214,6 @@ export default function Index({
         setData('distrito_id', next.distrito_id);
     };
 
-    const setHorarioDia = (
-        dia: HorarioDiaKey,
-        patch: Partial<HorarioAtencion[HorarioDiaKey]>,
-    ) => {
-        setDataInternal((current) => ({
-            ...current,
-            horario_atencion: {
-                ...current.horario_atencion,
-                [dia]: { ...current.horario_atencion[dia], ...patch },
-            },
-        }));
-    };
-
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
@@ -276,7 +234,6 @@ export default function Index({
             precio_incluye_igv: data.precio_incluye_igv ? 1 : 0,
             ticket_ancho_mm: data.ticket_ancho_mm,
             emite_comprobantes_sunat: data.emite_comprobantes_sunat ? 1 : 0,
-            horario_atencion: JSON.stringify(data.horario_atencion),
             clear_logo: clearLogo ? 1 : 0,
         };
 
@@ -364,16 +321,16 @@ export default function Index({
                     className="gap-5"
                 >
                     <div className="sticky top-0 z-30 -mx-2 border-b border-transparent bg-background/95 px-2 py-2 backdrop-blur-md supports-backdrop-filter:bg-background/85">
-                        <TabsList className="grid h-auto w-full grid-cols-3 gap-2 bg-transparent p-0">
+                        <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
                             <TabsTrigger
                                 value="identidad"
-                                className="group h-auto min-h-18 cursor-pointer justify-start gap-3 border-border/70 bg-card/70 p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md data-[state=active]:border-sky-400 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-950 dark:data-[state=active]:bg-sky-950/40 dark:data-[state=active]:text-sky-100"
+                                className="group h-auto min-h-18 w-full min-w-0 cursor-pointer justify-start gap-3 overflow-hidden whitespace-normal border-border/70 bg-card/70 p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md data-[state=active]:border-sky-400 data-[state=active]:bg-sky-50 data-[state=active]:text-sky-950 dark:data-[state=active]:bg-sky-950/40 dark:data-[state=active]:text-sky-100"
                             >
                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/12 text-sky-700 ring-1 ring-sky-500/20 dark:text-sky-300">
                                     <Store className="size-4.5" />
                                 </span>
                                 <span className="min-w-0">
-                                    <span className="block font-semibold">
+                                    <span className="block truncate font-semibold">
                                         {t('tabs.identidad.title')}
                                     </span>
                                     <span className="hidden truncate text-[11px] font-normal text-muted-foreground sm:block">
@@ -383,33 +340,17 @@ export default function Index({
                             </TabsTrigger>
                             <TabsTrigger
                                 value="facturacion"
-                                className="group h-auto min-h-18 cursor-pointer justify-start gap-3 border-border/70 bg-card/70 p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-950 dark:data-[state=active]:bg-emerald-950/40 dark:data-[state=active]:text-emerald-100"
+                                className="group h-auto min-h-18 w-full min-w-0 cursor-pointer justify-start gap-3 overflow-hidden whitespace-normal border-border/70 bg-card/70 p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md data-[state=active]:border-emerald-400 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-950 dark:data-[state=active]:bg-emerald-950/40 dark:data-[state=active]:text-emerald-100"
                             >
                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300">
                                     <Receipt className="size-4.5" />
                                 </span>
                                 <span className="min-w-0">
-                                    <span className="block font-semibold">
+                                    <span className="block truncate font-semibold">
                                         {t('tabs.facturacion.title')}
                                     </span>
                                     <span className="hidden truncate text-[11px] font-normal text-muted-foreground sm:block">
                                         {t('tabs.facturacion.description')}
-                                    </span>
-                                </span>
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="horarios"
-                                className="group h-auto min-h-18 cursor-pointer justify-start gap-3 border-border/70 bg-card/70 p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md data-[state=active]:border-amber-400 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-950 dark:data-[state=active]:bg-amber-950/40 dark:data-[state=active]:text-amber-100"
-                            >
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/12 text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-300">
-                                    <Clock3 className="size-4.5" />
-                                </span>
-                                <span className="min-w-0">
-                                    <span className="block font-semibold">
-                                        {t('tabs.horarios.title')}
-                                    </span>
-                                    <span className="hidden truncate text-[11px] font-normal text-muted-foreground sm:block">
-                                        {t('tabs.horarios.description')}
                                     </span>
                                 </span>
                             </TabsTrigger>
@@ -1139,101 +1080,6 @@ export default function Index({
                                         </div>
                                     )}
                             </FormSection>
-                        </SectionCard>
-                    </TabsContent>
-
-                    <TabsContent
-                        value="horarios"
-                        className="space-y-5 data-[state=active]:animate-in data-[state=active]:fade-in-50"
-                    >
-                        <SectionCard
-                            icon={Clock3}
-                            title={t('sections.horarios.title')}
-                            description={t('sections.horarios.description')}
-                        >
-                            <div className="flex flex-col gap-2">
-                                {HORARIO_DIAS.map((dia) => {
-                                    const row = data.horario_atencion[dia];
-
-                                    return (
-                                        <div
-                                            key={dia}
-                                            className="grid items-center gap-3 rounded-lg border border-border/60 bg-card/40 p-3 sm:grid-cols-[8rem_auto_1fr_1fr]"
-                                        >
-                                            <label
-                                                htmlFor={`horario-${dia}-abierto`}
-                                                className="flex cursor-pointer items-center gap-2 text-sm font-medium"
-                                            >
-                                                <Checkbox
-                                                    id={`horario-${dia}-abierto`}
-                                                    checked={row.abierto}
-                                                    onCheckedChange={(c) =>
-                                                        setHorarioDia(dia, {
-                                                            abierto: c === true,
-                                                        })
-                                                    }
-                                                    disabled={!canUpdate}
-                                                />
-                                                {t(`fields.dia_${dia}`)}
-                                            </label>
-                                            <span className="hidden text-xs text-muted-foreground sm:block">
-                                                {row.abierto
-                                                    ? t('fields.horario_abierto')
-                                                    : t('fields.horario_cerrado')}
-                                            </span>
-                                            <FormField
-                                                id={`horario-${dia}-abre`}
-                                                label={t('fields.abre')}
-                                                error={
-                                                    errors[
-                                                        `horario_atencion.${dia}.abre`
-                                                    ]
-                                                }
-                                            >
-                                                <Input
-                                                    id={`horario-${dia}-abre`}
-                                                    type="time"
-                                                    value={row.abre}
-                                                    onChange={(e) =>
-                                                        setHorarioDia(dia, {
-                                                            abre: e.target.value,
-                                                        })
-                                                    }
-                                                    disabled={
-                                                        !canUpdate || !row.abierto
-                                                    }
-                                                    className="tabular-nums"
-                                                />
-                                            </FormField>
-                                            <FormField
-                                                id={`horario-${dia}-cierra`}
-                                                label={t('fields.cierra')}
-                                                error={
-                                                    errors[
-                                                        `horario_atencion.${dia}.cierra`
-                                                    ]
-                                                }
-                                            >
-                                                <Input
-                                                    id={`horario-${dia}-cierra`}
-                                                    type="time"
-                                                    value={row.cierra}
-                                                    onChange={(e) =>
-                                                        setHorarioDia(dia, {
-                                                            cierra: e.target
-                                                                .value,
-                                                        })
-                                                    }
-                                                    disabled={
-                                                        !canUpdate || !row.abierto
-                                                    }
-                                                    className="tabular-nums"
-                                                />
-                                            </FormField>
-                                        </div>
-                                    );
-                                })}
-                            </div>
                         </SectionCard>
                     </TabsContent>
                 </Tabs>

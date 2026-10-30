@@ -99,7 +99,7 @@ class RoleController extends Controller
             ],
             'permissions_catalog' => $permissionsCatalog,
             // Demo: bloquear mutaciones (roles por tenant, pero demo es pública).
-            'mutations_locked' => demo_mutations_locked(),
+            'mutations_locked' => demo_config_locked(),
         ]);
     }
 
@@ -430,7 +430,7 @@ class RoleController extends Controller
      */
     private function abortIfDemoRolesLocked(): void
     {
-        if (! demo_mutations_locked()) {
+        if (! demo_config_locked()) {
             return;
         }
 

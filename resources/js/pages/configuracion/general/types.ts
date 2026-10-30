@@ -4,23 +4,6 @@ export type IgvAfectacion = 'gravado' | 'exonerado' | 'inafecto';
 
 export type TicketAnchoMm = '56' | '57' | '58' | '80';
 
-export type HorarioDiaKey =
-    | 'lun'
-    | 'mar'
-    | 'mie'
-    | 'jue'
-    | 'vie'
-    | 'sab'
-    | 'dom';
-
-export type HorarioDia = {
-    abierto: boolean;
-    abre: string;
-    cierra: string;
-};
-
-export type HorarioAtencion = Record<HorarioDiaKey, HorarioDia>;
-
 export type RestaurantSetting = {
     id: string;
     ruc: string | null;
@@ -55,7 +38,6 @@ export type RestaurantSetting = {
     emite_comprobantes_sunat: boolean;
     apisunat_mode: 'sandbox' | 'produccion';
     apisunat_configurado: boolean;
-    horario_atencion: HorarioAtencion;
     updated_at: string | null;
     actualizado_por: {
         id: number;
@@ -77,6 +59,6 @@ export type ConfiguracionGeneralProps = {
     mutations_locked?: boolean;
 };
 
-export type GeneralTab = 'identidad' | 'facturacion' | 'horarios';
+export type GeneralTab = 'identidad' | 'facturacion';
 
 export { type GeoOption };

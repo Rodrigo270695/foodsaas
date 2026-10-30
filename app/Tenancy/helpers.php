@@ -22,14 +22,26 @@ if (! function_exists('is_public_demo_tenant')) {
     }
 }
 
+if (! function_exists('demo_config_locked')) {
+    /**
+     * Configuración (General, Sedes, Roles, Usuarios) sigue bloqueada en el
+     * tenant público `demo`. El resto del sistema sí admite crear/editar/borrar.
+     */
+    function demo_config_locked(): bool
+    {
+        return is_public_demo_tenant();
+    }
+}
+
 if (! function_exists('demo_mutations_locked')) {
     /**
-     * True en el tenant público `demo`, también en modo soporte.
-     * Así nadie (ni un inquieto ni impersonación) borra datos de la demo.
+     * Bloqueo global de mutaciones. La demo pública ya no es de solo lectura:
+     * se puede operar (series, caja, etc.). Configuración se bloquea con
+     * {@see demo_config_locked()}.
      */
     function demo_mutations_locked(): bool
     {
-        return is_public_demo_tenant();
+        return false;
     }
 }
 

@@ -1,6 +1,6 @@
 {
     "title": "Sedes",
-    "description": "Sucursales del restaurante. Cada sede tiene su propia operación, caja, stock y series de facturación.",
+    "description": "Sucursales del restaurante. Cada sede tiene su propio horario, operación, caja, stock y series de facturación.",
     "demo_locked": {
         "description": "Restaurante demo: puedes consultar sedes, pero no crear, editar ni eliminar.",
         "create": "La demo es solo lectura: no se pueden crear sedes."
@@ -35,6 +35,7 @@
         "nombre": "Sede",
         "ubicacion": "Ubicación",
         "telefono": "Teléfono",
+        "horario": "Horario",
         "series": "Series FEL",
         "series_link": "Configurar",
         "estado": "Estado",
@@ -48,6 +49,8 @@
         "demo_locked": "Demo pública: solo lectura.",
         "active": "Activa",
         "inactive": "Inactiva",
+        "horario_closed": "Cerrado",
+        "horario_mixed": "Mixto · {{count}} días",
         "actions_for": "Acciones para {{name}}"
     },
     "empty": {
@@ -63,8 +66,8 @@
     "form": {
         "title_create": "Nueva sede",
         "title_edit": "Editar sede",
-        "description_create": "Registra una nueva sede de la clínica veterinaria.",
-        "description_edit": "Actualiza la información de la sede seleccionada.",
+        "description_create": "Registra un local con su dirección y el horario en el que atiende.",
+        "description_edit": "Actualiza los datos, el horario o el estado de este local.",
         "submit_create": "Crear sede",
         "submit_edit": "Guardar cambios",
         "section_basic": "Información básica",
@@ -74,6 +77,8 @@
         "section_location_hint": "Dirección física de la sede.",
         "section_billing": "Facturación electrónica",
         "section_billing_hint": "Series de comprobantes asociadas a esta sede (SUNAT / Nubefact).",
+        "section_hours": "Horario de atención",
+        "section_hours_hint": "Días y horas de este local. Delivery, reservas y avisos al cliente usan este horario, no el de otra sede.",
         "section_status": "Estado",
         "series_hint": "Las series de factura y boleta se configuran en Facturación › Series, asociadas a cada sede.",
         "fields": {
@@ -90,7 +95,18 @@
             "serie_boleta": "Serie boleta",
             "serie_boleta_hint": "4 caracteres SUNAT, sin guión: B001 (no B-001). Debe existir en Nubefact.",
             "activa": "Sede activa",
-            "activa_hint": "Si está desactivada, no aparecerá en agenda, caja ni en los listados de selección."
+            "activa_hint": "Si está desactivada, no aparecerá en agenda, caja ni en los listados de selección.",
+            "abre": "Abre",
+            "cierra": "Cierra",
+            "horario_abierto": "Abierto",
+            "horario_cerrado": "Cerrado",
+            "dia_lun": "Lunes",
+            "dia_mar": "Martes",
+            "dia_mie": "Miércoles",
+            "dia_jue": "Jueves",
+            "dia_vie": "Viernes",
+            "dia_sab": "Sábado",
+            "dia_dom": "Domingo"
         }
     },
     "delete": {

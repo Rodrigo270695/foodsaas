@@ -39,6 +39,7 @@ import {
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePlanLimitReached } from '@/hooks/use-plan-limits';
 import { usePermission } from '@/hooks/use-permission';
+import { summarizeHorarioAtencion } from '@/components/restaurante/horario-semanal-editor';
 import { useRowSelection } from '@/hooks/use-row-selection';
 import AppLayout from '@/layouts/app-layout';
 import sedes from './sede-routes';
@@ -338,6 +339,19 @@ export default function Index({
                             —
                         </span>
                     ),
+            },
+            {
+                key: 'horario',
+                header: t('columns.horario'),
+                cell: (sede) => (
+                    <span className="text-xs tabular-nums text-foreground/90">
+                        {summarizeHorarioAtencion(sede.horario_atencion, {
+                            closed: t('row.horario_closed'),
+                            mixed: (days) =>
+                                t('row.horario_mixed', { count: days }),
+                        })}
+                    </span>
+                ),
             },
             {
                 key: 'series',

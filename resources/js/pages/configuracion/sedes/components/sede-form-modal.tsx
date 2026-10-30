@@ -4,6 +4,11 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormField, FormModal, FormSection } from '@/components/forms';
 import {
+    HorarioSemanalEditor,
+    normalizeHorarioAtencion,
+    type HorarioAtencion,
+} from '@/components/restaurante/horario-semanal-editor';
+import {
     GeoCascadeFields,
     type GeoCascadeValue,
 } from '@/components/geo/geo-cascade-fields';
@@ -30,6 +35,7 @@ type SedeFormData = {
     /** Único campo geográfico que se envía: la FK al distrito. */
     distrito_id: number | null;
     activa: boolean;
+    horario_atencion: HorarioAtencion;
 };
 
 const emptyForm: SedeFormData = {
@@ -39,6 +45,7 @@ const emptyForm: SedeFormData = {
     email: '',
     distrito_id: null,
     activa: true,
+    horario_atencion: normalizeHorarioAtencion(null),
 };
 
 const buildInitialData = (sede: Sede | null): SedeFormData => ({
@@ -48,6 +55,7 @@ const buildInitialData = (sede: Sede | null): SedeFormData => ({
     email: sede?.email ?? '',
     distrito_id: sede?.distrito_id ?? null,
     activa: sede?.activa ?? true,
+    horario_atencion: normalizeHorarioAtencion(sede?.horario_atencion),
 });
 
 /**
@@ -122,7 +130,11 @@ export function SedeFormModal({
     const isDirty = useMemo(() => {
         const initial = initialSnapshotRef.current;
         return (Object.keys(initial) as Array<keyof SedeFormData>).some(
-            (key) => initial[key] !== data[key],
+            (key) =>
+                key === 'horario_atencion'
+                    ? JSON.stringify(initial.horario_atencion) !==
+                      JSON.stringify(data.horario_atencion)
+                    : initial[key] !== data[key],
         );
     }, [data]);
 
@@ -188,7 +200,7 @@ export function SedeFormModal({
                     ? t('form.description_edit')
                     : t('form.description_create')
             }
-            size="lg"
+            size="xl"
             onSubmit={onSubmit}
             footer={
                 <>
@@ -324,7 +336,35 @@ export function SedeFormModal({
                     />
                 </FormSection>
 
-                <FormSection index={2} title={t('form.section_status')}>
+                <FormSection
+                    index={2}
+                    title={t('form.section_hours')}
+                    description={t('form.section_hours_hint')}
+                >
+                    <HorarioSemanalEditor
+                        value={data.horario_atencion}
+                        onChange={(next) => setData('horario_atencion', next)}
+                        disabled={processing}
+                        errors={errors}
+                        labels={{
+                            abre: t('form.fields.abre'),
+                            cierra: t('form.fields.cierra'),
+                            abierto: t('form.fields.horario_abierto'),
+                            cerrado: t('form.fields.horario_cerrado'),
+                            dias: {
+                                lun: t('form.fields.dia_lun'),
+                                mar: t('form.fields.dia_mar'),
+                                mie: t('form.fields.dia_mie'),
+                                jue: t('form.fields.dia_jue'),
+                                vie: t('form.fields.dia_vie'),
+                                sab: t('form.fields.dia_sab'),
+                                dom: t('form.fields.dia_dom'),
+                            },
+                        }}
+                    />
+                </FormSection>
+
+                <FormSection index={3} title={t('form.section_status')}>
                     <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:bg-muted/30">
                         <Checkbox
                             id="sede-activa"

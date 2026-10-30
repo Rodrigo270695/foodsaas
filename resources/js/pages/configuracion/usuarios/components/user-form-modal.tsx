@@ -25,13 +25,15 @@ import {
 } from '@/components/ui/select';
 import { toastManager } from '@/lib/toast';
 import usuarios from '@/routes/configuracion/usuarios';
-import type { User, UserRoleOption } from '../types';
+import type { User, UserRoleOption, UserSedeRef } from '../types';
 
 export type UserFormModalProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     user: User | null;
     rolesCatalog: readonly UserRoleOption[];
+    sedesCatalog?: readonly UserSedeRef[];
+    requiresSedeAssignment?: boolean;
 };
 
 type UserFormData = {
@@ -44,6 +46,7 @@ type UserFormData = {
     role: string;
     documento_tipo: string;
     documento_numero: string;
+    sede_ids: string[];
 };
 
 const emptyForm: UserFormData = {
@@ -56,6 +59,7 @@ const emptyForm: UserFormData = {
     role: '',
     documento_tipo: 'DNI',
     documento_numero: '',
+    sede_ids: [],
 };
 
 const normalizeDocumentoTipo = (raw: string | null | undefined): string => {
@@ -79,14 +83,20 @@ const buildInitialData = (user: User | null): UserFormData => ({
     role: user?.roles[0]?.name ?? '',
     documento_tipo: user ? normalizeDocumentoTipo(user.documento_tipo) : 'DNI',
     documento_numero: user?.documento_numero ?? '',
+    sede_ids: user?.sedes?.map((sede) => sede.id) ?? [],
 });
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const isFormValid = (data: UserFormData, isEdit: boolean): boolean => {
+const isFormValid = (
+    data: UserFormData,
+    isEdit: boolean,
+    requireSedes: boolean,
+): boolean => {
     if (data.name.trim().length < 2) return false;
     if (!EMAIL_REGEX.test(data.email.trim())) return false;
     if (!data.role) return false;
+    if (requireSedes && data.sede_ids.length === 0) return false;
     if (!isEdit) {
         if (data.password.length < 8) return false;
         if (data.password !== data.password_confirmation) return false;
@@ -110,6 +120,8 @@ export function UserFormModal({
     onOpenChange,
     user,
     rolesCatalog,
+    sedesCatalog = [],
+    requiresSedeAssignment = false,
 }: UserFormModalProps) {
     const { t } = useTranslation(['usuarios', 'propietarios', 'common']);
     const isEdit = user !== null;
@@ -119,7 +131,8 @@ export function UserFormModal({
     const { data, setData, post, put, processing, errors, reset, clearErrors } =
         useForm<UserFormData>(emptyForm);
 
-    const canSubmit = isFormValid(data, isEdit) && !processing;
+    const canSubmit =
+        isFormValid(data, isEdit, requiresSedeAssignment) && !processing;
     const initialSnapshotRef = useRef<UserFormData>(emptyForm);
 
     const tipoDoc = data.documento_tipo.trim().toUpperCase();
@@ -225,6 +238,8 @@ export function UserFormModal({
             initial.role !== data.role ||
             initial.documento_tipo !== data.documento_tipo ||
             initial.documento_numero !== data.documento_numero ||
+            JSON.stringify([...initial.sede_ids].sort()) !==
+                JSON.stringify([...data.sede_ids].sort()) ||
             data.password.length > 0 ||
             data.password_confirmation.length > 0
         );
@@ -280,7 +295,7 @@ export function UserFormModal({
                     ? t('usuarios:form.description_edit')
                     : t('usuarios:form.description_create')
             }
-            size="lg"
+            size={requiresSedeAssignment ? 'xl' : 'lg'}
             onSubmit={onSubmit}
             footer={
                 <>
@@ -472,8 +487,64 @@ export function UserFormModal({
                     </FormField>
                 </FormSection>
 
+                {requiresSedeAssignment ? (
+                    <FormSection
+                        index={1}
+                        title={t('usuarios:form.section_sedes')}
+                        description={t('usuarios:form.section_sedes_hint')}
+                    >
+                        {sedesCatalog.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                                {t('usuarios:form.section_sedes_empty')}
+                            </p>
+                        ) : (
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {sedesCatalog.map((sede) => {
+                                const checked = data.sede_ids.includes(sede.id);
+
+                                return (
+                                    <label
+                                        key={sede.id}
+                                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/60 bg-card/40 p-3 transition-colors hover:bg-muted/30"
+                                    >
+                                        <Checkbox
+                                            checked={checked}
+                                            onCheckedChange={(next) => {
+                                                const on = next === true;
+                                                setData(
+                                                    'sede_ids',
+                                                    on
+                                                        ? [...data.sede_ids, sede.id]
+                                                        : data.sede_ids.filter(
+                                                              (id) => id !== sede.id,
+                                                          ),
+                                                );
+                                            }}
+                                            className="mt-0.5"
+                                        />
+                                        <span className="min-w-0">
+                                            <span className="block text-sm font-medium">
+                                                {sede.nombre}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {sede.codigo}
+                                            </span>
+                                        </span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        )}
+                        {errors.sede_ids ? (
+                            <p className="text-xs text-destructive" role="alert">
+                                {errors.sede_ids}
+                            </p>
+                        ) : null}
+                    </FormSection>
+                ) : null}
+
                 <FormSection
-                    index={1}
+                    index={requiresSedeAssignment ? 2 : 1}
                     title={t('usuarios:form.section_access')}
                     description={
                         isEdit

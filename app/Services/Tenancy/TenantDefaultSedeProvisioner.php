@@ -8,6 +8,8 @@ use App\Models\Distrito;
 use App\Models\Sede;
 use App\Models\Tenant;
 use App\Support\Plan\PlanLimits;
+use App\Support\Restaurante\HorarioAtencion;
+use App\Support\Sedes\SedeAssignment;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -54,7 +56,7 @@ final class TenantDefaultSedeProvisioner
         $nombre = trim((string) ($tenant->nombre_comercial ?: $tenant->razon_social ?: 'Sede principal'));
         $nombre = mb_substr($nombre, 0, 150);
 
-        return Sede::query()->create([
+        $sede = Sede::query()->create([
             'tenant_id' => $tenantId,
             'codigo' => Sede::generateNextCode($tenantId),
             'nombre' => $nombre,
@@ -66,7 +68,12 @@ final class TenantDefaultSedeProvisioner
             'provincia' => $distrito?->provincia?->name,
             'departamento' => $distrito?->provincia?->departamento?->name,
             'activa' => true,
+            'horario_atencion' => HorarioAtencion::defaults(),
             'created_by_id' => $createdByUserId,
         ]);
+
+        SedeAssignment::attachTenantUsersIfFirstSede($sede);
+
+        return $sede;
     }
 }

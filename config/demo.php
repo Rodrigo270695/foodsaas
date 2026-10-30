@@ -4,7 +4,8 @@ return [
     'slug' => env('FOODSAAS_DEMO_SLUG', 'demo'),
 
     /**
-     * Rutas con mutación permitidas en el tenant demo (login, salir, etc.).
+     * Auth y salida: siempre permitidas en demo.
+     * El resto de mutaciones se permiten salvo Configuración (`configuracion.*`).
      *
      * @var list<string>
      */

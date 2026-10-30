@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\Audit\PlatformSecurityAuditLogger;
 use App\Services\Integrations\ApiPeruDniService;
+use App\Support\Sedes\SedeAssignment;
 use App\Support\Tenancy\ClinicAdminScope;
 use App\Support\Tenancy\PlatformUserDirectory;
 use Illuminate\Database\Eloquent\Builder;
@@ -91,6 +92,9 @@ class UserController extends Controller
             }
         } else {
             $with['roles'] = fn ($q) => $q->select(['id', 'name']);
+            if (SedeAssignment::tablesReady()) {
+                $with['sedes'] = fn ($q) => $q->select(['sedes.id', 'sedes.nombre', 'sedes.codigo']);
+            }
         }
 
         $users = $query
@@ -147,7 +151,12 @@ class UserController extends Controller
             ],
             'roles_catalog' => $rolesCatalog,
             'tenant_roles_filter_catalog' => $tenantRolesFilterCatalog,
-            'mutations_locked' => demo_mutations_locked()
+            'sedes_catalog' => PlatformUserDirectory::isCentralList()
+                ? []
+                : SedeAssignment::catalogForTenant(),
+            'requires_sede_assignment' => ! PlatformUserDirectory::isCentralList()
+                && SedeAssignment::requiresExplicitAssignment(),
+            'mutations_locked' => demo_config_locked()
                 && ! PlatformUserDirectory::isCentralList(),
         ]);
     }
@@ -171,6 +180,7 @@ class UserController extends Controller
         ]);
 
         $user->syncRoles([$data['role']]);
+        SedeAssignment::syncForUser($user, $data['sede_ids'] ?? null);
 
         PlatformSecurityAuditLogger::log(
             action: 'users.created',
@@ -232,6 +242,7 @@ class UserController extends Controller
 
         $user->update($payload);
         $user->syncRoles([$data['role']]);
+        SedeAssignment::syncForUser($user, $data['sede_ids'] ?? null);
 
         PlatformSecurityAuditLogger::log(
             action: 'users.updated',

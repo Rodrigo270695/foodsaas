@@ -56,6 +56,7 @@ import type {
     UserEstadoFilter,
     UserFilters,
     UserRoleOption,
+    UserSedeRef,
     UserStats,
     UserTenantCatalogOption,
 } from './types';
@@ -73,6 +74,8 @@ type UsuariosIndexProps = {
     tenants_catalog?: readonly UserTenantCatalogOption[];
     /** Tenant demo público: solo consulta, sin altas/edición/borrado. */
     mutations_locked?: boolean;
+    sedes_catalog?: readonly UserSedeRef[];
+    requires_sede_assignment?: boolean;
 };
 
 /**
@@ -116,6 +119,8 @@ export default function Index({
     list_scope = 'clinic',
     tenants_catalog = [],
     mutations_locked = false,
+    sedes_catalog = [],
+    requires_sede_assignment = false,
 }: UsuariosIndexProps) {
     const isCentralList = list_scope === 'central';
     const { t } = useTranslation(['usuarios', 'common']);
@@ -424,6 +429,30 @@ export default function Index({
                     );
                 },
             },
+            ...(!isCentralList && requires_sede_assignment
+                ? [
+                      {
+                          key: 'sedes',
+                          header: t('usuarios:columns.sedes'),
+                          cell: (user: User) => {
+                              const sedes = user.sedes ?? [];
+                              if (sedes.length === 0) {
+                                  return (
+                                      <span className="text-xs text-muted-foreground italic">
+                                          {t('usuarios:row.no_sede')}
+                                      </span>
+                                  );
+                              }
+
+                              return (
+                                  <span className="line-clamp-2 text-xs text-foreground/90">
+                                      {sedes.map((sede) => sede.nombre).join(', ')}
+                                  </span>
+                              );
+                          },
+                      } satisfies DataTableColumn<User>,
+                  ]
+                : []),
             {
                 key: 'status',
                 header: t('usuarios:columns.status'),
@@ -511,6 +540,7 @@ export default function Index({
         currentUserId,
         isCentralList,
         pageLocale,
+        requires_sede_assignment,
     ]);
 
     return (
@@ -523,7 +553,9 @@ export default function Index({
                     description={
                         mutations_locked
                             ? t('usuarios:demo_locked.description')
-                            : t('usuarios:description')
+                            : isCentralList
+                              ? t('usuarios:description')
+                              : t('usuarios:description_clinic')
                     }
                     stats={[
                         {
@@ -782,6 +814,8 @@ export default function Index({
                 }}
                 user={modal.type === 'edit' ? modal.user : null}
                 rolesCatalog={roles_catalog}
+                sedesCatalog={sedes_catalog}
+                requiresSedeAssignment={requires_sede_assignment}
             />
 
             <UserDocumentsModal

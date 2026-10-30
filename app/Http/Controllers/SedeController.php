@@ -8,6 +8,8 @@ use App\Http\Requests\SedeRequest;
 use App\Models\Departamento;
 use App\Models\Distrito;
 use App\Models\Sede;
+use App\Support\Restaurante\HorarioAtencion;
+use App\Support\Sedes\SedeAssignment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -112,7 +114,7 @@ class SedeController extends Controller
                 'coincidencias' => $sedes->total(),
             ],
             'departamentos' => $departamentos,
-            'mutations_locked' => demo_mutations_locked(),
+            'mutations_locked' => demo_config_locked(),
         ]);
     }
 
@@ -123,14 +125,18 @@ class SedeController extends Controller
         $tenantId = $this->tenantIdOrAbort();
         $userId = Auth::id();
         $data = $this->hydrateLocationFromDistrito($request->validated());
+        $data['horario_atencion'] = HorarioAtencion::normalize($data['horario_atencion'] ?? []);
 
-        Sede::create([
+        $sede = Sede::create([
             ...$data,
             'tenant_id' => $tenantId,
             'codigo' => Sede::generateNextCode($tenantId),
             'created_by_id' => $userId,
             'updated_by_id' => $userId,
         ]);
+
+        SedeAssignment::attachTenantUsersIfFirstSede($sede);
+        SedeAssignment::reconcileTenant($tenantId);
 
         return back()->with('success', 'Sede creada correctamente.');
     }
@@ -141,11 +147,14 @@ class SedeController extends Controller
 
         $this->assertSedeBelongsToTenant($sede);
         $data = $this->hydrateLocationFromDistrito($request->validated());
+        $data['horario_atencion'] = HorarioAtencion::normalize($data['horario_atencion'] ?? []);
 
         $sede->update([
             ...$data,
             'updated_by_id' => Auth::id(),
         ]);
+
+        SedeAssignment::reconcileTenant((string) $sede->tenant_id);
 
         return back()->with('success', 'Sede actualizada correctamente.');
     }
@@ -155,8 +164,10 @@ class SedeController extends Controller
         $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
 
         $this->assertSedeBelongsToTenant($sede);
+        $tenantId = (string) $sede->tenant_id;
         $sede->update(['updated_by_id' => Auth::id()]);
         $sede->delete();
+        SedeAssignment::reconcileTenant($tenantId);
 
         return back()->with('success', 'Sede eliminada correctamente.');
     }
@@ -182,6 +193,8 @@ class SedeController extends Controller
             ->where('tenant_id', $tenantId)
             ->whereIn('id', $data['ids'])
             ->delete();
+
+        SedeAssignment::reconcileTenant($tenantId);
 
         return back()->with(
             'success',

@@ -1,7 +1,7 @@
 {
     "title": "Configuración general",
-    "description": "Identidad fiscal, logo, facturación y horarios de atención de tu restaurante.",
-    "description_for": "Datos generales de {{name}}: identidad, logo, facturación y horarios.",
+    "description": "Identidad fiscal, logo y facturación de tu restaurante. El horario se configura en cada sede.",
+    "description_for": "Datos generales de {{name}}: identidad, logo y facturación.",
     "actions": {
         "save": "Guardar cambios",
         "saved": "Guardado"

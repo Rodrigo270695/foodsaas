@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Http\Requests\Concerns\ValidatesPlanIntLimits;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Sedes\SedeAssignment;
 use App\Support\Tenancy\ClinicAdminScope;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -104,6 +105,7 @@ class UserRequest extends FormRequest
                 'string',
                 $roleRule,
             ],
+            ...$this->sedeAssignmentRules($tenantId),
         ];
     }
 
@@ -116,6 +118,8 @@ class UserRequest extends FormRequest
             'password' => 'contraseña',
             'is_active' => 'estado',
             'role' => 'rol',
+            'sede_ids' => 'sedes',
+            'sede_ids.*' => 'sede',
             'documento_tipo' => 'tipo de documento',
             'documento_numero' => 'número de documento',
             'colegiatura' => 'número de colegiatura',
@@ -137,10 +141,19 @@ class UserRequest extends FormRequest
             $numero = preg_replace('/\D+/', '', $numero) ?? '';
         }
 
+        $sedeIds = $this->input('sede_ids', []);
+        if (! is_array($sedeIds)) {
+            $sedeIds = [];
+        }
+
         $this->merge([
             'name' => trim((string) $this->input('name', '')),
             'email' => strtolower(trim((string) $this->input('email', ''))),
             'phone' => trim((string) $this->input('phone', '')) ?: null,
+            'sede_ids' => array_values(array_unique(array_filter(
+                array_map(static fn ($id): string => is_string($id) ? $id : (string) $id, $sedeIds),
+                static fn (string $id): bool => $id !== '',
+            ))),
             'documento_tipo' => $tipo !== '' ? $tipo : null,
             'documento_numero' => $numero !== '' ? $numero : null,
             'colegiatura' => trim((string) $this->input('colegiatura', '')) ?: null,
@@ -180,5 +193,33 @@ class UserRequest extends FormRequest
                 $v->errors()->add('documento_tipo', 'Indica el tipo de documento.');
             }
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function sedeAssignmentRules(int|string|null $tenantId): array
+    {
+        if (! ClinicAdminScope::isClinicContext() || $tenantId === null) {
+            return [];
+        }
+
+        $tenantKey = (string) $tenantId;
+
+        if (! SedeAssignment::requiresExplicitAssignment($tenantKey)) {
+            return [
+                'sede_ids' => ['nullable', 'array'],
+            ];
+        }
+
+        return [
+            'sede_ids' => ['required', 'array', 'min:1'],
+            'sede_ids.*' => [
+                'uuid',
+                Rule::exists('sedes', 'id')->where(
+                    fn ($q) => $q->where('tenant_id', $tenantKey)->where('activa', true),
+                ),
+            ],
+        ];
     }
 }

@@ -56,6 +56,14 @@ export type User = {
     tenant?: UserTenantRef | null;
     /** Usuario que dio de alta a este (puede ser null para el primer superadmin). */
     created_by: UserCreatedByRef | null;
+    /** Locales asignados (solo tenant). */
+    sedes?: readonly UserSedeRef[];
+};
+
+export type UserSedeRef = {
+    id: string;
+    nombre: string;
+    codigo: string;
 };
 
 export type UserStats = {

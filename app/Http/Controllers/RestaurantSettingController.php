@@ -9,7 +9,6 @@ use App\Models\RestaurantSetting;
 use App\Models\User;
 use App\Support\Caja\TicketAnchoMm;
 use App\Support\Plan\PlanCapabilities;
-use App\Support\Restaurante\HorarioAtencion;
 use App\Tenancy\TenantManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -96,7 +95,6 @@ class RestaurantSettingController extends Controller
             'precio_incluye_igv' => $data['precio_incluye_igv'],
             'ticket_ancho_mm' => TicketAnchoMm::normalize((string) $data['ticket_ancho_mm']),
             'emite_comprobantes_sunat' => $data['emite_comprobantes_sunat'],
-            'horario_atencion' => HorarioAtencion::normalize($data['horario_atencion'] ?? []),
             'updated_by_id' => Auth::id(),
         ]);
 
@@ -223,7 +221,6 @@ class RestaurantSettingController extends Controller
             'apisunat_configurado' => $planPermiteFacturaElectronica
                 && $this->hasApisunatColumns()
                 && (bool) $setting->apisunat_configurado,
-            'horario_atencion' => $setting->horarioAtencionNormalizado(),
             'updated_at' => $setting->updated_at?->toIso8601String(),
             'actualizado_por' => $setting->actualizadoPor ? [
                 'id' => $setting->actualizadoPor->id,

@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Bloquea POST/PUT/PATCH/DELETE en el tenant público demo (excepto auth y salir).
+ * En el tenant demo bloquea POST/PUT/PATCH/DELETE del menú Configuración.
+ * El resto de módulos (series, caja, etc.) sí se pueden usar.
  */
 class BlockPublicDemoMutations
 {
@@ -30,7 +31,11 @@ class BlockPublicDemoMutations
             return $next($request);
         }
 
-        abort(403, __('demo.mutations_blocked'));
+        if ($this->isConfiguracionMutation($routeName)) {
+            abort(403, __('demo.mutations_blocked'));
+        }
+
+        return $next($request);
     }
 
     private function isAllowedMutation(string $routeName): bool
@@ -43,5 +48,10 @@ class BlockPublicDemoMutations
         $allowed = config('demo.allowed_mutation_route_names', []);
 
         return in_array($routeName, $allowed, true);
+    }
+
+    private function isConfiguracionMutation(string $routeName): bool
+    {
+        return str_starts_with($routeName, 'configuracion.');
     }
 }

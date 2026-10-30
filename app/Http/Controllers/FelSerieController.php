@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\GuardsPublicDemoTenant;
 use App\Models\FelSerie;
 use App\Models\Sede;
 use App\Support\Fel\SunatSerieCodigo;
@@ -14,8 +13,6 @@ use Inertia\Response;
 
 class FelSerieController extends Controller
 {
-    use GuardsPublicDemoTenant;
-
     public function index(Request $request): Response
     {
         $tenantId = $this->tenantIdOrAbort();
@@ -79,16 +76,11 @@ class FelSerieController extends Controller
             'filters' => [
                 'sede_id' => $sedeFiltro,
             ],
-            'mutations_locked' => $this->demoMutationsLockedForClinic(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $this->abortIfPublicDemoMutationsLocked(
-            'El restaurante demo es de solo lectura: no se pueden crear series.',
-        );
-
         $tenantId = $this->tenantIdOrAbort();
 
         $data = $request->validate([
@@ -129,10 +121,6 @@ class FelSerieController extends Controller
 
     public function update(Request $request, FelSerie $felSerie): RedirectResponse
     {
-        $this->abortIfPublicDemoMutationsLocked(
-            'El restaurante demo es de solo lectura: no se pueden editar series.',
-        );
-
         $data = $request->validate([
             'activo' => ['required', 'boolean'],
         ]);
@@ -144,10 +132,6 @@ class FelSerieController extends Controller
 
     public function destroy(FelSerie $felSerie): RedirectResponse
     {
-        $this->abortIfPublicDemoMutationsLocked(
-            'El restaurante demo es de solo lectura: no se pueden eliminar series.',
-        );
-
         if ($felSerie->tieneDocumentos()) {
             return back()->withErrors(['general' => 'No se puede eliminar una serie que ya tiene comprobantes emitidos.']);
         }

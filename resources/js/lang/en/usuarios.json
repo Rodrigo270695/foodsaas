@@ -1,6 +1,7 @@
 {
     "title": "Users",
     "description": "Manage central panel accounts (superadmin and platform staff). Restaurant users are managed within each tenant.",
+    "description_clinic": "Team accounts. If you have more than one location, assign each person to the branches they work at. With a single location, this is automatic.",
     "demo_locked": {
         "description": "Demo restaurant: you can view users but cannot create, edit, or delete accounts (protects the public demo).",
         "create": "The demo is read-only: you cannot create users."
@@ -42,6 +43,7 @@
         "tenant": "Restaurant",
         "phone": "Phone",
         "role": "Role",
+        "sedes": "Branches",
         "status": "Status",
         "last_login": "Last login",
         "created_at": "Created",
@@ -50,6 +52,7 @@
     "row": {
         "no_phone": "No phone",
         "no_role": "No role",
+        "no_sede": "No branch",
         "platform_account": "Platform",
         "no_login": "Never",
         "verified": "Verified",
@@ -88,6 +91,9 @@
         "section_professional": "Professional documents",
         "section_professional_hint": "License, CV, ID scan and signature. Optional.",
         "professional_banner": "Fill in the identity document.",
+        "section_sedes": "Branches",
+        "section_sedes_hint": "Choose which locations this person works at. They can belong to more than one. With a single active location this is automatic — you don’t configure it.",
+        "section_sedes_empty": "There are no active locations to assign.",
         "section_access": "Access",
         "section_access_hint_create": "Set the initial password for this account.",
         "section_access_hint_edit": "Change the password if needed. Leave empty to keep the current one.",

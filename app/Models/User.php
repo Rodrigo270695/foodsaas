@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -76,6 +77,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class, 'tenant_id');
+    }
+
+    /**
+     * Locales en los que trabaja este usuario.
+     *
+     * @return BelongsToMany<Sede, $this>
+     */
+    public function sedes(): BelongsToMany
+    {
+        return $this->belongsToMany(Sede::class, 'sede_user')->withTimestamps();
     }
 
     public function isTenantUser(): bool

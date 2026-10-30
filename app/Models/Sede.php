@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\UsesPublicSchema;
+use App\Support\Restaurante\HorarioAtencion;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -36,6 +38,7 @@ class Sede extends Model
         'serie_factura',
         'serie_boleta',
         'activa',
+        'horario_atencion',
         'created_by_id',
         'updated_by_id',
     ];
@@ -44,6 +47,7 @@ class Sede extends Model
     {
         return [
             'activa' => 'boolean',
+            'horario_atencion' => 'array',
         ];
     }
 
@@ -65,6 +69,22 @@ class Sede extends Model
     public function distritoModel(): BelongsTo
     {
         return $this->belongsTo(Distrito::class, 'distrito_id');
+    }
+
+    /**
+     * @return BelongsToMany<User, $this>
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'sede_user')->withTimestamps();
+    }
+
+    /**
+     * @return array<string, array{abierto: bool, abre: string, cierra: string}>
+     */
+    public function horarioAtencionNormalizado(): array
+    {
+        return HorarioAtencion::normalize($this->horario_atencion);
     }
 
     public static function generateNextCode(string $tenantId): string

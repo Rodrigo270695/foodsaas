@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ValidatesPlanIntLimits;
 use App\Rules\ExistsDistritoId;
+use App\Support\Restaurante\HorarioAtencion;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -37,6 +38,7 @@ class SedeRequest extends FormRequest
             // No usar exists:public.distritos — Laravel lo toma como conexión.
             'distrito_id' => ['required', 'integer', new ExistsDistritoId],
             'activa' => ['required', 'boolean'],
+            ...HorarioAtencion::rules(),
         ];
     }
 
@@ -49,6 +51,7 @@ class SedeRequest extends FormRequest
             'email' => 'correo',
             'distrito_id' => 'distrito (ubicación)',
             'activa' => 'estado',
+            'horario_atencion' => 'horario de atención',
         ];
     }
 
@@ -56,11 +59,35 @@ class SedeRequest extends FormRequest
     {
         $this->merge([
             'activa' => $this->boolean('activa'),
+            'horario_atencion' => HorarioAtencion::decodeInput($this->input('horario_atencion')),
         ]);
     }
 
     public function withValidator(Validator $validator): void
     {
         $this->enforcePlanIntLimitsOnCreate($validator, ['max_sedes']);
+
+        $validator->after(function (Validator $validator): void {
+            $horario = $this->input('horario_atencion');
+            if (! is_array($horario)) {
+                return;
+            }
+
+            foreach (HorarioAtencion::DIAS as $dia) {
+                $row = is_array($horario[$dia] ?? null) ? $horario[$dia] : [];
+                if (! ($row['abierto'] ?? false)) {
+                    continue;
+                }
+
+                $abre = (string) ($row['abre'] ?? '');
+                $cierra = (string) ($row['cierra'] ?? '');
+                if ($abre !== '' && $cierra !== '' && $abre >= $cierra) {
+                    $validator->errors()->add(
+                        "horario_atencion.{$dia}.cierra",
+                        'La hora de cierre debe ser posterior a la de apertura.',
+                    );
+                }
+            }
+        });
     }
 }

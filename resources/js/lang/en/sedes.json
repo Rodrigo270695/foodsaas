@@ -1,6 +1,6 @@
 {
     "title": "Branches",
-    "description": "Veterinary clinic branches. Each branch has its own schedule, cash register, inventory and billing series.",
+    "description": "Restaurant locations. Each branch has its own hours, operations, cash register, inventory and billing series.",
     "plan_limit": {
         "max_sedes": "You reached your plan's branch limit. Upgrade your plan to add more."
     },
@@ -31,6 +31,7 @@
         "nombre": "Branch",
         "ubicacion": "Location",
         "telefono": "Phone",
+        "horario": "Hours",
         "series": "FEL series",
         "series_link": "Configure",
         "estado": "Status",
@@ -44,6 +45,8 @@
         "demo_locked": "Public demo: read-only.",
         "active": "Active",
         "inactive": "Inactive",
+        "horario_closed": "Closed",
+        "horario_mixed": "Mixed · {{count}} days",
         "actions_for": "Actions for {{name}}"
     },
     "empty": {
@@ -59,8 +62,8 @@
     "form": {
         "title_create": "New branch",
         "title_edit": "Edit branch",
-        "description_create": "Register a new branch for the veterinary clinic.",
-        "description_edit": "Update the information of the selected branch.",
+        "description_create": "Register a location with its address and opening hours.",
+        "description_edit": "Update this location’s details, hours or status.",
         "submit_create": "Create branch",
         "submit_edit": "Save changes",
         "section_basic": "Basic information",
@@ -70,6 +73,8 @@
         "section_location_hint": "Physical address of the branch.",
         "section_billing": "Electronic billing",
         "section_billing_hint": "Receipt series associated with this branch (SUNAT / Nubefact).",
+        "section_hours": "Opening hours",
+        "section_hours_hint": "Days and hours for this location. Delivery, reservations and customer notices use this schedule, not another branch’s.",
         "section_status": "Status",
         "series_hint": "Invoice and receipt series are managed under Billing › Series, linked to each branch.",
         "fields": {
@@ -86,7 +91,18 @@
             "serie_boleta": "Receipt series",
             "serie_boleta_hint": "4 SUNAT characters, no hyphen: B001 (not B-001). Must exist in Nubefact.",
             "activa": "Active branch",
-            "activa_hint": "If disabled, the branch won't appear in scheduling, cash or selection lists."
+            "activa_hint": "If disabled, the branch won't appear in scheduling, cash or selection lists.",
+            "abre": "Opens",
+            "cierra": "Closes",
+            "horario_abierto": "Open",
+            "horario_cerrado": "Closed",
+            "dia_lun": "Monday",
+            "dia_mar": "Tuesday",
+            "dia_mie": "Wednesday",
+            "dia_jue": "Thursday",
+            "dia_vie": "Friday",
+            "dia_sab": "Saturday",
+            "dia_dom": "Sunday"
         }
     },
     "delete": {

@@ -43,6 +43,15 @@ export type Sede = {
     serie_factura: string | null;
     serie_boleta: string | null;
     activa: boolean;
+    horario_atencion?: {
+        lun: { abierto: boolean; abre: string; cierra: string };
+        mar: { abierto: boolean; abre: string; cierra: string };
+        mie: { abierto: boolean; abre: string; cierra: string };
+        jue: { abierto: boolean; abre: string; cierra: string };
+        vie: { abierto: boolean; abre: string; cierra: string };
+        sab: { abierto: boolean; abre: string; cierra: string };
+        dom: { abierto: boolean; abre: string; cierra: string };
+    } | null;
     created_at: string;
     updated_at: string;
     created_by_id: string | null;

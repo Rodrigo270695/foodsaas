@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Restaurante;
 
 /**
- * Horario semanal de atención del restaurante (JSON en cfg_restaurant_settings).
+ * Horario semanal de atención de una sede (JSON en public.sedes).
  *
  * Forma:
  *   { lun: { abierto: true, abre: "11:00", cierra: "23:00" }, ... }
@@ -59,5 +59,57 @@ final class HorarioAtencion
         }
 
         return $fallback;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function decodeInput(mixed $raw): array
+    {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = is_array($decoded) ? $decoded : [];
+        }
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        foreach (self::DIAS as $dia) {
+            if (! isset($raw[$dia]) || ! is_array($raw[$dia])) {
+                continue;
+            }
+            $raw[$dia]['abierto'] = filter_var(
+                $raw[$dia]['abierto'] ?? false,
+                FILTER_VALIDATE_BOOLEAN,
+            );
+            foreach (['abre', 'cierra'] as $campo) {
+                $hora = $raw[$dia][$campo] ?? null;
+                if (is_string($hora) && preg_match('/^\d{2}:\d{2}/', $hora) === 1) {
+                    $raw[$dia][$campo] = substr($hora, 0, 5);
+                }
+            }
+        }
+
+        return $raw;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public static function rules(string $prefix = 'horario_atencion'): array
+    {
+        $rules = [
+            $prefix => ['required', 'array'],
+        ];
+
+        foreach (self::DIAS as $dia) {
+            $rules["{$prefix}.{$dia}"] = ['required', 'array'];
+            $rules["{$prefix}.{$dia}.abierto"] = ['required', 'boolean'];
+            $rules["{$prefix}.{$dia}.abre"] = ['required', 'date_format:H:i'];
+            $rules["{$prefix}.{$dia}.cierra"] = ['required', 'date_format:H:i'];
+        }
+
+        return $rules;
     }
 }
