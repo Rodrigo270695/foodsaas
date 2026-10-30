@@ -69,6 +69,15 @@
     "toast": {
         "load_error": "No se pudo cargar la carta."
     },
+    "catalog": {
+        "subtitle": "Catálogo visual por categorías. Filtra, busca y edita productos sin salir del plano de carta.",
+        "refresh": "Actualizar carta",
+        "stat_total": "Total {{count}}",
+        "stat_active": "Activos {{count}}",
+        "stat_inactive": "Inactivos {{count}}",
+        "stat_categories": "Categorías {{count}}",
+        "stat_matches": "Coincidencias {{count}}"
+    },
     "categoria_form": {
         "title_create": "Nueva categoría",
         "title_edit": "Editar categoría",

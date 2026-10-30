@@ -70,6 +70,18 @@
     "toast": {
         "load_error": "Could not load the dining room."
     },
+    "floor": {
+        "subtitle": "Tap a table to edit it. Available tables are ready for orders; inactive ones stay out of operations.",
+        "search": "Search table...",
+        "refresh": "Refresh floor",
+        "available": "Available",
+        "inactive": "Inactive",
+        "capacity": "{{count}} seats",
+        "stat_total": "Total {{count}}",
+        "stat_available": "Available {{count}}",
+        "stat_inactive": "Inactive {{count}}",
+        "stat_capacity": "Capacity {{count}}"
+    },
     "zona_form": {
         "title_create": "New zone",
         "title_edit": "Edit zone",

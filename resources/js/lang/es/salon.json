@@ -70,6 +70,18 @@
     "toast": {
         "load_error": "No se pudo cargar el salón."
     },
+    "floor": {
+        "subtitle": "Toca una mesa para editarla. Las disponibles están listas para comandas; las inactivas no aparecen en operación.",
+        "search": "Buscar mesa...",
+        "refresh": "Actualizar salón",
+        "available": "Disponible",
+        "inactive": "Inactiva",
+        "capacity": "{{count}} personas",
+        "stat_total": "Total {{count}}",
+        "stat_available": "Disponibles {{count}}",
+        "stat_inactive": "Inactivas {{count}}",
+        "stat_capacity": "Capacidad {{count}}"
+    },
     "zona_form": {
         "title_create": "Nueva zona",
         "title_edit": "Editar zona",

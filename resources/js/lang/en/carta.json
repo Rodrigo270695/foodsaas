@@ -69,6 +69,15 @@
     "toast": {
         "load_error": "Could not load the menu."
     },
+    "catalog": {
+        "subtitle": "Visual catalog by category. Filter, search, and edit products without leaving the menu board.",
+        "refresh": "Refresh menu",
+        "stat_total": "Total {{count}}",
+        "stat_active": "Active {{count}}",
+        "stat_inactive": "Inactive {{count}}",
+        "stat_categories": "Categories {{count}}",
+        "stat_matches": "Matches {{count}}"
+    },
     "categoria_form": {
         "title_create": "New category",
         "title_edit": "Edit category",
