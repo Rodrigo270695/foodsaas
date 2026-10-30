@@ -1,10 +1,9 @@
+import { usePage } from '@inertiajs/react';
+import type { ClinicBranding } from '@/types/clinic-branding';
+
 /**
- * Reservado para branding por tenant (logo en subdominio).
- * En el panel central no hay personalización aún.
+ * Logo del restaurante desde props compartidas (login y sidebar del tenant).
  */
-export function useClinicBranding(): {
-    logo_url?: string | null;
-    updated_at?: string | null;
-} | null {
-    return null;
+export function useClinicBranding(): ClinicBranding | null {
+    return (usePage().props.clinic_branding as ClinicBranding | null) ?? null;
 }

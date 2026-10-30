@@ -6,11 +6,35 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Support\Tenancy\ClinicAdminScope;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
 
 class TenantRolesSeeder extends Seeder
 {
+    public function run(): void
+    {
+        $this->seedAll();
+    }
+
+    public function seedAll(bool $forceSync = false): void
+    {
+        if (! Schema::hasTable('tenants')) {
+            return;
+        }
+
+        $ids = DB::table('tenants')
+            ->whereNull('deleted_at')
+            ->pluck('id')
+            ->all();
+
+        foreach ($ids as $id) {
+            if (is_string($id) || is_int($id)) {
+                $this->seedForTenant((string) $id, $forceSync);
+            }
+        }
+    }
+
     /** @var array<string, array{description: string, permissions: list<string>}> */
     public const ROLES = [
         'admin_restaurante' => [
@@ -19,7 +43,7 @@ class TenantRolesSeeder extends Seeder
         ],
         'gerente' => [
             'description' => 'Gerente de turno.',
-            'permissions' => ['dashboard.view', 'roles.view', 'usuarios.view'],
+            'permissions' => ['dashboard.view', 'config-general.view', 'config-general.update', 'roles.view', 'usuarios.view'],
         ],
         'cajero' => [
             'description' => 'Caja y ventas.',

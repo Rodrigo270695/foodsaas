@@ -1,11 +1,19 @@
 <?php
 
+use App\Http\Controllers\RestaurantSettingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('configuracion')->name('configuracion.')->group(function (): void {
+    Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.view'])
+        ->get('general', [RestaurantSettingController::class, 'show'])
+        ->name('general.show');
+    Route::middleware(['tenant.required', 'tenant.match-user', 'permission:config-general.update'])
+        ->match(['put', 'patch'], 'general', [RestaurantSettingController::class, 'update'])
+        ->name('general.update');
+
     Route::middleware('permission:sedes.view')
         ->get('sedes', [SedeController::class, 'index'])
         ->name('sedes.index');

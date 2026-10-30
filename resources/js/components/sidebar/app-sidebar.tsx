@@ -67,6 +67,13 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                     context: 'tenant',
                     items: [
                         {
+                            title: t('items.general'),
+                            href: '/configuracion/general',
+                            icon: Store,
+                            permission: 'config-general.view',
+                            context: 'tenant',
+                        },
+                        {
                             title: t('items.sedes'),
                             href: '/configuracion/sedes',
                             icon: MapPin,

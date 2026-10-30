@@ -1,0 +1,121 @@
+{
+    "title": "General settings",
+    "description": "Tax identity, logo, billing and opening hours for your restaurant.",
+    "description_for": "General data for {{name}}: identity, logo, billing and hours.",
+    "actions": {
+        "save": "Save changes",
+        "saved": "Saved"
+    },
+    "demo_locked": {
+        "title": "Read-only demo restaurant",
+        "description": "You can review the settings, but you cannot save changes or replace the logo."
+    },
+    "state": {
+        "configured": "Configured",
+        "not_configured": "Not issuing"
+    },
+    "tabs": {
+        "identidad": {
+            "title": "My restaurant",
+            "description": "Identity, contact and logo"
+        },
+        "facturacion": {
+            "title": "Billing",
+            "description": "VAT, tickets and SUNAT"
+        },
+        "horarios": {
+            "title": "Hours",
+            "description": "Weekly opening hours"
+        }
+    },
+    "sections": {
+        "identidad": {
+            "title": "Tax identity",
+            "description": "RUC, legal name and address shown on electronic receipts issued by the restaurant."
+        },
+        "contacto": {
+            "title": "Contact",
+            "description": "How customers can reach you."
+        },
+        "branding": {
+            "title": "Visual identity",
+            "description": "The logo appears on this tenant’s login and in the restaurant sidebar."
+        },
+        "facturacion": {
+            "title": "Billing and SUNAT receipts",
+            "description": "Currency, VAT and whether this restaurant will issue electronic boletas or invoices (according to your plan)."
+        },
+        "horarios": {
+            "title": "Opening hours",
+            "description": "Days and hours the restaurant is open. Used later for delivery, reservations and customer notices."
+        }
+    },
+    "fields": {
+        "ruc": "RUC",
+        "ruc_hint": "11 digits, no dashes or spaces.",
+        "razon_social": "Legal name",
+        "nombre_comercial": "Trade name",
+        "nombre_comercial_hint": "Public-facing restaurant name. If empty, the legal name is used.",
+        "direccion_fiscal": "Tax address",
+        "departamento": "Region",
+        "provincia": "Province",
+        "distrito": "District",
+        "logo": "Restaurant logo",
+        "logo_hint": "Upload a square image (PNG, JPG, WEBP or SVG) up to 2 MB. Transparent background works best.",
+        "logo_hint_uploaded": "Logo saved. Replace it by uploading another image or remove it with the button.",
+        "logo_drop": "Drop your logo here or click to choose a file",
+        "logo_drop_supported": "PNG · JPG · WEBP · SVG · 2 MB max",
+        "logo_select": "Choose file",
+        "logo_replace": "Replace",
+        "logo_remove": "Remove logo",
+        "logo_remove_pending": "Will be removed on save",
+        "logo_undo_remove": "Keep logo",
+        "logo_pending": "New file: {{name}}",
+        "logo_preview_alt": "Logo preview",
+        "email_institucional": "Business email",
+        "telefono_principal": "Main phone",
+        "web_url": "Website",
+        "moneda": "Currency",
+        "moneda_pen": "Peruvian soles",
+        "moneda_usd": "US dollars",
+        "igv_afectacion": "IGV treatment (SUNAT)",
+        "igv_afectacion_hint": "How this restaurant issues electronic receipts. Taxed = code 10; Exempt = 20; Unaffected = 30.",
+        "igv_afectacion_gravado": "Taxed (code 10)",
+        "igv_afectacion_exonerado": "Exempt (code 20)",
+        "igv_afectacion_inafecto": "Unaffected (code 30)",
+        "igv_porcentaje": "General IGV (drinks and retail)",
+        "igv_porcentaje_hint": "Standard Peruvian rate: 18%. Applies to sodas, water, beer and packaged goods.",
+        "igv_alimentos_porcentaje": "Prepared-food IGV",
+        "igv_alimentos_porcentaje_hint": "Default 18%. The 10% restaurant rate (Law 31556) is no longer in force; change this only if your accountant still uses another rate.",
+        "igv_restaurante_note": "In Peru the general IGV is 18%. Restaurant meals and drinks are currently taxed at 18%. Packaged sodas, water and similar products are also 18%. If your books use a different rate for dishes, set it under «Prepared-food IGV» without changing the 18% for drinks.",
+        "precio_incluye_igv": "Entered prices include IGV",
+        "precio_incluye_igv_hint": "If on, the system derives the taxable base from the final price. If off, IGV is added on top.",
+        "ticket_ancho_mm": "Thermal ticket width (pre-bill)",
+        "ticket_ancho_mm_hint": "56, 57 and 58 mm are narrow rolls. 80 mm is the wide roll (the printer uses a ~72 mm head; that is not a choice).",
+        "ticket_ancho_mm_56": "56 mm (ultra-narrow roll)",
+        "ticket_ancho_mm_57": "57 mm (narrow roll)",
+        "ticket_ancho_mm_58": "58 mm (narrow roll)",
+        "ticket_ancho_mm_80": "80 mm (wide roll)",
+        "emite_comprobantes_sunat": "Issue SUNAT electronic receipts (boleta/invoice)",
+        "emite_comprobantes_sunat_hint": "Turn off if you only use the software for tables, kitchen and inventory without billing the customer. You can still keep currency and IGV for internal tickets.",
+        "abre": "Opens",
+        "cierra": "Closes",
+        "horario_abierto": "Open",
+        "horario_cerrado": "Closed",
+        "dia_lun": "Monday",
+        "dia_mar": "Tuesday",
+        "dia_mie": "Wednesday",
+        "dia_jue": "Thursday",
+        "dia_vie": "Friday",
+        "dia_sab": "Saturday",
+        "dia_dom": "Sunday"
+    },
+    "footer": {
+        "last_updated_by": "Last edited by {{name}}",
+        "never_updated": "No settings have been saved yet."
+    },
+    "plan_sin_facturacion_electronica": {
+        "title": "Your plan does not include SUNAT e-invoicing",
+        "body": "You can keep using the system as usual. To issue receipts, the platform admin must assign a plan with electronic boletas or invoices."
+    }
+}

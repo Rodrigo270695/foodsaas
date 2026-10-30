@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\RestaurantSetting;
 use App\Models\User;
 use App\Support\Plan\PlanLimits;
+use App\Support\Restaurante\RestaurantBrandingUrls;
 use App\Support\Tenancy\TenantSubdomainUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -142,6 +144,31 @@ class HandleInertiaRequests extends Middleware
                     'estado' => $ctx->estado(),
                     'is_demo' => is_public_demo_tenant(),
                 ];
+            },
+            'clinic_branding' => function () {
+                if (tenant() === null) {
+                    return null;
+                }
+
+                try {
+                    if (! RestaurantSetting::tableReady()) {
+                        return [
+                            'logo_url' => RestaurantBrandingUrls::default(),
+                            'updated_at' => null,
+                        ];
+                    }
+
+                    return RestaurantBrandingUrls::sharedPayload(
+                        RestaurantSetting::query()->first(),
+                    );
+                } catch (Throwable $e) {
+                    report($e);
+
+                    return [
+                        'logo_url' => RestaurantBrandingUrls::default(),
+                        'updated_at' => null,
+                    ];
+                }
             },
             'plan_limits' => static fn () => PlanLimits::snapshot(),
         ];

@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\DB;
 class TenantMigrateCommand extends Command
 {
     protected $signature = 'foodsaas:tenant-migrate
-                            {schema : Nombre del schema PostgreSQL (ej. rest_mi_local)}
+                            {schema? : Nombre del schema PostgreSQL (ej. rest_mi_local)}
+                            {--all : Migrar todos los schemas de tenants}
                             {--replay : Reinicia el historial de migraciones tenant y vuelve a ejecutarlas}
                             {--wipe : DROP SCHEMA CASCADE + recrear vacío y migrar de nuevo}';
 
@@ -23,13 +24,55 @@ class TenantMigrateCommand extends Command
             return self::FAILURE;
         }
 
-        $code = $migrator->migrate(
-            (string) $this->argument('schema'),
-            $this->output,
-            (bool) $this->option('wipe'),
-            (bool) $this->option('replay'),
-        );
+        $schemas = $this->option('all')
+            ? $this->tenantSchemas()
+            : [trim((string) $this->argument('schema'))];
 
-        return $code === TenantSchemaMigrator::EXIT_SUCCESS ? self::SUCCESS : self::FAILURE;
+        $schemas = array_values(array_filter($schemas, static fn (string $schema): bool => $schema !== ''));
+
+        if ($schemas === []) {
+            if ($this->option('all')) {
+                $this->warn('No hay tenants con schema_name para migrar.');
+
+                return self::SUCCESS;
+            }
+
+            $this->error('Indica un schema o usa --all.');
+
+            return self::FAILURE;
+        }
+
+        $failed = 0;
+
+        foreach ($schemas as $schema) {
+            $this->info('Migrando '.$schema.'…');
+            $code = $migrator->migrate(
+                $schema,
+                $this->output,
+                (bool) $this->option('wipe'),
+                (bool) $this->option('replay'),
+            );
+
+            if ($code !== TenantSchemaMigrator::EXIT_SUCCESS) {
+                $failed++;
+            }
+        }
+
+        return $failed === 0 ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function tenantSchemas(): array
+    {
+        return DB::table('tenants')
+            ->whereNull('deleted_at')
+            ->whereNotNull('schema_name')
+            ->orderBy('schema_name')
+            ->pluck('schema_name')
+            ->filter(static fn (mixed $name): bool => is_string($name) && $name !== '')
+            ->values()
+            ->all();
     }
 }

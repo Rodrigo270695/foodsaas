@@ -1,0 +1,121 @@
+{
+    "title": "Configuración general",
+    "description": "Identidad fiscal, logo, facturación y horarios de atención de tu restaurante.",
+    "description_for": "Datos generales de {{name}}: identidad, logo, facturación y horarios.",
+    "actions": {
+        "save": "Guardar cambios",
+        "saved": "Guardado"
+    },
+    "demo_locked": {
+        "title": "Restaurante demo de solo lectura",
+        "description": "Puedes consultar la configuración, pero no guardar cambios ni reemplazar el logo."
+    },
+    "state": {
+        "configured": "Configurado",
+        "not_configured": "Sin emitir"
+    },
+    "tabs": {
+        "identidad": {
+            "title": "Mi restaurante",
+            "description": "Identidad, contacto y logo"
+        },
+        "facturacion": {
+            "title": "Facturación",
+            "description": "IGV, tickets y SUNAT"
+        },
+        "horarios": {
+            "title": "Horarios",
+            "description": "Atención de la semana"
+        }
+    },
+    "sections": {
+        "identidad": {
+            "title": "Identidad fiscal",
+            "description": "RUC, razón social y dirección que aparecerán en los comprobantes emitidos por el restaurante."
+        },
+        "contacto": {
+            "title": "Contacto",
+            "description": "Datos por los que tus clientes pueden ubicarte."
+        },
+        "branding": {
+            "title": "Identidad visual",
+            "description": "El logo se muestra en el login del tenant y en el sidebar de este restaurante."
+        },
+        "facturacion": {
+            "title": "Facturación y comprobantes SUNAT",
+            "description": "Moneda, IGV y si tu restaurante emitirá boletas o facturas electrónicas (según tu plan)."
+        },
+        "horarios": {
+            "title": "Horario de atención",
+            "description": "Días y horas en que el restaurante atiende. Úsalo para delivery, reservas y avisos al cliente."
+        }
+    },
+    "fields": {
+        "ruc": "RUC",
+        "ruc_hint": "11 dígitos, sin guiones ni espacios.",
+        "razon_social": "Razón social",
+        "nombre_comercial": "Nombre comercial",
+        "nombre_comercial_hint": "Cómo se llama tu restaurante de cara al público. Si lo dejas vacío se usa la razón social.",
+        "direccion_fiscal": "Dirección fiscal",
+        "departamento": "Departamento",
+        "provincia": "Provincia",
+        "distrito": "Distrito",
+        "logo": "Logo del restaurante",
+        "logo_hint": "Sube una imagen cuadrada (PNG, JPG, WEBP o SVG) de máximo 2 MB. Idealmente con fondo transparente.",
+        "logo_hint_uploaded": "Logo guardado. Reemplázalo subiendo otra imagen o quítalo con el botón.",
+        "logo_drop": "Arrastra tu logo aquí o haz clic para elegir un archivo",
+        "logo_drop_supported": "PNG · JPG · WEBP · SVG · máximo 2 MB",
+        "logo_select": "Seleccionar archivo",
+        "logo_replace": "Reemplazar",
+        "logo_remove": "Quitar logo",
+        "logo_remove_pending": "Se quitará al guardar",
+        "logo_undo_remove": "Mantener logo",
+        "logo_pending": "Nuevo archivo: {{name}}",
+        "logo_preview_alt": "Vista previa del logo",
+        "email_institucional": "Correo institucional",
+        "telefono_principal": "Teléfono principal",
+        "web_url": "Sitio web",
+        "moneda": "Moneda",
+        "moneda_pen": "Soles peruanos",
+        "moneda_usd": "Dólares americanos",
+        "igv_afectacion": "Afectación IGV (SUNAT)",
+        "igv_afectacion_hint": "Define cómo se emiten los comprobantes de este restaurante. Gravado = código 10; Exonerado = 20; Inafecto = 30.",
+        "igv_afectacion_gravado": "Gravado (código 10)",
+        "igv_afectacion_exonerado": "Exonerado (código 20)",
+        "igv_afectacion_inafecto": "Inafecto (código 30)",
+        "igv_porcentaje": "IGV general (bebidas y retail)",
+        "igv_porcentaje_hint": "Tasa estándar peruana: 18%. Aplica a gaseosas, aguas, cervezas y productos envasados.",
+        "igv_alimentos_porcentaje": "IGV de alimentos preparados",
+        "igv_alimentos_porcentaje_hint": "Por defecto 18%. La tasa reducida del 10% (Ley 31556) para restaurantes ya no está vigente; si tu contador aún aplica otra tasa, cámbiala aquí.",
+        "igv_restaurante_note": "En Perú el IGV general es 18%. Las comidas y bebidas servidas en restaurante hoy se gravan al 18%. Las gaseosas, aguas y productos envasados también van al 18%. Si tu plan contable usa una tasa distinta para platos, configúrala en «IGV de alimentos preparados» sin cambiar el 18% de las bebidas.",
+        "precio_incluye_igv": "Los precios ingresados incluyen IGV",
+        "precio_incluye_igv_hint": "Si está activo, el sistema calcula la base imponible a partir del precio final. Si no, el IGV se suma al precio mostrado.",
+        "ticket_ancho_mm": "Ancho del ticket térmico (pre-cuenta)",
+        "ticket_ancho_mm_hint": "56, 57 y 58 mm son rollos estrechos. 80 mm es el rollo ancho (la impresora usa un cabezal de unos 72 mm, eso no se elige).",
+        "ticket_ancho_mm_56": "56 mm (rollo ultra estrecho)",
+        "ticket_ancho_mm_57": "57 mm (rollo estrecho)",
+        "ticket_ancho_mm_58": "58 mm (rollo estrecho)",
+        "ticket_ancho_mm_80": "80 mm (rollo ancho)",
+        "emite_comprobantes_sunat": "Emitir comprobantes electrónicos SUNAT (boleta/factura)",
+        "emite_comprobantes_sunat_hint": "Desactívalo si solo usas el software para mesas, cocina e inventario sin facturar al cliente. Aun así puedes llevar moneda e IGV para tickets internos.",
+        "abre": "Abre",
+        "cierra": "Cierra",
+        "horario_abierto": "Abierto",
+        "horario_cerrado": "Cerrado",
+        "dia_lun": "Lunes",
+        "dia_mar": "Martes",
+        "dia_mie": "Miércoles",
+        "dia_jue": "Jueves",
+        "dia_vie": "Viernes",
+        "dia_sab": "Sábado",
+        "dia_dom": "Domingo"
+    },
+    "footer": {
+        "last_updated_by": "Última edición por {{name}}",
+        "never_updated": "Aún no se ha guardado ninguna configuración."
+    },
+    "plan_sin_facturacion_electronica": {
+        "title": "Tu plan no incluye facturación electrónica SUNAT",
+        "body": "Puedes seguir usando el sistema con normalidad. Si necesitas emitir comprobantes, el administrador de la plataforma debe asignarte un plan con boletas o facturas electrónicas."
+    }
+}

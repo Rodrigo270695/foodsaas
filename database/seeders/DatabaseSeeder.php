@@ -13,5 +13,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RbacSeeder::class);
         $this->call(PlansAndFeaturesSeeder::class);
+        $this->call(TenantRolesSeeder::class);
     }
 }
