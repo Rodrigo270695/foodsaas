@@ -5,9 +5,18 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 function DropdownMenu({
+  modal = false,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+  // modal=false evita que Radix ponga aria-hidden en el árbol mientras el
+  // trigger conserva el foco (aviso Chrome / lectores de pantalla).
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      modal={modal}
+      {...props}
+    />
+  )
 }
 
 function DropdownMenuPortal({

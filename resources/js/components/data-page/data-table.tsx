@@ -283,6 +283,8 @@ export function DataTable<T>({
                     'transition-opacity duration-200',
                     isLoading && 'pointer-events-none opacity-60',
                 )}
+                // inert evita foco/AT en filas mientras carga (mejor que aria-hidden).
+                {...(isLoading ? { inert: true } : {})}
             >
             <div className="hidden md:block">
                 <div className="overflow-x-auto">
