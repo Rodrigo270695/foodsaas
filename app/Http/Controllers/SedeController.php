@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\SedesXlsxExport;
+use App\Http\Controllers\Concerns\GuardsPublicDemoTenant;
 use App\Http\Requests\SedeRequest;
 use App\Models\Departamento;
 use App\Models\Distrito;
@@ -16,6 +17,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SedeController extends Controller
 {
+    use GuardsPublicDemoTenant;
+
     private const PER_PAGE_OPTIONS = [10, 15, 20, 25, 50, 100];
 
     private const SORTABLE_COLUMNS = [
@@ -115,6 +118,8 @@ class SedeController extends Controller
 
     public function store(SedeRequest $request): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         $tenantId = $this->tenantIdOrAbort();
         $userId = Auth::id();
         $data = $this->hydrateLocationFromDistrito($request->validated());
@@ -132,6 +137,8 @@ class SedeController extends Controller
 
     public function update(SedeRequest $request, Sede $sede): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         $this->assertSedeBelongsToTenant($sede);
         $data = $this->hydrateLocationFromDistrito($request->validated());
 
@@ -145,6 +152,8 @@ class SedeController extends Controller
 
     public function destroy(Request $request, Sede $sede): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         $this->assertSedeBelongsToTenant($sede);
         $sede->update(['updated_by_id' => Auth::id()]);
         $sede->delete();
@@ -154,6 +163,8 @@ class SedeController extends Controller
 
     public function bulkDestroy(Request $request): RedirectResponse
     {
+        $this->abortIfPublicDemoMutationsLocked(__('demo.mutations_blocked'));
+
         $tenantId = $this->tenantIdOrAbort();
         $data = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:500'],

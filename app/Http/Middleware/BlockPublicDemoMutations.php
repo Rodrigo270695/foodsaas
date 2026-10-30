@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,12 +17,6 @@ class BlockPublicDemoMutations
     public function handle(Request $request, Closure $next): Response
     {
         if (! is_public_demo_tenant()) {
-            return $next($request);
-        }
-
-        /** @var User|null $user */
-        $user = $request->user();
-        if ($user?->isPlatformSuperadmin()) {
             return $next($request);
         }
 

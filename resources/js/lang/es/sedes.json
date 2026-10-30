@@ -24,6 +24,12 @@
     },
     "search_placeholder": "Buscar por nombre, código, dirección...",
     "filter_label": "Filtrar por estado",
+    "filters": {
+        "all": "Todos los estados",
+        "all_description": "Mostrar sedes en cualquier estado",
+        "active": "Activas",
+        "inactive": "Inactivas"
+    },
     "columns": {
         "codigo": "Código",
         "nombre": "Sede",
@@ -40,6 +46,8 @@
         "system": "Sistema",
         "copy_code": "Copiar código",
         "demo_locked": "Demo pública: solo lectura.",
+        "active": "Activa",
+        "inactive": "Inactiva",
         "actions_for": "Acciones para {{name}}"
     },
     "empty": {

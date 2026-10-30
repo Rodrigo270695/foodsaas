@@ -14,6 +14,13 @@
     "form": {
         "unsaved_changes": "You have changes that haven't been saved yet. If you close this form, they'll be lost. Leave without saving?"
     },
+    "filters": {
+        "all": "All",
+        "all_states": "All statuses",
+        "all_states_description": "Show records in any status",
+        "active": "Active",
+        "inactive": "Inactive"
+    },
     "language": {
         "label": "Language",
         "es": "Español",

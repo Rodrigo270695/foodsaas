@@ -144,11 +144,11 @@ export default function Index({
         () => [
             {
                 value: 'todas',
-                label: t('common:filters.all_states'),
-                description: t('common:filters.all_states_description'),
+                label: t('filters.all'),
+                description: t('filters.all_description'),
             },
-            { value: 'activa', label: t('common:filters.active') },
-            { value: 'inactiva', label: t('common:filters.inactive') },
+            { value: 'activa', label: t('filters.active') },
+            { value: 'inactiva', label: t('filters.inactive') },
         ],
         [t],
     );
@@ -359,13 +359,13 @@ export default function Index({
                 cell: (sede) =>
                     sede.activa ? (
                         <StatBadge
-                            label={t('common:filters.active')}
+                            label={t('row.active')}
                             value=""
                             variant="success"
                         />
                     ) : (
                         <StatBadge
-                            label={t('common:filters.inactive')}
+                            label={t('row.inactive')}
                             value=""
                             variant="muted"
                         />

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
-use App\Models\User;
 use App\Tenancy\TenantContext;
 use App\Tenancy\TenantManager;
 
@@ -25,21 +24,12 @@ if (! function_exists('is_public_demo_tenant')) {
 
 if (! function_exists('demo_mutations_locked')) {
     /**
-     * True cuando el request está en el tenant demo y no es superadmin de plataforma.
+     * True en el tenant público `demo`, también en modo soporte.
+     * Así nadie (ni un inquieto ni impersonación) borra datos de la demo.
      */
     function demo_mutations_locked(): bool
     {
-        if (! is_public_demo_tenant()) {
-            return false;
-        }
-
-        $user = auth()->user();
-
-        if ($user instanceof User && $user->isPlatformSuperadmin()) {
-            return false;
-        }
-
-        return true;
+        return is_public_demo_tenant();
     }
 }
 

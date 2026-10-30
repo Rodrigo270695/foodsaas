@@ -14,6 +14,13 @@
     "form": {
         "unsaved_changes": "Hay cambios que aún no guardaste. Si cierras este formulario, se perderán. ¿Quieres salir sin guardar?"
     },
+    "filters": {
+        "all": "Todas",
+        "all_states": "Todos los estados",
+        "all_states_description": "Mostrar registros en cualquier estado",
+        "active": "Activas",
+        "inactive": "Inactivas"
+    },
     "language": {
         "label": "Idioma",
         "es": "Español",

@@ -20,6 +20,12 @@
     },
     "search_placeholder": "Search by name, code, address...",
     "filter_label": "Filter by status",
+    "filters": {
+        "all": "All statuses",
+        "all_description": "Show branches in any status",
+        "active": "Active",
+        "inactive": "Inactive"
+    },
     "columns": {
         "codigo": "Code",
         "nombre": "Branch",
@@ -35,6 +41,9 @@
         "no_location": "No location",
         "system": "System",
         "copy_code": "Copy code",
+        "demo_locked": "Public demo: read-only.",
+        "active": "Active",
+        "inactive": "Inactive",
         "actions_for": "Actions for {{name}}"
     },
     "empty": {
