@@ -69,7 +69,7 @@ class UserRequest extends FormRequest
             'email' => [
                 'required',
                 'string',
-                'email:rfc,dns',
+                'email:rfc',
                 'max:150',
                 $emailUnique,
             ],
