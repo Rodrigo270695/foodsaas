@@ -251,6 +251,25 @@ class SalonController extends Controller
             ->unique()
             ->values();
 
+        // Toda la unión (incl. miembros ya agrupados) debe ser de la misma zona.
+        $zonaScope = Mesa::query()
+            ->where('sede_id', $sedeId)
+            ->where(function ($q) use ($ids, $existingUnions): void {
+                $q->whereIn('id', $ids);
+                if ($existingUnions->isNotEmpty()) {
+                    $q->orWhereIn('union_id', $existingUnions->all());
+                }
+            })
+            ->pluck('zona_id')
+            ->unique()
+            ->values();
+
+        if ($zonaScope->count() !== 1) {
+            throw ValidationException::withMessages([
+                'mesa_ids' => 'Solo se pueden unir mesas de la misma zona.',
+            ]);
+        }
+
         $unionId = $existingUnions->count() === 1
             ? (string) $existingUnions->first()
             : (string) Str::uuid();

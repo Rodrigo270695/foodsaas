@@ -16,8 +16,10 @@ A veces solo hay mesas chicas libres (ej. dos de 4) y llega un grupo grande (fam
 Reglas actuales:
 
 - Solo mesas **activas** de la **sede activa**.
-- Si una mesa ya pertenece a un grupo, unir con otra **absorbe / fusiona** grupos.
-- Separar una mesa del grupo; si quedan &lt; 2, se disuelve el grupo entero.
+- Solo mesas de la **misma zona** (no se une Principal con Terraza).
+- Si una mesa ya pertenece a un grupo, unir con otra **absorbe / fusiona** grupos (misma zona).
+- Separar manualmente: botón Unlink en la tarjeta, en el centro de la línea, o menú ⋯. Si quedan &lt; 2, se disuelve el grupo.
+- Tras cobro (futuro): separación automática (ver abajo).
 
 ## Futuro: separación automática al cobrar / liberar
 

@@ -1,11 +1,7 @@
-import { AlertCircle, CircleHelp } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
+import { InfoHint } from '@/components/ui/info-hint';
 import { cn } from '@/lib/utils';
 
 export type FormFieldProps = {
@@ -71,29 +67,14 @@ export function FormField({
                 </Label>
 
                 {info ? (
-                    <Popover modal>
-                        <PopoverTrigger asChild>
-                            <button
-                                type="button"
-                                aria-label={infoLabel}
-                                className="inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
-                            >
-                                <CircleHelp
-                                    className="size-3.5"
-                                    strokeWidth={2.25}
-                                    aria-hidden
-                                />
-                            </button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                            side="top"
-                            align="start"
-                            sideOffset={6}
-                            className="max-w-64 text-sm leading-relaxed text-muted-foreground"
-                        >
-                            {info}
-                        </PopoverContent>
-                    </Popover>
+                    <InfoHint
+                        label={infoLabel}
+                        className="size-5"
+                        side="top"
+                        align="start"
+                    >
+                        {info}
+                    </InfoHint>
                 ) : null}
             </div>
 

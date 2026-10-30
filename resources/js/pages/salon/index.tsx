@@ -82,6 +82,7 @@ export default function Index({
     const [copyOpen, setCopyOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [query, setQuery] = useState('');
+    const [joinMode, setJoinMode] = useState(false);
     const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
 
     const reload = useCallback(
@@ -245,6 +246,11 @@ export default function Index({
                                 mesasLimitReached={mesasLimitReached}
                                 hasZonas={zonas.length > 0}
                                 canCopy={canCreate && copy_targets.length > 0}
+                                canUpdate={canUpdate}
+                                joinMode={joinMode}
+                                onToggleJoinMode={() =>
+                                    setJoinMode((v) => !v)
+                                }
                                 onRefresh={() => reload()}
                                 onCopy={() => setCopyOpen(true)}
                                 onNewZona={() =>
@@ -345,6 +351,8 @@ export default function Index({
                                 ariaLabel={t('aria.results_count_other', {
                                     count: visibleMesas.length,
                                 })}
+                                joinMode={joinMode}
+                                onJoinModeChange={setJoinMode}
                                 onEdit={(mesa) =>
                                     setModal({ type: 'mesa-edit', mesa })
                                 }

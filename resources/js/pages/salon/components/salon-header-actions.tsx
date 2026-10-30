@@ -1,8 +1,9 @@
-import { Copy, LayoutGrid, Plus, RefreshCw } from 'lucide-react';
+import { Copy, LayoutGrid, Link2, Plus, RefreshCw } from 'lucide-react';
 import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
+import { InfoHint } from '@/components/ui/info-hint';
 import {
     Tooltip,
     TooltipContent,
@@ -15,6 +16,9 @@ type SalonHeaderActionsProps = {
     mesasLimitReached: boolean;
     hasZonas: boolean;
     canCopy?: boolean;
+    canUpdate?: boolean;
+    joinMode?: boolean;
+    onToggleJoinMode?: () => void;
     onRefresh: () => void;
     onCopy?: () => void;
     onNewZona: () => void;
@@ -41,6 +45,9 @@ export function SalonHeaderActions({
     mesasLimitReached,
     hasZonas,
     canCopy = false,
+    canUpdate = false,
+    joinMode = false,
+    onToggleJoinMode,
     onRefresh,
     onCopy,
     onNewZona,
@@ -55,7 +62,7 @@ export function SalonHeaderActions({
           : t('actions.new_mesa');
 
     return (
-        <div className="flex flex-row flex-wrap items-center justify-end gap-2">
+        <div className="flex flex-row flex-wrap items-center justify-end gap-1.5 sm:gap-2">
             <ActionTip label={t('floor.refresh')}>
                 <Button
                     type="button"
@@ -72,6 +79,44 @@ export function SalonHeaderActions({
                     />
                 </Button>
             </ActionTip>
+
+            {canUpdate && onToggleJoinMode ? (
+                <Can permission="salon.update">
+                    <div className="flex items-center gap-0.5">
+                        <ActionTip
+                            label={
+                                joinMode
+                                    ? t('union.mode_on')
+                                    : t('union.mode')
+                            }
+                        >
+                            <Button
+                                type="button"
+                                variant={joinMode ? 'default' : 'outline'}
+                                size="icon"
+                                aria-pressed={joinMode}
+                                aria-label={t('union.mode')}
+                                onClick={onToggleJoinMode}
+                                className={cn(
+                                    'cursor-pointer',
+                                    joinMode &&
+                                        'bg-[#660033] text-white hover:bg-[#660033]/90',
+                                )}
+                            >
+                                <Link2 className="size-4" strokeWidth={2.5} />
+                            </Button>
+                        </ActionTip>
+                        <InfoHint
+                            label={t('union.info_label')}
+                            side="bottom"
+                            align="end"
+                            contentClassName="max-w-72"
+                        >
+                            {t('union.hint')}
+                        </InfoHint>
+                    </div>
+                </Can>
+            ) : null}
 
             {canCopy && onCopy ? (
                 <Can permission="salon.create">

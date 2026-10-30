@@ -191,6 +191,28 @@ export function MesaFloorCard({
                     ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-0.5">
+                    {canUpdate && joined && onSeparar ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 cursor-pointer text-[#660033] hover:bg-[#660033]/10"
+                                    aria-label={t('union.separar')}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onSeparar();
+                                    }}
+                                >
+                                    <Unlink2 className="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                                {t('union.separar')}
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : null}
                     {canUpdate && available && onJoinDragStart ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -199,10 +221,7 @@ export function MesaFloorCard({
                                     variant="ghost"
                                     size="icon"
                                     className="size-8 cursor-grab touch-none text-[#660033] hover:bg-[#660033]/10 active:cursor-grabbing"
-                                    aria-label={t('union.drag', {
-                                        defaultValue:
-                                            'Arrastra para unir con otra mesa',
-                                    })}
+                                    aria-label={t('union.drag')}
                                     onPointerDown={onJoinDragStart}
                                     onClick={(e) => e.stopPropagation()}
                                 >
@@ -210,10 +229,7 @@ export function MesaFloorCard({
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">
-                                {t('union.drag', {
-                                    defaultValue:
-                                        'Arrastra hacia otra mesa para unirlas',
-                                })}
+                                {t('union.drag')}
                             </TooltipContent>
                         </Tooltip>
                     ) : null}

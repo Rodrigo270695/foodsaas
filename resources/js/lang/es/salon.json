@@ -71,7 +71,7 @@
         "load_error": "No se pudo cargar el salón."
     },
     "floor": {
-        "subtitle": "Toca una mesa para editarla. Une mesas arrastrando el enlace o con el botón Unir. Las inactivas no aparecen en operación.",
+        "subtitle": "Toca una mesa para editarla. Une solo dentro de la misma zona (ícono de enlace arriba). Las inactivas no aparecen en operación.",
         "search": "Buscar mesa...",
         "refresh": "Actualizar salón",
         "available": "Disponible",
@@ -84,11 +84,14 @@
     },
     "union": {
         "mode": "Unir mesas",
-        "mode_on": "Elige 2 mesas…",
-        "hint": "Arrastra desde el ícono de enlace de una mesa hacia otra, o activa el modo y tócalas.",
-        "drag": "Arrastra hacia otra mesa para unirlas",
+        "mode_on": "Toca la primera mesa…",
+        "mode_pick_second": "Ahora toca otra mesa de la misma zona.",
+        "info_label": "Cómo unir mesas",
+        "hint": "Solo mesas de la misma zona. Arrastra el ícono de enlace hacia otra mesa, o activa el modo Unir (ícono arriba) y tócalas. Para separar: botón de deshacer enlace en la tarjeta o en el centro de la línea.",
+        "drag": "Arrastra hacia otra mesa de la misma zona",
         "badge": "Unida",
-        "separar": "Separar mesa",
+        "separar": "Separar unión",
+        "same_zone_error": "No se pueden unir mesas de zonas distintas.",
         "capacity_group": "{{solo}} → grupo {{total}}"
     },
     "stats_badges": {
