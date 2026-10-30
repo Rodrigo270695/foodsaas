@@ -40,30 +40,22 @@ type TableDiagramProps = {
 };
 
 /**
- * Diagrama de piso: mesa redonda (≤4) o rectangular (≥5),
- * con exactamente `capacidad` sillas (tope visual 10) alrededor.
+ * Diagrama de piso: mesa cuadrada con bordes redondos (misma forma siempre)
+ * y exactamente `capacidad` sillas (tope visual 10) alrededor.
  */
 function TableDiagram({ codigo, capacidad, available }: TableDiagramProps) {
     const seats = Math.max(1, Math.min(capacidad, MAX_VISIBLE_CHAIRS));
-    const isRound = seats <= 4;
     const overflow = Math.max(0, capacidad - MAX_VISIBLE_CHAIRS);
-
-    // Radio del anillo de sillas (px relativos al contenedor 88×88 / 104×88)
-    const radiusX = isRound ? 38 : 42;
-    const radiusY = isRound ? 38 : 34;
+    const radius = 38;
 
     return (
         <div
             className="relative mx-auto size-[5.5rem] sm:size-[6.5rem]"
             aria-hidden="true"
         >
-            {/* Mesa */}
             <div
                 className={cn(
-                    'absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center border-2 shadow-sm',
-                    isRound
-                        ? 'size-[3.25rem] rounded-full sm:size-[3.75rem]'
-                        : 'h-[2.75rem] w-[3.75rem] rounded-xl sm:h-[3.25rem] sm:w-[4.5rem]',
+                    'absolute top-1/2 left-1/2 flex size-[3.25rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 shadow-sm sm:size-[3.75rem]',
                     available
                         ? 'border-emerald-500/55 bg-emerald-500/12'
                         : 'border-border bg-muted/50',
@@ -74,14 +66,11 @@ function TableDiagram({ codigo, capacidad, available }: TableDiagramProps) {
                 </span>
             </div>
 
-            {/* Sillas en anillo (polar) */}
             {Array.from({ length: seats }).map((_, i) => {
-                // Empieza arriba (-90°) y reparte en círculo completo
                 const angleDeg = (360 / seats) * i - 90;
                 const angleRad = (angleDeg * Math.PI) / 180;
-                const x = Math.cos(angleRad) * radiusX;
-                const y = Math.sin(angleRad) * radiusY;
-                // Oriente la silla hacia el centro de la mesa
+                const x = Math.cos(angleRad) * radius;
+                const y = Math.sin(angleRad) * radius;
                 const faceCenter = angleDeg + 90;
 
                 return (
