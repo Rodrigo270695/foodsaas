@@ -7,6 +7,7 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ServicioPushStrip } from '@/components/servicio/servicio-push-strip';
 import { cn } from '@/lib/utils';
 import pedidos from '@/pages/pedidos/pedidos-routes';
 import type { ServicioFeed, ServicioListoItem } from '@/types/servicio-feed';
@@ -204,6 +205,8 @@ export function ServicioFeedInbox() {
                         </p>
                     ) : null}
                 </div>
+
+                <ServicioPushStrip />
             </DropdownMenuContent>
         </DropdownMenu>
     );
