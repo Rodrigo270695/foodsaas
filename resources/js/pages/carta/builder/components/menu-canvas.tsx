@@ -50,7 +50,7 @@ export function MenuCanvas({
         tipografia,
         colorTexto,
     });
-    const { theme } = style;
+    const { theme, darkTheme } = style;
     const [dragOver, setDragOver] = useState(false);
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
