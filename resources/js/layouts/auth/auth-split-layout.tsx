@@ -15,6 +15,7 @@ const PAGES_WITH_OWN_CARD = new Set([
     'errors/not-found',
     'errors/server-error',
     'errors/method-not-allowed',
+    'tenant/errors/not-found',
     'tenant/errors/blocked',
 ]);
 

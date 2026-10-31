@@ -100,6 +100,15 @@
             "description": "The route you tried to open does not exist or is no longer available.",
             "helper": "Check the address or return to the main panel. If the link came from the menu, the module may not be enabled for your restaurant yet."
         },
+        "tenant_not_found": {
+            "title": "Restaurant not found",
+            "description": "The address «{{slug}}» is not registered in FoodSaaS.",
+            "helper": "Check the subdomain (no spaces or capitals) or contact Orvae support. If you just signed up, activation may take a few minutes.",
+            "slug_label": "Subdomain",
+            "message": "There is no active restaurant with the identifier «{{slug}}».",
+            "cta_central": "Go to FoodSaaS"
+        },
+
         "method_not_allowed": {
             "title": "Method not allowed",
             "description": "This URL does not accept the kind of request you used (for example GET instead of POST).",

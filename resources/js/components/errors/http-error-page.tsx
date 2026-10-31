@@ -1,5 +1,14 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Home, LayoutGrid, Lock, SearchX, TriangleAlert } from 'lucide-react';
+import {
+    ArrowLeft,
+    Building2,
+    Home,
+    LayoutGrid,
+    Lock,
+    SearchX,
+    TriangleAlert,
+    type LucideIcon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +21,16 @@ type HttpErrorPageProps = {
     message?: string | null;
     attempted_path?: string | null;
     is_authenticated?: boolean;
+    /** Sobrescribe título / descripción / helper (p. ej. tenant no encontrado). */
+    title?: string;
+    description?: string;
+    helper?: string;
+    icon?: LucideIcon;
+    /** CTA primario custom (si no hay, usa login/dashboard). */
+    primaryHref?: string;
+    primaryLabel?: string;
+    primaryExternal?: boolean;
+    pathLabel?: string;
 };
 
 export function HttpErrorPage({
@@ -19,29 +38,62 @@ export function HttpErrorPage({
     message,
     attempted_path,
     is_authenticated = false,
+    title: titleOverride,
+    description: descriptionOverride,
+    helper: helperOverride,
+    icon: IconOverride,
+    primaryHref,
+    primaryLabel,
+    primaryExternal = false,
+    pathLabel,
 }: HttpErrorPageProps) {
     const { t } = useTranslation('common');
 
     const isForbidden = status === 403;
     const isMethodNotAllowed = status === 405;
     const isServerError = status === 500 || status === 503;
-    const Icon = isForbidden ? Lock : isServerError ? TriangleAlert : SearchX;
+    const Icon =
+        IconOverride ??
+        (isForbidden ? Lock : isServerError ? TriangleAlert : SearchX);
 
-    const title = isForbidden
-        ? t('http_errors.forbidden.title')
-        : isMethodNotAllowed
-          ? t('http_errors.method_not_allowed.title')
-          : isServerError
-            ? t('http_errors.server_error.title')
-            : t('http_errors.not_found.title');
+    const title =
+        titleOverride ??
+        (isForbidden
+            ? t('http_errors.forbidden.title')
+            : isMethodNotAllowed
+              ? t('http_errors.method_not_allowed.title')
+              : isServerError
+                ? t('http_errors.server_error.title')
+                : t('http_errors.not_found.title'));
 
-    const description = isForbidden
-        ? t('http_errors.forbidden.description')
-        : isMethodNotAllowed
-          ? t('http_errors.method_not_allowed.description')
-          : isServerError
-            ? t('http_errors.server_error.description')
-            : t('http_errors.not_found.description');
+    const description =
+        descriptionOverride ??
+        (isForbidden
+            ? t('http_errors.forbidden.description')
+            : isMethodNotAllowed
+              ? t('http_errors.method_not_allowed.description')
+              : isServerError
+                ? t('http_errors.server_error.description')
+                : t('http_errors.not_found.description'));
+
+    const helper =
+        helperOverride ??
+        (isForbidden
+            ? t('http_errors.forbidden.helper')
+            : isMethodNotAllowed
+              ? t('http_errors.method_not_allowed.helper')
+              : isServerError
+                ? t('http_errors.server_error.helper')
+                : t('http_errors.not_found.helper'));
+
+    const resolvedPrimaryHref =
+        primaryHref ?? (is_authenticated ? dashboard() : '/login');
+    const resolvedPrimaryLabel =
+        primaryLabel ??
+        (is_authenticated
+            ? t('http_errors.cta_dashboard')
+            : t('http_errors.cta_login'));
+    const PrimaryIcon = is_authenticated && !primaryHref ? LayoutGrid : Home;
 
     return (
         <>
@@ -61,24 +113,33 @@ export function HttpErrorPage({
                 </div>
 
                 <div className="space-y-2">
-                    <p className="text-sm font-medium tracking-wide text-muted-foreground">{status}</p>
-                    <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
-                    <p className="mx-auto max-w-lg text-sm text-muted-foreground sm:text-base">{description}</p>
+                    <p className="text-sm font-medium tracking-wide text-muted-foreground">
+                        {status}
+                    </p>
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                        {title}
+                    </h1>
+                    <p className="mx-auto max-w-lg text-sm text-muted-foreground sm:text-base">
+                        {description}
+                    </p>
                 </div>
 
                 <div className="flex w-full flex-col items-center gap-2 sm:w-auto sm:flex-row sm:gap-3">
-                    {is_authenticated ? (
+                    {primaryExternal ? (
                         <Button asChild size="lg" className="w-full gap-2 sm:w-auto">
-                            <Link href={dashboard()} prefetch>
-                                <LayoutGrid className="size-4" />
-                                {t('http_errors.cta_dashboard')}
-                            </Link>
+                            <a href={resolvedPrimaryHref}>
+                                <Building2 className="size-4" />
+                                {resolvedPrimaryLabel}
+                            </a>
                         </Button>
                     ) : (
                         <Button asChild size="lg" className="w-full gap-2 sm:w-auto">
-                            <Link href="/login">
-                                <Home className="size-4" />
-                                {t('http_errors.cta_login')}
+                            <Link
+                                href={resolvedPrimaryHref}
+                                prefetch={!primaryHref}
+                            >
+                                <PrimaryIcon className="size-4" />
+                                {resolvedPrimaryLabel}
                             </Link>
                         </Button>
                     )}
@@ -97,13 +158,21 @@ export function HttpErrorPage({
                 {(message || attempted_path) && (
                     <Card className="w-full text-left">
                         <CardHeader>
-                            <CardTitle className="text-base">{t('http_errors.details_title')}</CardTitle>
-                            <CardDescription>{t('http_errors.details_hint')}</CardDescription>
+                            <CardTitle className="text-base">
+                                {t('http_errors.details_title')}
+                            </CardTitle>
+                            <CardDescription>
+                                {t('http_errors.details_hint')}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm text-muted-foreground">
                             {attempted_path ? (
                                 <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-start sm:gap-x-2">
-                                    <span className="shrink-0">{t('http_errors.attempted_path')}:</span>
+                                    <span className="shrink-0">
+                                        {pathLabel ??
+                                            t('http_errors.attempted_path')}
+                                        :
+                                    </span>
                                     <code className="max-w-full break-all rounded bg-muted/60 px-1.5 py-0.5 font-mono text-xs text-foreground sm:text-sm">
                                         {attempted_path}
                                     </code>
@@ -119,13 +188,7 @@ export function HttpErrorPage({
                 )}
 
                 <p className="max-w-xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                    {isForbidden
-                        ? t('http_errors.forbidden.helper')
-                        : isMethodNotAllowed
-                          ? t('http_errors.method_not_allowed.helper')
-                          : isServerError
-                            ? t('http_errors.server_error.helper')
-                            : t('http_errors.not_found.helper')}
+                    {helper}
                 </p>
             </div>
         </>

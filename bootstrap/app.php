@@ -10,6 +10,7 @@ use App\Http\Middleware\MatchUserTenant;
 use App\Http\Middleware\ResolveTenant;
 use App\Http\Middleware\SetPermissionsTeam;
 use App\Models\User;
+use App\Support\Tenancy\TenantSubdomainUrl;
 use App\Tenancy\Exceptions\TenantNotFoundException;
 use App\Tenancy\Exceptions\TenantSuspendedException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -255,6 +256,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return Inertia::render('tenant/errors/not-found', [
                 'slug' => $e->identifier,
+                'central_url' => TenantSubdomainUrl::scheme().'://'.TenantSubdomainUrl::rootDomain(),
             ])
                 ->toResponse($request)
                 ->setStatusCode(404);
