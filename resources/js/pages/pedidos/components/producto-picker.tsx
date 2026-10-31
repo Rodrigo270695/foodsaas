@@ -49,43 +49,48 @@ function ProductTile({
             type="button"
             disabled={disabled || sinStock}
             onClick={onAdd}
+            aria-label={`${producto.nombre}, ${money(producto.precio)}`}
             className={cn(
-                'group flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card text-left shadow-sm transition-all duration-150 touch-manipulation',
-                'hover:-translate-y-0.5 hover:border-brand-600/40 hover:shadow-md',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/40',
-                'active:translate-y-0 active:scale-[0.98]',
+                'group flex h-full w-full min-w-0 flex-col overflow-hidden rounded-xl border border-border/80 bg-card text-left',
+                'shadow-sm transition-[box-shadow,border-color,transform,opacity] duration-150 touch-manipulation',
+                'hover:border-brand-600/45 hover:shadow-md',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600/40 focus-visible:ring-offset-2',
+                'active:scale-[0.985]',
                 (disabled || sinStock) &&
-                    'pointer-events-none opacity-55 grayscale',
+                    'pointer-events-none opacity-50 grayscale',
             )}
         >
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-brand-50/80 dark:bg-brand-950/40">
+            {/* Media fija: misma proporción en todas las cards */}
+            <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-muted/40">
                 {producto.imagen_url ? (
                     <img
                         src={producto.imagen_url}
-                        alt={producto.nombre}
+                        alt=""
                         loading="lazy"
                         decoding="async"
-                        className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                        className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                     />
                 ) : (
                     <div
-                        className="flex size-full items-center justify-center text-brand-600/35"
+                        className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-brand-50 to-muted/60 dark:from-brand-950/50 dark:to-muted/20"
                         aria-hidden
                     >
-                        <UtensilsCrossed className="size-10 stroke-[1.5]" />
+                        <UtensilsCrossed className="size-9 text-brand-600/30 stroke-[1.5]" />
                     </div>
                 )}
                 {sinStock ? (
-                    <span className="absolute top-2 left-2 rounded-md bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-background uppercase">
+                    <span className="absolute top-2 left-2 rounded-md bg-foreground/85 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-background uppercase">
                         Sin stock
                     </span>
                 ) : null}
             </div>
-            <div className="flex flex-1 flex-col gap-1 p-3">
-                <span className="line-clamp-2 text-sm leading-snug font-medium text-foreground">
+
+            {/* Pie de altura fija: 2 líneas de título + precio */}
+            <div className="flex min-h-[4.75rem] flex-1 flex-col gap-1.5 p-3">
+                <span className="line-clamp-2 min-h-[2.5rem] text-sm leading-tight font-medium text-foreground">
                     {producto.nombre}
                 </span>
-                <span className="mt-auto text-base font-semibold tabular-nums text-brand-600">
+                <span className="mt-auto text-[0.95rem] font-semibold tabular-nums tracking-tight text-brand-600">
                     {money(producto.precio)}
                 </span>
             </div>
@@ -186,14 +191,18 @@ export function ProductoPicker({
                 </div>
             ) : (
                 <div
-                    className="grid max-h-[min(34rem,calc(100dvh-18rem))] grid-cols-2 gap-3 overflow-y-auto overscroll-contain pr-0.5 sm:grid-cols-3 xl:grid-cols-4"
+                    className="grid max-h-[min(34rem,calc(100dvh-18rem))] grid-cols-2 gap-3 overflow-y-auto overscroll-contain pr-0.5 sm:grid-cols-3 xl:grid-cols-4 [grid-auto-rows:1fr]"
                     role="list"
                     aria-label={t('form.carta', {
                         defaultValue: 'Carta',
                     })}
                 >
                     {filtered.map((p) => (
-                        <div key={p.id} role="listitem">
+                        <div
+                            key={p.id}
+                            role="listitem"
+                            className="min-h-0 min-w-0"
+                        >
                             <ProductTile
                                 producto={p}
                                 disabled={disabled}

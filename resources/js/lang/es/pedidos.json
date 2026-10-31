@@ -17,6 +17,8 @@
         "activos": "Activos",
         "historico": "Histórico",
         "historico_hint": "Cobrados y anulados en el rango elegido.",
+        "activos_hint": "Para ver cobrados/anulados elige Histórico y un rango.",
+        "sin_rango": "Sin filtro de fecha",
         "fecha": "Fecha",
         "cerrados": "Cerrados",
         "anulados": "Anulados",

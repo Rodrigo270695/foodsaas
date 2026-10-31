@@ -6,6 +6,7 @@ import {
     BookOpenCheck,
     Bot,
     Building2,
+    BookOpen,
     ChefHat,
     ClipboardList,
     Cog,
@@ -70,8 +71,8 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
             ],
             groups: [
                 {
-                    title: t('groups.operacion'),
-                    icon: UtensilsCrossed,
+                    title: t('groups.catalogo'),
+                    icon: BookOpen,
                     context: 'tenant',
                     items: [
                         {
@@ -88,6 +89,14 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             permission: 'almacen.view',
                             context: 'tenant',
                         },
+                    ],
+                },
+                {
+                    title: t('groups.servicio'),
+                    icon: UtensilsCrossed,
+                    context: 'tenant',
+                    defaultOpen: true,
+                    items: [
                         {
                             title: t('items.salon'),
                             href: '/salon',
@@ -109,6 +118,13 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             permission: 'cocina.view',
                             context: 'tenant',
                         },
+                    ],
+                },
+                {
+                    title: t('groups.cobros'),
+                    icon: Wallet,
+                    context: 'tenant',
+                    items: [
                         {
                             title: t('items.caja'),
                             href: '/caja',

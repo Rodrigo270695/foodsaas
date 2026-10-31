@@ -17,6 +17,8 @@
         "activos": "Open",
         "historico": "History",
         "historico_hint": "Paid and cancelled tickets in the selected range.",
+        "activos_hint": "To see paid/cancelled tickets, choose History and a range.",
+        "sin_rango": "No date filter",
         "fecha": "Date",
         "cerrados": "Closed",
         "anulados": "Cancelled",

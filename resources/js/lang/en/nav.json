@@ -4,6 +4,9 @@
     "plan_kicker": "Plan",
     "groups": {
         "operacion": "Operations",
+        "catalogo": "Catalog",
+        "servicio": "Service",
+        "cobros": "Checkout",
         "facturacion": "Billing",
         "configuracion": "Settings",
         "plataforma_sistema": "System",
