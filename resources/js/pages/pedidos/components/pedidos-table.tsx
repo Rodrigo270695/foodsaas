@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { ClipboardList, History, MoreHorizontal, Plus } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { ClipboardList, History, Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -9,12 +9,6 @@ import {
     type DataTableColumn,
 } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 import pedidos from '../pedidos-routes';
@@ -53,12 +47,9 @@ export function PedidosTable({
                 key: 'numero',
                 header: t('columns.numero'),
                 cell: (row) => (
-                    <Link
-                        href={pedidos.show(row.id).url}
-                        className="font-semibold text-brand-600 hover:underline"
-                    >
+                    <span className="font-semibold text-brand-600">
                         #{row.numero}
-                    </Link>
+                    </span>
                 ),
             },
             {
@@ -107,32 +98,6 @@ export function PedidosTable({
                     );
                 },
             },
-            {
-                key: 'actions',
-                header: '',
-                align: 'right',
-                cell: (row) => (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="size-8"
-                            >
-                                <MoreHorizontal className="size-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                                <Link href={pedidos.show(row.id).url}>
-                                    {t('actions.open')}
-                                </Link>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                ),
-            },
         ],
         [t],
     );
@@ -143,6 +108,7 @@ export function PedidosTable({
             data={paginated.data}
             rowKey={(row) => row.id}
             isLoading={isLoading}
+            onRowClick={(row) => router.visit(pedidos.show(row.id).url)}
             footer={
                 <DataPagination
                     meta={paginated}
