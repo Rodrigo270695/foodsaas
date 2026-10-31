@@ -279,9 +279,13 @@ class TenantProvisioner
                 'phone' => $payload['telefono'] ?? null,
                 'is_active' => true,
                 'must_change_password' => true,
-                'email_verified_at' => null,
             ],
         );
+
+        // Admin provisionado por plataforma: no pedir verificación de correo.
+        if ($user->email_verified_at === null) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
 
         $previousTeam = getPermissionsTeamId();
         setPermissionsTeamId((string) $tenant->id);

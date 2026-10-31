@@ -162,7 +162,8 @@ return [
 
     'features' => [
         Features::resetPasswords(),
-        Features::emailVerification(),
+        // Sin verificación de correo (mismo criterio que VetSaaS): usuarios los crea el admin.
+        // Features::emailVerification(),
         Features::twoFactorAuthentication([
             'confirm' => true,
             'confirmPassword' => true,

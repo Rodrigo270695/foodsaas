@@ -179,6 +179,9 @@ class UserController extends Controller
             'created_by_id' => $request->user()?->id,
         ]);
 
+        // Usuario interno del restaurante: el admin ya lo dio de alta (no pedir verify).
+        $user->forceFill(['email_verified_at' => now()])->save();
+
         $user->syncRoles([$data['role']]);
         SedeAssignment::syncForUser($user, $data['sede_ids'] ?? null, $data['role']);
 
