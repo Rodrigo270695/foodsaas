@@ -584,7 +584,7 @@ export function DateRangeFilter({
             variant="outline"
             disabled={disabled}
             className={cn(
-                'h-10 max-w-full min-w-40 cursor-pointer justify-start gap-2 rounded-lg border-brand-600 bg-brand-600 px-3 font-medium text-white shadow-sm hover:bg-brand-700 hover:text-white',
+                'h-9 max-w-full min-w-40 cursor-pointer justify-start gap-2 rounded-lg border-brand-600 bg-brand-600 px-2.5 font-medium text-white shadow-sm hover:bg-brand-700 hover:text-white',
                 !hasRange &&
                     'border-border bg-card text-foreground hover:bg-muted/60 hover:text-foreground',
                 triggerClassName,
