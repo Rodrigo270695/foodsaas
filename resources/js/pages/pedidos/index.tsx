@@ -1,10 +1,11 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
+    CheckCircle2,
     ClipboardList,
     CookingPot,
+    History,
     MoreHorizontal,
     Plus,
-    Store,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -18,13 +19,6 @@ import {
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -36,17 +30,12 @@ import {
 } from '@/components/ui/filter-select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
+import { PedidoFormModal } from './components/pedido-form-modal';
 import pedidos from './pedidos-routes';
 
 type MesaLibre = {
@@ -63,20 +52,53 @@ type PedidoRow = {
     canal: string;
     total: string | number;
     created_at: string;
+    cerrado_at?: string | null;
     mesa?: { id: string; codigo: string; nombre: string | null } | null;
-    lineas_pendientes_count?: number;
-    lineas_cola_count?: number;
 };
 
 type Props = {
     pedidos: Paginated<PedidoRow>;
     mesas_libres: MesaLibre[];
-    filters: { estado: string; sede_id: string | null };
-    stats: { activos: number; en_cola: number };
+    filters: {
+        estado: string;
+        fecha: string | null;
+        sede_id: string | null;
+    };
+    stats: { activos: number; en_cola: number; cerrados_hoy: number };
 };
 
 function money(value: string | number): string {
     return `S/ ${Number(value).toFixed(2)}`;
+}
+
+function formatFechaHora(iso: string): { fecha: string; hora: string } {
+    const d = new Date(iso);
+    return {
+        fecha: d.toLocaleDateString(undefined, {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        }),
+        hora: d.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+        }),
+    };
+}
+
+function estadoTone(estado: string): string {
+    switch (estado) {
+        case 'borrador':
+            return 'bg-muted text-muted-foreground';
+        case 'abierto':
+            return 'bg-amber-500/15 text-amber-800 dark:text-amber-300';
+        case 'cerrado':
+            return 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300';
+        case 'anulado':
+            return 'bg-rose-500/15 text-rose-800 dark:text-rose-300';
+        default:
+            return 'bg-muted text-muted-foreground';
+    }
 }
 
 export default function Index({
@@ -88,13 +110,14 @@ export default function Index({
     const { t } = useTranslation(['pedidos', 'common']);
     const { can } = usePermission();
     const [openNew, setOpenNew] = useState(false);
-    const [mesaId, setMesaId] = useState('');
-    const [canal, setCanal] = useState<'salon' | 'mostrador'>('salon');
-    const [comensales, setComensales] = useState(2);
-    const [creating, setCreating] = useState(false);
+    const isHistorico =
+        filters.estado === 'historico' ||
+        filters.estado === 'cerrados' ||
+        filters.estado === 'anulados';
 
     const { isLoading, setPerPage, applyFilter } = useDataTablePage<{
         estado: string;
+        fecha: string | null;
     }>({
         routeUrl: pedidos.index().url,
         initialFilters: {
@@ -111,8 +134,21 @@ export default function Index({
     const estadoOptions = useMemo<readonly FilterSelectOption<string>[]>(
         () => [
             { value: 'activos', label: t('filters.activos'), tone: 'warning' },
-            { value: 'cerrados', label: t('filters.cerrados'), tone: 'success' },
-            { value: 'anulados', label: t('filters.anulados'), tone: 'warning' },
+            {
+                value: 'historico',
+                label: t('filters.historico', { defaultValue: 'Histórico' }),
+                tone: 'info',
+            },
+            {
+                value: 'cerrados',
+                label: t('filters.cerrados'),
+                tone: 'success',
+            },
+            {
+                value: 'anulados',
+                label: t('filters.anulados'),
+                tone: 'danger',
+            },
             { value: 'todos', label: t('filters.todos') },
         ],
         [t],
@@ -143,7 +179,16 @@ export default function Index({
             {
                 key: 'estado',
                 header: t('columns.estado'),
-                cell: (row) => t(`estado.${row.estado}`),
+                cell: (row) => (
+                    <span
+                        className={cn(
+                            'inline-flex rounded-md px-2 py-0.5 text-xs font-medium',
+                            estadoTone(row.estado),
+                        )}
+                    >
+                        {t(`estado.${row.estado}`)}
+                    </span>
+                ),
             },
             {
                 key: 'total',
@@ -155,13 +200,19 @@ export default function Index({
                 ),
             },
             {
-                key: 'hora',
-                header: t('columns.hora'),
-                cell: (row) =>
-                    new Date(row.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    }),
+                key: 'fecha',
+                header: t('columns.fecha', { defaultValue: 'Fecha' }),
+                cell: (row) => {
+                    const { fecha, hora } = formatFechaHora(row.created_at);
+                    return (
+                        <div className="leading-tight">
+                            <p className="text-sm tabular-nums">{fecha}</p>
+                            <p className="text-xs text-muted-foreground tabular-nums">
+                                {hora}
+                            </p>
+                        </div>
+                    );
+                },
             },
             {
                 key: 'actions',
@@ -193,22 +244,6 @@ export default function Index({
         [t],
     );
 
-    function submitNew() {
-        setCreating(true);
-        router.post(
-            pedidos.store().url,
-            {
-                canal,
-                mesa_id: canal === 'salon' ? mesaId || null : null,
-                comensales,
-            },
-            {
-                onFinish: () => setCreating(false),
-                onSuccess: () => setOpenNew(false),
-            },
-        );
-    }
-
     return (
         <>
             <Head title={t('title')} />
@@ -228,6 +263,14 @@ export default function Index({
                             value: stats.en_cola,
                             variant: 'info',
                             icon: CookingPot,
+                        },
+                        {
+                            label: t('stats.cerrados_hoy', {
+                                defaultValue: 'Cerrados hoy',
+                            }),
+                            value: stats.cerrados_hoy,
+                            variant: 'success',
+                            icon: CheckCircle2,
                         },
                     ]}
                     action={
@@ -249,14 +292,63 @@ export default function Index({
                     }
                 />
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                     <FilterSelect
                         ariaLabel={t('filters.estado')}
                         value={filters.estado}
-                        onChange={(estado) => applyFilter({ estado })}
+                        onChange={(estado) => {
+                            if (estado === 'historico') {
+                                applyFilter({
+                                    estado,
+                                    fecha:
+                                        filters.fecha ??
+                                        new Date().toISOString().slice(0, 10),
+                                });
+                                return;
+                            }
+                            applyFilter({
+                                estado,
+                                fecha: null,
+                            });
+                        }}
                         options={estadoOptions}
                         disabled={isLoading}
                     />
+
+                    {isHistorico || filters.estado === 'todos' ? (
+                        <div className="grid gap-1.5">
+                            <Label
+                                htmlFor="pedidos-fecha"
+                                className="text-xs text-muted-foreground"
+                            >
+                                {t('filters.fecha', {
+                                    defaultValue: 'Fecha',
+                                })}
+                            </Label>
+                            <Input
+                                id="pedidos-fecha"
+                                type="date"
+                                className="w-auto min-w-[11rem]"
+                                value={filters.fecha ?? ''}
+                                disabled={isLoading}
+                                onChange={(e) =>
+                                    applyFilter({
+                                        fecha: e.target.value || null,
+                                    })
+                                }
+                            />
+                        </div>
+                    ) : null}
+
+                    {filters.estado === 'historico' ? (
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground sm:pb-2">
+                            <History className="size-3.5" />
+                            {t('filters.historico_hint', {
+                                defaultValue:
+                                    'Cobrados y anulados del día seleccionado.',
+                            })}
+                        </p>
+                    ) : null}
                 </div>
 
                 <DataTable
@@ -270,16 +362,31 @@ export default function Index({
                             onPerPageChange={setPerPage}
                             preservedQuery={{
                                 estado: filters.estado,
+                                fecha: filters.fecha || undefined,
                             }}
                         />
                     }
                     emptyState={
                         <EmptyState
-                            icon={ClipboardList}
-                            title={t('empty.title')}
-                            description={t('empty.description')}
+                            icon={isHistorico ? History : ClipboardList}
+                            title={
+                                isHistorico
+                                    ? t('empty.historico_title', {
+                                          defaultValue:
+                                              'Sin pedidos en esta fecha',
+                                      })
+                                    : t('empty.title')
+                            }
+                            description={
+                                isHistorico
+                                    ? t('empty.historico_description', {
+                                          defaultValue:
+                                              'Cambia la fecha o cobra un pedido para verlo aquí.',
+                                      })
+                                    : t('empty.description')
+                            }
                             action={
-                                can('pedidos.create') ? (
+                                !isHistorico && can('pedidos.create') ? (
                                     <Button
                                         type="button"
                                         onClick={() => setOpenNew(true)}
@@ -294,98 +401,22 @@ export default function Index({
                 />
             </div>
 
-            <Dialog open={openNew} onOpenChange={setOpenNew}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>{t('actions.new')}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-2">
-                        <div className="grid gap-2">
-                            <Label>{t('columns.canal')}</Label>
-                            <Select
-                                value={canal}
-                                onValueChange={(v) =>
-                                    setCanal(v as 'salon' | 'mostrador')
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="salon">
-                                        {t('canal.salon')}
-                                    </SelectItem>
-                                    <SelectItem value="mostrador">
-                                        <span className="inline-flex items-center gap-2">
-                                            <Store className="size-3.5" />
-                                            {t('canal.mostrador')}
-                                        </span>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        {canal === 'salon' ? (
-                            <div className="grid gap-2">
-                                <Label>{t('form.mesa')}</Label>
-                                <Select
-                                    value={mesaId}
-                                    onValueChange={setMesaId}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue
-                                            placeholder={t('form.mesa')}
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {mesas_libres.map((m) => (
-                                            <SelectItem key={m.id} value={m.id}>
-                                                {m.nombre?.trim() || m.codigo}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        ) : null}
-                        <div className="grid gap-2">
-                            <Label>{t('form.comensales')}</Label>
-                            <Input
-                                type="number"
-                                min={1}
-                                max={99}
-                                value={comensales}
-                                onChange={(e) =>
-                                    setComensales(Number(e.target.value) || 1)
-                                }
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpenNew(false)}
-                        >
-                            {t('common:actions.cancel')}
-                        </Button>
-                        <Button
-                            type="button"
-                            disabled={
-                                creating ||
-                                (canal === 'salon' && mesaId === '')
-                            }
-                            onClick={submitNew}
-                        >
-                            {t('actions.open')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <PedidoFormModal
+                open={openNew}
+                onOpenChange={setOpenNew}
+                mesasLibres={mesas_libres}
+            />
         </>
     );
 }
 
 Index.layout = (page: React.ReactNode) => (
-    <AppLayout breadcrumbs={[{ title: 'Pedidos', href: '/pedidos' }]}>
+    <AppLayout
+        breadcrumbs={[
+            { title: 'Operación' },
+            { title: 'Pedidos', href: '/pedidos' },
+        ]}
+    >
         {page}
     </AppLayout>
 );

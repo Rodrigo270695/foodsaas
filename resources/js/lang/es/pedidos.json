@@ -15,13 +15,17 @@
     "filters": {
         "estado": "Estado",
         "activos": "Activos",
+        "historico": "Histórico",
+        "historico_hint": "Cobrados y anulados del día seleccionado.",
+        "fecha": "Fecha",
         "cerrados": "Cerrados",
         "anulados": "Anulados",
         "todos": "Todos"
     },
     "stats": {
         "activos": "Activos",
-        "en_cola": "En cocina"
+        "en_cola": "En cocina",
+        "cerrados_hoy": "Cerrados hoy"
     },
     "columns": {
         "numero": "Nº",
@@ -29,6 +33,7 @@
         "canal": "Canal",
         "estado": "Estado",
         "total": "Total",
+        "fecha": "Fecha",
         "hora": "Hora"
     },
     "estado": {
@@ -50,14 +55,22 @@
     },
     "empty": {
         "title": "Sin pedidos",
-        "description": "Abre un pedido desde aquí o toca una mesa libre en el salón."
+        "description": "Abre un pedido desde aquí o toca una mesa libre en el salón.",
+        "historico_title": "Sin pedidos en esta fecha",
+        "historico_description": "Cambia la fecha o cobra un pedido para verlo aquí."
     },
     "form": {
         "mesa": "Mesa",
+        "mesa_hint": "Solo mesas sin pedido activo.",
+        "no_mesas_libres": "No hay mesas libres. Libera una o abre desde Salón.",
         "comensales": "Comensales",
+        "comensales_cap": "{{count}} pers.",
         "notas": "Notas",
+        "notas_placeholder": "Opcional",
         "cantidad": "Cant.",
-        "buscar_producto": "Buscar producto…"
+        "buscar_producto": "Buscar producto…",
+        "modal_description": "Mostrador o delivery desde aquí. Pedidos de mesa: tócala en Salón → Operar.",
+        "section_pedido": "Datos del pedido"
     },
     "cobro": {
         "title": "Cobrar pedido",

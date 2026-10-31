@@ -15,13 +15,17 @@
     "filters": {
         "estado": "Status",
         "activos": "Open",
+        "historico": "History",
+        "historico_hint": "Paid and cancelled tickets for the selected day.",
+        "fecha": "Date",
         "cerrados": "Closed",
         "anulados": "Cancelled",
         "todos": "All"
     },
     "stats": {
         "activos": "Open",
-        "en_cola": "In kitchen"
+        "en_cola": "In kitchen",
+        "cerrados_hoy": "Closed today"
     },
     "columns": {
         "numero": "No.",
@@ -29,6 +33,7 @@
         "canal": "Channel",
         "estado": "Status",
         "total": "Total",
+        "fecha": "Date",
         "hora": "Time"
     },
     "estado": {
@@ -50,14 +55,22 @@
     },
     "empty": {
         "title": "No orders",
-        "description": "Open an order here or tap a free table in the dining room."
+        "description": "Open an order here or tap a free table in the dining room.",
+        "historico_title": "No orders on this date",
+        "historico_description": "Pick another date or charge an order to see it here."
     },
     "form": {
         "mesa": "Table",
+        "mesa_hint": "Only tables without an open order.",
+        "no_mesas_libres": "No free tables. Free one or open from the floor.",
         "comensales": "Guests",
+        "comensales_cap": "{{count}} seats",
         "notas": "Notes",
+        "notas_placeholder": "Optional",
         "cantidad": "Qty",
-        "buscar_producto": "Search product…"
+        "buscar_producto": "Search product…",
+        "modal_description": "Counter or delivery from here. Table orders: tap the table in Dining room → Serve.",
+        "section_pedido": "Order details"
     },
     "cobro": {
         "title": "Charge order",

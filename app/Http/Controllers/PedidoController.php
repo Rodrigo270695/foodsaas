@@ -29,8 +29,18 @@ class PedidoController extends Controller
 
         $sedeId = ActiveSedeContext::id() ?? '';
         $estado = (string) $request->string('estado', 'activos');
-        if (! in_array($estado, ['activos', 'cerrados', 'anulados', 'todos'], true)) {
+        if (! in_array($estado, ['activos', 'historico', 'cerrados', 'anulados', 'todos'], true)) {
             $estado = 'activos';
+        }
+
+        $fecha = trim((string) $request->string('fecha', ''));
+        if ($fecha !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+            $fecha = '';
+        }
+
+        // Histórico sin fecha → hoy (evita listar años de tickets de golpe).
+        if ($estado === 'historico' && $fecha === '') {
+            $fecha = now()->toDateString();
         }
 
         $query = Pedido::query()
@@ -49,10 +59,15 @@ class PedidoController extends Controller
 
         match ($estado) {
             'activos' => $query->whereIn('estado', Pedido::ESTADOS_ACTIVOS),
+            'historico' => $query->whereIn('estado', [Pedido::ESTADO_CERRADO, Pedido::ESTADO_ANULADO]),
             'cerrados' => $query->where('estado', Pedido::ESTADO_CERRADO),
             'anulados' => $query->where('estado', Pedido::ESTADO_ANULADO),
             default => null,
         };
+
+        if ($fecha !== '') {
+            $query->whereDate('created_at', $fecha);
+        }
 
         $pedidos = $query->paginate((int) $request->integer('per_page', 20))->withQueryString();
 
@@ -65,11 +80,14 @@ class PedidoController extends Controller
                 ->orderBy('codigo')
                 ->get(['id', 'codigo', 'nombre', 'capacidad']);
 
+        $hoy = now()->toDateString();
+
         return Inertia::render('pedidos/index', [
             'pedidos' => $pedidos,
             'mesas_libres' => $mesasLibres,
             'filters' => [
                 'estado' => $estado,
+                'fecha' => $fecha !== '' ? $fecha : null,
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
             ],
             'stats' => [
@@ -77,6 +95,11 @@ class PedidoController extends Controller
                 'en_cola' => $sedeId === '' ? 0 : PedidoLinea::query()
                     ->where('estado', PedidoLinea::ESTADO_EN_COLA)
                     ->whereHas('pedido', fn ($q) => $q->where('sede_id', $sedeId)->whereIn('estado', Pedido::ESTADOS_ACTIVOS))
+                    ->count(),
+                'cerrados_hoy' => $sedeId === '' ? 0 : Pedido::query()
+                    ->where('sede_id', $sedeId)
+                    ->where('estado', Pedido::ESTADO_CERRADO)
+                    ->whereDate('created_at', $hoy)
                     ->count(),
             ],
         ]);
@@ -86,6 +109,11 @@ class PedidoController extends Controller
     {
         $this->tenantIdOrAbort();
         $sedeId = $this->activeSedeIdOrAbort();
+
+        $request->merge([
+            'mesa_id' => $request->filled('mesa_id') ? $request->input('mesa_id') : null,
+            'notas' => $request->filled('notas') ? $request->input('notas') : null,
+        ]);
 
         $data = $request->validate([
             'canal' => ['required', Rule::in([Pedido::CANAL_SALON, Pedido::CANAL_MOSTRADOR, Pedido::CANAL_DELIVERY])],
