@@ -1,4 +1,5 @@
 import {
+    ClipboardList,
     Link2,
     MoreHorizontal,
     Pencil,
@@ -9,6 +10,7 @@ import {
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { usePermission } from '@/hooks/use-permission';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -22,11 +24,13 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { MesaSalon } from '../types';
+import { openOrCreateUnionPedido } from '../lib/open-mesa-pedido';
+import type { MesaSalon, SalonFloorMode } from '../types';
 
 type MesaUnionCardProps = {
     mesas: MesaSalon[];
     capacidadTotal: number;
+    mode: SalonFloorMode;
     canUpdate: boolean;
     canDelete: boolean;
     onEdit: (mesa: MesaSalon) => void;
@@ -151,6 +155,7 @@ function UnionTableDiagram({
 export function MesaUnionCard({
     mesas,
     capacidadTotal,
+    mode,
     canUpdate,
     canDelete,
     onEdit,
@@ -162,15 +167,23 @@ export function MesaUnionCard({
     onJoinDragStart,
 }: MesaUnionCardProps) {
     const { t } = useTranslation(['salon', 'common']);
+    const { can } = usePermission();
     const primary = mesas[0];
     if (!primary) {
         return null;
     }
 
+    const isGestionar = mode === 'gestionar';
     const zonaNombre = primary.zona?.nombre ?? '—';
     const codigos = mesas.map((m) => m.codigo);
-    const showActions = canUpdate || canDelete;
+    const showManageChrome = isGestionar && (canUpdate || canDelete);
     const allActive = mesas.every((m) => m.activa);
+    const occupied = mesas.some((m) => Boolean(m.pedidos?.[0]));
+    const canPedido =
+        can('pedidos.view') || can('pedidos.create');
+    const primaryEnabled = isGestionar
+        ? Boolean(onJoinTap)
+        : Boolean(onJoinTap || (allActive && canPedido));
 
     return (
         <article
@@ -182,13 +195,24 @@ export function MesaUnionCard({
                 joinHighlight === 'target' &&
                     'ring-2 ring-emerald-500 border-emerald-500/60 scale-[1.02]',
                 !joinHighlight &&
-                    'border-[#660033]/45 hover:border-[#660033]/70',
+                    (occupied
+                        ? 'border-amber-500/45 hover:border-amber-500/65'
+                        : 'border-[#660033]/45 hover:border-[#660033]/70'),
             )}
         >
             <div className="mb-1 flex items-start justify-between gap-2">
                 <div className="flex min-w-0 flex-wrap items-center gap-1">
-                    <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-700 uppercase dark:text-emerald-300">
-                        {t('floor.available')}
+                    <span
+                        className={cn(
+                            'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
+                            occupied
+                                ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                                : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+                        )}
+                    >
+                        {occupied
+                            ? t('floor.occupied', { defaultValue: 'Ocupada' })
+                            : t('floor.available')}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-md bg-[#660033]/12 px-2 py-0.5 text-[10px] font-semibold text-[#660033]">
                         <Link2 className="size-3" aria-hidden />
@@ -198,7 +222,7 @@ export function MesaUnionCard({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-0.5">
-                    {canUpdate ? (
+                    {showManageChrome && canUpdate ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -221,7 +245,10 @@ export function MesaUnionCard({
                         </Tooltip>
                     ) : null}
 
-                    {canUpdate && allActive && onJoinDragStart ? (
+                    {showManageChrome &&
+                    canUpdate &&
+                    allActive &&
+                    onJoinDragStart ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -242,7 +269,7 @@ export function MesaUnionCard({
                         </Tooltip>
                     ) : null}
 
-                    {showActions ? (
+                    {showManageChrome ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -329,25 +356,35 @@ export function MesaUnionCard({
             </div>
 
             <div
-                role={onJoinTap ? 'button' : undefined}
-                tabIndex={onJoinTap ? 0 : undefined}
+                role={primaryEnabled ? 'button' : undefined}
+                tabIndex={primaryEnabled ? 0 : undefined}
                 onClick={() => {
                     if (onJoinTap) {
                         onJoinTap();
+                        return;
+                    }
+                    if (!isGestionar && canPedido) {
+                        openOrCreateUnionPedido(mesas);
                     }
                 }}
                 onKeyDown={(e) => {
-                    if (!onJoinTap) {
+                    if (!primaryEnabled) {
                         return;
                     }
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        onJoinTap();
+                        if (onJoinTap) {
+                            onJoinTap();
+                            return;
+                        }
+                        if (!isGestionar && canPedido) {
+                            openOrCreateUnionPedido(mesas);
+                        }
                     }
                 }}
                 className={cn(
-                    'flex flex-1 flex-col items-center gap-2.5 rounded-xl px-1 py-2 text-center outline-none',
-                    onJoinTap ? 'cursor-pointer' : 'cursor-default',
+                    'flex flex-1 flex-col items-center gap-2.5 rounded-xl px-1 py-2 text-center outline-none touch-manipulation',
+                    primaryEnabled ? 'cursor-pointer' : 'cursor-default',
                 )}
             >
                 <UnionTableDiagram
@@ -360,18 +397,20 @@ export function MesaUnionCard({
                         <button
                             key={mesa.id}
                             type="button"
-                            disabled={!canUpdate}
+                            disabled={!isGestionar || !canUpdate}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (canUpdate) {
+                                if (isGestionar && canUpdate) {
                                     onEdit(mesa);
                                 }
                             }}
                             className={cn(
                                 'rounded-md border border-[#660033]/25 bg-[#660033]/5 px-2 py-0.5 font-mono text-[11px] font-semibold text-[#660033] transition-colors',
-                                canUpdate &&
+                                isGestionar &&
+                                    canUpdate &&
                                     'cursor-pointer hover:border-[#660033]/50 hover:bg-[#660033]/10',
-                                !canUpdate && 'cursor-default',
+                                (!isGestionar || !canUpdate) &&
+                                    'cursor-default',
                             )}
                         >
                             {mesa.codigo}
@@ -400,6 +439,22 @@ export function MesaUnionCard({
                             })}
                         </span>
                     </p>
+                    {!isGestionar && allActive ? (
+                        <p className="inline-flex items-center justify-center gap-1 pt-0.5 text-[11px] font-medium text-[#660033]">
+                            <ClipboardList
+                                className="size-3"
+                                strokeWidth={2.25}
+                                aria-hidden
+                            />
+                            {occupied
+                                ? t('floor.open_order', {
+                                      defaultValue: 'Abrir pedido',
+                                  })
+                                : t('floor.new_order', {
+                                      defaultValue: 'Tomar pedido',
+                                  })}
+                        </p>
+                    ) : null}
                 </div>
             </div>
         </article>

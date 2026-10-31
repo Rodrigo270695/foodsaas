@@ -10,12 +10,13 @@ import {
 import { useTranslation } from 'react-i18next';
 import { toastManager } from '@/lib/toast';
 import { cn } from '@/lib/utils';
-import type { MesaSalon } from '../types';
+import type { MesaSalon, SalonFloorMode } from '../types';
 import { MesaFloorCard } from './mesa-floor-card';
 import { MesaUnionCard } from './mesa-union-card';
 
 type MesasGridProps = {
     mesas: MesaSalon[];
+    mode: SalonFloorMode;
     isLoading?: boolean;
     canUpdate: boolean;
     canDelete: boolean;
@@ -43,6 +44,7 @@ type GridItem =
 
 export function MesasGrid({
     mesas,
+    mode,
     isLoading = false,
     canUpdate,
     canDelete,
@@ -417,6 +419,7 @@ export function MesasGrid({
                                 <MesaUnionCard
                                     mesas={item.mesas}
                                     capacidadTotal={item.capacidad}
+                                    mode={mode}
                                     canUpdate={canUpdate}
                                     canDelete={canDelete}
                                     joinHighlight={joinHighlight}
@@ -427,6 +430,7 @@ export function MesasGrid({
                                     }
                                     onSepararOne={onSeparar}
                                     onJoinTap={
+                                        mode === 'gestionar' &&
                                         joinMode &&
                                         canUpdate &&
                                         item.mesas.every((m) => m.activa)
@@ -434,6 +438,7 @@ export function MesasGrid({
                                             : undefined
                                     }
                                     onJoinDragStart={
+                                        mode === 'gestionar' &&
                                         canUpdate &&
                                         item.mesas.every((m) => m.activa)
                                             ? (e) => startDrag(rep, e)
@@ -464,18 +469,24 @@ export function MesasGrid({
                         >
                             <MesaFloorCard
                                 mesa={mesa}
+                                mode={mode}
                                 canUpdate={canUpdate}
                                 canDelete={canDelete}
                                 joinHighlight={joinHighlight}
                                 onEdit={onEdit}
                                 onDelete={onDelete}
                                 onJoinTap={
-                                    joinMode && canUpdate && mesa.activa
+                                    mode === 'gestionar' &&
+                                    joinMode &&
+                                    canUpdate &&
+                                    mesa.activa
                                         ? () => handleJoinTap(mesa)
                                         : undefined
                                 }
                                 onJoinDragStart={
-                                    canUpdate && mesa.activa
+                                    mode === 'gestionar' &&
+                                    canUpdate &&
+                                    mesa.activa
                                         ? (e) => startDrag(mesa, e)
                                         : undefined
                                 }

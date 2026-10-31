@@ -51,6 +51,9 @@ export type SalonStats = {
 
 export type SalonEstadoFilter = 'todos' | 'activas' | 'inactivas';
 
+/** Operar = piso de servicio (pedido). Gestionar = editar mesas/zonas. */
+export type SalonFloorMode = 'operar' | 'gestionar';
+
 export type SalonFilters = {
     sede_id: string | null;
     zona_id: string | null;

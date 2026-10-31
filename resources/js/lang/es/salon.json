@@ -73,12 +73,22 @@
     "toast": {
         "load_error": "No se pudo cargar el salón."
     },
+    "mode": {
+        "label": "Modo del salón",
+        "operar": "Operar",
+        "gestionar": "Gestionar"
+    },
     "floor": {
-        "subtitle": "Toca una mesa para editarla. Al unir (misma zona) se forma un solo card. Las inactivas no aparecen en operación.",
+        "subtitle": "Toca una mesa libre para tomar el pedido, o una ocupada para continuar la comanda.",
+        "subtitle_operar": "Toca una mesa libre para tomar el pedido, o una ocupada para continuar la comanda.",
+        "subtitle_gestionar": "Edita mesas, zonas y uniones. Vuelve a Operar para tomar pedidos.",
         "search": "Buscar mesa...",
         "refresh": "Actualizar salón",
         "available": "Disponible",
+        "occupied": "Ocupada",
         "inactive": "Inactiva",
+        "new_order": "Tomar pedido",
+        "open_order": "Abrir pedido",
         "capacity": "{{count}} personas",
         "stat_total": "Total {{count}}",
         "stat_available": "Disponibles {{count}}",
@@ -106,6 +116,7 @@
     "stats_badges": {
         "total": "Total",
         "available": "Disponibles",
+        "occupied": "Ocupadas",
         "inactive": "Inactivas",
         "zones": "Zonas",
         "capacity": "Capacidad"

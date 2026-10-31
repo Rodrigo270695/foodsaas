@@ -1,5 +1,5 @@
-import { router } from '@inertiajs/react';
 import {
+    ClipboardList,
     Link2,
     MoreHorizontal,
     Pencil,
@@ -23,10 +23,12 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { MesaSalon } from '../types';
+import { openOrCreateMesaPedido } from '../lib/open-mesa-pedido';
+import type { MesaSalon, SalonFloorMode } from '../types';
 
 type MesaFloorCardProps = {
     mesa: MesaSalon;
+    mode: SalonFloorMode;
     canUpdate: boolean;
     canDelete: boolean;
     joinedCapacidad?: number;
@@ -138,6 +140,7 @@ function TableDiagram({
 
 export function MesaFloorCard({
     mesa,
+    mode,
     canUpdate,
     canDelete,
     joinedCapacidad,
@@ -150,13 +153,20 @@ export function MesaFloorCard({
 }: MesaFloorCardProps) {
     const { t } = useTranslation(['salon', 'common']);
     const { can } = usePermission();
+    const isGestionar = mode === 'gestionar';
     const pedidoActivo = mesa.pedidos?.[0] ?? null;
     const occupied = Boolean(pedidoActivo);
     const available = mesa.activa && !occupied;
     const joined = Boolean(mesa.union_id);
-    const showActions = canUpdate || canDelete;
+    const showManageChrome = isGestionar && (canUpdate || canDelete);
     const displayName = mesa.nombre?.trim() || mesa.codigo;
-    const canOpenPedido = can('pedidos.view') || can('pedidos.create');
+    const primaryEnabled = isGestionar
+        ? Boolean(canUpdate || onJoinTap)
+        : Boolean(
+              onJoinTap ||
+                  (available && can('pedidos.create')) ||
+                  (occupied && can('pedidos.view')),
+          );
 
     return (
         <article
@@ -214,7 +224,7 @@ export function MesaFloorCard({
                     ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-0.5">
-                    {canUpdate && joined && onSeparar ? (
+                    {showManageChrome && canUpdate && joined && onSeparar ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -236,7 +246,10 @@ export function MesaFloorCard({
                             </TooltipContent>
                         </Tooltip>
                     ) : null}
-                    {canUpdate && available && onJoinDragStart ? (
+                    {showManageChrome &&
+                    canUpdate &&
+                    available &&
+                    onJoinDragStart ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -256,7 +269,7 @@ export function MesaFloorCard({
                             </TooltipContent>
                         </Tooltip>
                     ) : null}
-                    {showActions ? (
+                    {showManageChrome ? (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -319,53 +332,39 @@ export function MesaFloorCard({
 
             <button
                 type="button"
-                disabled={!canUpdate && !onJoinTap && !canOpenPedido}
+                disabled={!primaryEnabled}
+                aria-label={
+                    isGestionar
+                        ? t('row.actions_for_mesa', { code: mesa.codigo })
+                        : occupied
+                          ? t('floor.open_order', {
+                                defaultValue: 'Abrir pedido',
+                            })
+                          : t('floor.new_order', {
+                                defaultValue: 'Tomar pedido',
+                            })
+                }
                 onClick={() => {
                     if (onJoinTap) {
                         onJoinTap();
                         return;
                     }
-                    if (occupied && pedidoActivo && can('pedidos.view')) {
-                        router.visit(`/pedidos/${pedidoActivo.id}`);
-                        return;
-                    }
-                    if (
-                        available &&
-                        can('pedidos.create') &&
-                        !canUpdate
-                    ) {
-                        router.post('/pedidos', {
-                            canal: 'salon',
-                            mesa_id: mesa.id,
-                            comensales: mesa.capacidad || 1,
-                        });
+                    if (!isGestionar) {
+                        if (
+                            (available && can('pedidos.create')) ||
+                            (occupied && can('pedidos.view'))
+                        ) {
+                            openOrCreateMesaPedido(mesa);
+                        }
                         return;
                     }
                     if (canUpdate) {
                         onEdit(mesa);
                     }
                 }}
-                onDoubleClick={() => {
-                    if (onJoinTap) {
-                        return;
-                    }
-                    if (occupied && pedidoActivo && can('pedidos.view')) {
-                        router.visit(`/pedidos/${pedidoActivo.id}`);
-                        return;
-                    }
-                    if (available && can('pedidos.create')) {
-                        router.post('/pedidos', {
-                            canal: 'salon',
-                            mesa_id: mesa.id,
-                            comensales: mesa.capacidad || 1,
-                        });
-                    }
-                }}
                 className={cn(
-                    'flex flex-1 flex-col items-center gap-2.5 rounded-xl px-1 py-2 text-center outline-none',
-                    canUpdate || onJoinTap || canOpenPedido
-                        ? 'cursor-pointer'
-                        : 'cursor-default',
+                    'flex flex-1 flex-col items-center gap-2.5 rounded-xl px-1 py-2 text-center outline-none touch-manipulation',
+                    primaryEnabled ? 'cursor-pointer' : 'cursor-default',
                 )}
             >
                 <TableDiagram
@@ -400,6 +399,22 @@ export function MesaFloorCard({
                                   })}
                         </span>
                     </p>
+                    {!isGestionar && mesa.activa ? (
+                        <p className="inline-flex items-center justify-center gap-1 pt-0.5 text-[11px] font-medium text-[#660033]">
+                            <ClipboardList
+                                className="size-3"
+                                strokeWidth={2.25}
+                                aria-hidden
+                            />
+                            {occupied
+                                ? t('floor.open_order', {
+                                      defaultValue: 'Abrir pedido',
+                                  })
+                                : t('floor.new_order', {
+                                      defaultValue: 'Tomar pedido',
+                                  })}
+                        </p>
+                    ) : null}
                 </div>
             </button>
         </article>

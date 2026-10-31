@@ -26,10 +26,25 @@ import type {
     MesaSalon,
     SalonEstadoFilter,
     SalonFilters,
+    SalonFloorMode,
     SalonStats,
     SedeOpcion,
     ZonaSalon,
 } from './types';
+
+const FLOOR_MODE_KEY = 'foodsaas.salon.floorMode';
+
+function readFloorMode(): SalonFloorMode {
+    if (typeof window === 'undefined') {
+        return 'operar';
+    }
+    try {
+        const raw = window.sessionStorage.getItem(FLOOR_MODE_KEY);
+        return raw === 'gestionar' ? 'gestionar' : 'operar';
+    } catch {
+        return 'operar';
+    }
+}
 
 type SalonIndexProps = {
     sedes_opciones: SedeOpcion[];
@@ -86,7 +101,27 @@ export default function Index({
     const [isLoading, setIsLoading] = useState(false);
     const [query, setQuery] = useState('');
     const [joinMode, setJoinMode] = useState(false);
+    const [floorMode, setFloorMode] = useState<SalonFloorMode>(() =>
+        readFloorMode(),
+    );
     const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
+
+    const changeFloorMode = useCallback((next: SalonFloorMode) => {
+        setFloorMode(next);
+        if (next !== 'gestionar') {
+            setJoinMode(false);
+        }
+        try {
+            window.sessionStorage.setItem(FLOOR_MODE_KEY, next);
+        } catch {
+            // ignore
+        }
+    }, []);
+
+    const occupiedCount = useMemo(
+        () => mesas.filter((m) => Boolean(m.pedidos?.[0])).length,
+        [mesas],
+    );
 
     const reload = useCallback(
         (overrides: Partial<SalonFilters> = {}) => {
@@ -201,7 +236,17 @@ export default function Index({
             <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('title')}
-                    description={t('floor.subtitle')}
+                    description={
+                        floorMode === 'operar'
+                            ? t('floor.subtitle_operar', {
+                                  defaultValue:
+                                      'Toca una mesa libre para tomar el pedido, o una ocupada para continuar la comanda.',
+                              })
+                            : t('floor.subtitle_gestionar', {
+                                  defaultValue:
+                                      'Edita mesas, zonas y uniones. Vuelve a Operar para tomar pedidos.',
+                              })
+                    }
                     stats={[
                         {
                             label: t('stats_badges.total', {
@@ -215,45 +260,44 @@ export default function Index({
                             label: t('stats_badges.available', {
                                 defaultValue: 'Disponibles',
                             }),
-                            value: stats.mesas_activas,
+                            value: Math.max(
+                                0,
+                                stats.mesas_activas - occupiedCount,
+                            ),
                             variant: 'success',
                             icon: CheckCircle2,
                         },
                         {
-                            label: t('stats_badges.inactive', {
-                                defaultValue: 'Inactivas',
+                            label: t('stats_badges.occupied', {
+                                defaultValue: 'Ocupadas',
                             }),
-                            value: Math.max(
-                                0,
-                                stats.mesas - stats.mesas_activas,
-                            ),
-                            variant: 'muted',
+                            value: occupiedCount,
+                            variant: 'warning',
+                            icon: Users,
                         },
                         {
                             label: t('stats_badges.zones', {
                                 defaultValue: 'Zonas',
                             }),
                             value: stats.zonas,
-                            variant: 'warning',
+                            variant: 'muted',
                             icon: LayoutGrid,
-                        },
-                        {
-                            label: t('stats_badges.capacity', {
-                                defaultValue: 'Capacidad',
-                            }),
-                            value: stats.capacidad,
-                            variant: 'primary',
-                            icon: Users,
+                            hideOnMobile: true,
                         },
                     ]}
                     action={
                         sedeId ? (
                             <SalonHeaderActions
+                                mode={floorMode}
+                                onModeChange={changeFloorMode}
                                 isLoading={isLoading}
                                 mesasLimitReached={mesasLimitReached}
                                 hasZonas={zonas.length > 0}
                                 canCopy={canCreate && copy_targets.length > 0}
                                 canUpdate={canUpdate}
+                                canManageLayout={
+                                    canCreate || canUpdate || canDelete
+                                }
                                 joinMode={joinMode}
                                 onToggleJoinMode={() =>
                                     setJoinMode((v) => !v)
@@ -285,8 +329,12 @@ export default function Index({
                             zonaId={filters.zona_id}
                             estado={filters.estado}
                             query={query}
-                            canUpdate={canUpdate}
-                            canDelete={canDelete}
+                            canUpdate={
+                                floorMode === 'gestionar' ? canUpdate : false
+                            }
+                            canDelete={
+                                floorMode === 'gestionar' ? canDelete : false
+                            }
                             onZonaChange={(zona_id) => reload({ zona_id })}
                             onEstadoChange={(estado) => reload({ estado })}
                             onQueryChange={setQuery}
@@ -352,6 +400,7 @@ export default function Index({
                         ) : (
                             <MesasGrid
                                 mesas={visibleMesas}
+                                mode={floorMode}
                                 isLoading={isLoading}
                                 canUpdate={canUpdate}
                                 canDelete={canDelete}

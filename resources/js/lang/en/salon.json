@@ -74,12 +74,22 @@
     "toast": {
         "load_error": "Could not load the dining room."
     },
+    "mode": {
+        "label": "Floor mode",
+        "operar": "Serve",
+        "gestionar": "Manage"
+    },
     "floor": {
-        "subtitle": "Tap a table to edit it. Joining (same zone) merges into one card. Inactive tables stay out of operations.",
+        "subtitle": "Tap a free table to start an order, or an occupied one to continue it.",
+        "subtitle_operar": "Tap a free table to start an order, or an occupied one to continue it.",
+        "subtitle_gestionar": "Edit tables, zones and joins. Switch back to Serve to take orders.",
         "search": "Search table...",
         "refresh": "Refresh floor",
         "available": "Available",
+        "occupied": "Occupied",
         "inactive": "Inactive",
+        "new_order": "Take order",
+        "open_order": "Open order",
         "capacity": "{{count}} seats",
         "stat_total": "Total {{count}}",
         "stat_available": "Available {{count}}",
