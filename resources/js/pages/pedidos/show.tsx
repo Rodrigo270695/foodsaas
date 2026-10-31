@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
+import { toastManager } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import caja from '../caja/caja-routes';
 import {
@@ -99,9 +100,10 @@ export default function Show({ pedido, productos, categorias }: Props) {
     const [busy, setBusy] = useState(false);
 
     const pendientes = pedido.lineas.filter((l) => l.estado === 'pendiente');
-    const cobrables = pedido.lineas.filter((l) =>
+    const enCocinaOListos = pedido.lineas.filter((l) =>
         ['en_cola', 'listo'].includes(l.estado),
     );
+    const cobrables = enCocinaOListos;
     // Vista viva: la comanda se actualiza sola (el toast/sonido viene del feed del header)
     useEffect(() => {
         if (!activo) {
@@ -129,6 +131,19 @@ export default function Show({ pedido, productos, categorias }: Props) {
     }
 
     function anularLinea(lineaId: string) {
+        const linea = pedido.lineas.find((l) => l.id === lineaId);
+        if (!linea || linea.estado !== 'pendiente') {
+            toastManager.warning({
+                title: t('toast.no_anular_linea_titulo', {
+                    defaultValue: 'No se puede eliminar',
+                }),
+                description: t('toast.no_anular_linea', {
+                    defaultValue:
+                        'Este ítem ya pasó a cocina. Coordina con el área para anularlo.',
+                }),
+            });
+            return;
+        }
         router.delete(pedidos.lineas.destroy(pedido.id, lineaId).url, {
             preserveScroll: true,
         });
@@ -144,6 +159,19 @@ export default function Show({ pedido, productos, categorias }: Props) {
     }
 
     function anularPedido() {
+        if (enCocinaOListos.length > 0) {
+            toastManager.warning({
+                title: t('toast.no_anular_pedido_titulo', {
+                    defaultValue: 'No se puede anular el pedido',
+                }),
+                description: t('toast.no_anular_pedido', {
+                    defaultValue:
+                        'Hay ítems en cocina o listos. Coordina con cocina o cobra el pedido.',
+                }),
+                duration: 5500,
+            });
+            return;
+        }
         if (!confirm(t('actions.anular'))) {
             return;
         }
@@ -311,10 +339,7 @@ export default function Show({ pedido, productos, categorias }: Props) {
                                                     {money(l.importe)}
                                                 </span>
                                                 {activo &&
-                                                [
-                                                    'pendiente',
-                                                    'en_cola',
-                                                ].includes(l.estado) ? (
+                                                l.estado === 'pendiente' ? (
                                                     <Can permission="pedidos.update">
                                                         <Button
                                                             type="button"
@@ -362,14 +387,24 @@ export default function Show({ pedido, productos, categorias }: Props) {
 
                         {activo ? (
                             <Can permission="pedidos.anular">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="w-full text-destructive hover:text-destructive"
-                                    onClick={anularPedido}
-                                >
-                                    {t('actions.anular')}
-                                </Button>
+                                <div className="space-y-1.5">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full text-destructive hover:text-destructive"
+                                        onClick={anularPedido}
+                                    >
+                                        {t('actions.anular')}
+                                    </Button>
+                                    {enCocinaOListos.length > 0 ? (
+                                        <p className="text-center text-[11px] leading-snug text-muted-foreground">
+                                            {t('comanda.anular_bloqueado_hint', {
+                                                defaultValue:
+                                                    'Hay ítems en cocina: no se puede anular el pedido ni quitar esos platos.',
+                                            })}
+                                        </p>
+                                    ) : null}
+                                </div>
                             </Can>
                         ) : null}
                     </aside>

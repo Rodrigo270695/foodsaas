@@ -1,43 +1,71 @@
 /**
- * Tonos cortos vía Web Audio (sin archivos).
- * El audio se desbloquea con el primer gesto del usuario (política del navegador).
+ * Sonidos de servicio (mesero ↔ cocina).
+ * Igual que VetSaaS sala de espera: MP3 en /public/sounds + prime tras el primer clic.
+ *
+ * Archivos (reemplázalos por los tuyos):
+ *   public/sounds/cocina-nuevo.mp3  → llegó ítem a cocina
+ *   public/sounds/plato-listo.mp3   → cocina marcó listo
  */
 
 type ChimeKind = 'kitchen' | 'ready' | 'ping';
 
-let ctx: AudioContext | null = null;
-let unlocked = false;
+const SOURCES: Record<ChimeKind, string> = {
+    kitchen: '/sounds/cocina-nuevo.mp3',
+    ready: '/sounds/plato-listo.mp3',
+    ping: '/sounds/plato-listo.mp3',
+};
 
-function getCtx(): AudioContext | null {
+const players = new Map<string, HTMLAudioElement>();
+let primed = false;
+
+function getPlayer(src: string): HTMLAudioElement | null {
     if (typeof window === 'undefined') {
         return null;
     }
-    const AC =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-            .webkitAudioContext;
-    if (!AC) {
-        return null;
+    let el = players.get(src);
+    if (!el) {
+        el = new Audio(src);
+        el.preload = 'auto';
+        players.set(src, el);
     }
-    if (!ctx) {
-        ctx = new AC();
-    }
-    return ctx;
+    return el;
 }
 
+/** Desbloquea el audio tras el primer gesto (política del navegador). */
 export function unlockNotificationAudio(): void {
-    const audio = getCtx();
-    if (!audio) {
+    if (primed || typeof window === 'undefined') {
         return;
     }
-    if (audio.state === 'suspended') {
-        void audio.resume();
+
+    primed = true;
+    for (const src of new Set(Object.values(SOURCES))) {
+        const el = getPlayer(src);
+        if (!el) {
+            continue;
+        }
+        el.volume = 0;
+        const played = el.play();
+        if (played === undefined) {
+            el.pause();
+            el.currentTime = 0;
+            el.volume = 1;
+            continue;
+        }
+        void played
+            .then(() => {
+                el.pause();
+                el.currentTime = 0;
+                el.volume = 1;
+            })
+            .catch(() => {
+                primed = false;
+                el.volume = 1;
+            });
     }
-    unlocked = true;
 }
 
 function ensureUnlockListener(): void {
-    if (typeof window === 'undefined' || unlocked) {
+    if (typeof window === 'undefined' || primed) {
         return;
     }
     const once = () => {
@@ -51,52 +79,68 @@ function ensureUnlockListener(): void {
 
 ensureUnlockListener();
 
-function tone(
-    audio: AudioContext,
-    frequency: number,
-    start: number,
-    duration: number,
-    gain = 0.08,
-): void {
-    const osc = audio.createOscillator();
-    const g = audio.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = frequency;
-    g.gain.setValueAtTime(0.0001, start);
-    g.gain.exponentialRampToValueAtTime(gain, start + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-    osc.connect(g);
-    g.connect(audio.destination);
-    osc.start(start);
-    osc.stop(start + duration + 0.02);
+function playFile(src: string): boolean {
+    const el = getPlayer(src);
+    if (!el) {
+        return false;
+    }
+    el.volume = 1;
+    try {
+        el.currentTime = 0;
+    } catch {
+        // Archivo aún no listo
+    }
+    void el.play().catch(() => {
+        // Bloqueado hasta un clic en la página
+    });
+    return true;
 }
 
-/** Reproduce un chime amable. Ignora si el audio aún no está desbloqueado. */
-export function playNotifyChime(kind: ChimeKind = 'ping'): void {
-    const audio = getCtx();
-    if (!audio) {
+/** Fallback sintético si no hay MP3 o falla la carga. */
+function playSynth(kind: ChimeKind): void {
+    const AC =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+            .webkitAudioContext;
+    if (!AC) {
         return;
     }
-    if (audio.state === 'suspended') {
-        void audio.resume().catch(() => undefined);
-    }
-
+    const audio = new AC();
     const now = audio.currentTime;
 
+    const tone = (freq: number, start: number, dur: number, gain = 0.09) => {
+        const osc = audio.createOscillator();
+        const g = audio.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, start);
+        g.gain.exponentialRampToValueAtTime(gain, start + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+        osc.connect(g);
+        g.connect(audio.destination);
+        osc.start(start);
+        osc.stop(start + dur + 0.02);
+    };
+
     if (kind === 'kitchen') {
-        // Dos notas ascendentes: llegó pedido a cocina
-        tone(audio, 523.25, now, 0.14, 0.09);
-        tone(audio, 659.25, now + 0.12, 0.18, 0.1);
+        tone(523.25, now, 0.14);
+        tone(659.25, now + 0.12, 0.18, 0.1);
         return;
     }
-
     if (kind === 'ready') {
-        // Tres notas brillantes: plato listo para servir
-        tone(audio, 659.25, now, 0.12, 0.09);
-        tone(audio, 783.99, now + 0.11, 0.12, 0.09);
-        tone(audio, 1046.5, now + 0.22, 0.2, 0.1);
+        tone(659.25, now, 0.12);
+        tone(783.99, now + 0.11, 0.12);
+        tone(1046.5, now + 0.22, 0.2, 0.1);
         return;
     }
+    tone(880, now, 0.12, 0.08);
+}
 
-    tone(audio, 880, now, 0.12, 0.08);
+/** Reproduce el sonido personalizado (MP3) o el tono sintético de respaldo. */
+export function playNotifyChime(kind: ChimeKind = 'ping'): void {
+    const src = SOURCES[kind];
+    if (playFile(src)) {
+        return;
+    }
+    playSynth(kind);
 }

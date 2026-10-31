@@ -152,9 +152,10 @@ class PedidoService
             return;
         }
 
-        if (! in_array($linea->estado, [PedidoLinea::ESTADO_PENDIENTE, PedidoLinea::ESTADO_EN_COLA], true)) {
+        // Solo pendientes: una vez enviado a cocina no se elimina desde salón.
+        if ($linea->estado !== PedidoLinea::ESTADO_PENDIENTE) {
             throw ValidationException::withMessages([
-                'linea' => 'No se puede anular un ítem ya listo. Coordina con cocina.',
+                'linea' => 'No se puede eliminar: el ítem ya fue enviado a cocina. Coordina con el área.',
             ]);
         }
 
@@ -229,7 +230,7 @@ class PedidoService
 
         if ($enCola) {
             throw ValidationException::withMessages([
-                'pedido' => 'No puedes anular un pedido con ítems ya enviados a cocina. Anula ítems primero o cobra.',
+                'pedido' => 'No puedes anular el pedido: hay ítems en cocina o listos. Coordina con cocina o cobra el pedido.',
             ]);
         }
 
