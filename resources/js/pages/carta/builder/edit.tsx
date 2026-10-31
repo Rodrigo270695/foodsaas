@@ -8,7 +8,13 @@ import {
     Plus,
     Save,
 } from 'lucide-react';
-import { useCallback, useMemo, useState, useTransition } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+    useTransition,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
@@ -23,7 +29,11 @@ import { FondoPicker } from './components/fondo-picker';
 import { MenuCanvas } from './components/menu-canvas';
 import { MenuQrPanel } from './components/menu-qr-panel';
 import type { TipografiaId } from './lib/tipografias';
-import type { BuilderProducto, FondoPreset } from './types';
+import type {
+    BuilderProducto,
+    FondoPreset,
+    MenuCartaDetail,
+} from './types';
 
 type EditProps = {
     carta: MenuCartaDetail;
