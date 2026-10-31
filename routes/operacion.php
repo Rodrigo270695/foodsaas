@@ -85,6 +85,12 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->get('export', [AlmacenController::class, 'exportStock'])
                     ->name('export');
                 Route::middleware('permission:almacen.view')
+                    ->get('movimientos', [AlmacenController::class, 'movimientos'])
+                    ->name('movimientos.index');
+                Route::middleware('permission:almacen.export')
+                    ->get('movimientos/export', [AlmacenController::class, 'exportMovimientos'])
+                    ->name('movimientos.export');
+                Route::middleware('permission:almacen.view')
                     ->get('{productoCarta}/kardex', [AlmacenController::class, 'kardex'])
                     ->name('kardex');
                 Route::middleware('permission:almacen.export')

@@ -6,8 +6,25 @@
         "export": "Export stock",
         "adjust": "Record movement",
         "view_kardex": "View kardex",
+        "view_movimientos": "Movements",
         "back": "Back to warehouse"
     },
+    "movimientos": {
+        "title": "Movements",
+        "subtitle": "Site-wide history of inbound, outbound and stock adjustments.",
+        "export": "Export movements",
+        "search_placeholder": "Search product, code or reason…",
+        "empty_title": "No movements",
+        "empty_description": "When you record entries or adjustments on a product, they will show up here.",
+        "stats": {
+            "total": "Total"
+        },
+        "filters": {
+            "tipo_label": "Filter by movement type",
+            "tipo_all": "All types"
+        }
+    },
+
     "stats": {
         "sku": "Tracked",
         "bajo": "Low stock",

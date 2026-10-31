@@ -11,6 +11,8 @@ const almacen = {
         url: `${base}/${id}/kardex/export`,
     }),
     movimientos: {
+        index: () => ({ url: `${base}/movimientos` }),
+        export: () => ({ url: `${base}/movimientos/export` }),
         store: (id: string | number) => ({ url: `${base}/${id}/movimientos` }),
     },
 };

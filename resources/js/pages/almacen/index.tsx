@@ -329,6 +329,19 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
                                     })}
                                 </TooltipContent>
                             </Tooltip>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                asChild
+                                className="cursor-pointer gap-2"
+                            >
+                                <Link href={almacen.movimientos.index().url}>
+                                    <ScrollText className="size-4" />
+                                    <span className="hidden sm:inline">
+                                        {t('actions.view_movimientos')}
+                                    </span>
+                                </Link>
+                            </Button>
                             <Can permission="almacen.export">
                                 <Tooltip>
                                     <TooltipTrigger asChild>

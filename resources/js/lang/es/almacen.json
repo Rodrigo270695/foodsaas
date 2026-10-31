@@ -6,8 +6,25 @@
         "export": "Exportar stock",
         "adjust": "Registrar movimiento",
         "view_kardex": "Ver kardex",
+        "view_movimientos": "Movimientos",
         "back": "Volver al almacén"
     },
+    "movimientos": {
+        "title": "Movimientos",
+        "subtitle": "Historial general de entradas, salidas y ajustes de la sede activa.",
+        "export": "Exportar movimientos",
+        "search_placeholder": "Buscar producto, código o motivo…",
+        "empty_title": "Sin movimientos",
+        "empty_description": "Cuando registres entradas o ajustes en un producto, aparecerán aquí.",
+        "stats": {
+            "total": "Total"
+        },
+        "filters": {
+            "tipo_label": "Filtrar por tipo de movimiento",
+            "tipo_all": "Todos los tipos"
+        }
+    },
+
     "stats": {
         "sku": "Con stock",
         "bajo": "Stock bajo",
