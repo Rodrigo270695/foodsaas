@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     ArrowLeft,
     CheckCircle2,
@@ -21,6 +21,7 @@ import {
     type DataTableColumn,
 } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -46,6 +47,9 @@ export default function BuilderIndex({
     const { t } = useTranslation(['carta', 'common']);
     const { can } = usePermission();
     const [createOpen, setCreateOpen] = useState(false);
+    const [menuToDelete, setMenuToDelete] = useState<MenuCartaRow | null>(
+        null,
+    );
 
     const published = useMemo(
         () => cartas.filter((c) => c.publicada).length,
@@ -132,19 +136,7 @@ export default function BuilderIndex({
                         {can('carta.armar') ? (
                             <DropdownMenuItem
                                 className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                                onSelect={() => {
-                                    if (
-                                        window.confirm(
-                                            t('builder.delete_confirm', {
-                                                name: row.nombre,
-                                            }),
-                                        )
-                                    ) {
-                                        router.delete(
-                                            carta.menus.destroy(row.id).url,
-                                        );
-                                    }
-                                }}
+                                onSelect={() => setMenuToDelete(row)}
                             >
                                 <Trash2 className="size-4" />
                                 {t('common:actions.delete')}
@@ -259,6 +251,25 @@ export default function BuilderIndex({
             </div>
 
             <MenuFormModal open={createOpen} onOpenChange={setCreateOpen} />
+
+            <ConfirmDeleteDialog
+                open={menuToDelete !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setMenuToDelete(null);
+                    }
+                }}
+                title={t('delete.menu_title')}
+                description={t('builder.delete_confirm', {
+                    name: menuToDelete?.nombre ?? '',
+                })}
+                deleteUrl={
+                    menuToDelete
+                        ? carta.menus.destroy(menuToDelete.id).url
+                        : null
+                }
+                loadingLabel={t('delete.deleting')}
+            />
         </>
     );
 }

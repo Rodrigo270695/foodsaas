@@ -15,6 +15,12 @@
         "reload": "Actualizar",
         "more": "Más acciones"
     },
+    "delete": {
+        "title": "Confirmar eliminación",
+        "deleting": "Eliminando…",
+        "blocked_toast": "No se pudo eliminar."
+    },
+
     "sede_switcher": {
         "label": "Sede activa",
         "placeholder": "Elige sede",

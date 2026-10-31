@@ -15,6 +15,12 @@
         "reload": "Refresh",
         "more": "More actions"
     },
+    "delete": {
+        "title": "Confirm deletion",
+        "deleting": "Deleting…",
+        "blocked_toast": "Could not delete."
+    },
+
     "sede_switcher": {
         "label": "Active branch",
         "placeholder": "Choose branch",

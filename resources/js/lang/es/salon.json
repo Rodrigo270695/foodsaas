@@ -60,8 +60,11 @@
         "no_results_description": "Ninguna mesa coincide con los filtros actuales."
     },
     "delete": {
-        "zona_confirm": "¿Eliminar la zona \"{{name}}\"? Solo es posible si no tiene mesas.",
-        "mesa_confirm": "¿Eliminar la mesa \"{{code}}\"? Esta acción no se puede deshacer."
+        "zona_title": "Eliminar zona",
+        "zona_confirm": "¿Eliminar la zona «{{name}}»? Solo es posible si no tiene mesas.",
+        "mesa_title": "Eliminar mesa",
+        "mesa_confirm": "¿Eliminar la mesa «{{code}}»? Esta acción no se puede deshacer.",
+        "deleting": "Eliminando…"
     },
     "aria": {
         "results_count_one": "{{count}} mesa encontrada",

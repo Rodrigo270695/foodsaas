@@ -72,9 +72,15 @@
         "no_categories_description": "Crea una categoría para empezar a cargar productos."
     },
     "delete": {
-        "product_confirm": "¿Eliminar el producto \"{{name}}\"? Esta acción no se puede deshacer.",
-        "category_confirm": "¿Eliminar la categoría \"{{name}}\"? Solo es posible si no tiene productos."
+        "product_title": "Eliminar producto",
+        "product_confirm": "¿Eliminar el producto «{{name}}»? Esta acción no se puede deshacer.",
+        "category_title": "Eliminar categoría",
+        "category_confirm": "¿Eliminar la categoría «{{name}}»? Solo es posible si no tiene productos.",
+        "area_title": "Eliminar área",
+        "menu_title": "Eliminar carta",
+        "deleting": "Eliminando…"
     },
+
     "aria": {
         "results_count_one": "{{count}} producto encontrado",
         "results_count_other": "{{count}} productos encontrados"

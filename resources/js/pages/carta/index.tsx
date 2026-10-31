@@ -23,6 +23,7 @@ import {
     type DataTableColumn,
 } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -67,8 +68,10 @@ type ModalState =
     | { type: 'idle' }
     | { type: 'product-create' }
     | { type: 'product-edit'; producto: ProductoCarta }
+    | { type: 'product-delete'; producto: ProductoCarta }
     | { type: 'category-create' }
-    | { type: 'category-edit'; categoria: CategoriaCarta };
+    | { type: 'category-edit'; categoria: CategoriaCarta }
+    | { type: 'category-delete'; categoria: CategoriaCarta };
 
 const DEFAULT_PER_PAGE = 12;
 const DEFAULT_ESTADO: CartaEstadoFilter = 'todos';
@@ -127,37 +130,13 @@ export default function Index({
     const [modal, setModal] = useState<ModalState>({ type: 'idle' });
     const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
 
-    const deleteProducto = useCallback(
-        (producto: ProductoCarta) => {
-            if (
-                !window.confirm(
-                    t('delete.product_confirm', { name: producto.nombre }),
-                )
-            ) {
-                return;
-            }
-            router.delete(carta.productos.destroy(producto.id).url, {
-                preserveScroll: true,
-            });
-        },
-        [t],
-    );
+    const askDeleteProducto = useCallback((producto: ProductoCarta) => {
+        setModal({ type: 'product-delete', producto });
+    }, []);
 
-    const deleteCategoria = useCallback(
-        (categoria: CategoriaCarta) => {
-            if (
-                !window.confirm(
-                    t('delete.category_confirm', { name: categoria.nombre }),
-                )
-            ) {
-                return;
-            }
-            router.delete(carta.categorias.destroy(categoria.id).url, {
-                preserveScroll: true,
-            });
-        },
-        [t],
-    );
+    const askDeleteCategoria = useCallback((categoria: CategoriaCarta) => {
+        setModal({ type: 'category-delete', categoria });
+    }, []);
 
     const hasActiveFilters = useMemo(
         () =>
@@ -324,7 +303,7 @@ export default function Index({
                                 {t('common:actions.edit')}
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                                onSelect={() => deleteProducto(producto)}
+                                onSelect={() => askDeleteProducto(producto)}
                                 className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                             >
                                 <Trash2 className="size-4" />
@@ -338,7 +317,7 @@ export default function Index({
         }
 
         return base;
-    }, [t, showRowActions, deleteProducto]);
+    }, [t, showRowActions, askDeleteProducto]);
 
     return (
         <>
@@ -456,7 +435,7 @@ export default function Index({
                     onEditCategoria={(categoria) =>
                         setModal({ type: 'category-edit', categoria })
                     }
-                    onDeleteCategoria={deleteCategoria}
+                    onDeleteCategoria={askDeleteCategoria}
                 />
 
                 {categorias.length === 0 ? (
@@ -589,6 +568,50 @@ export default function Index({
                     defaultValue:
                         'Copia categorías, áreas, productos y cartas publicables. No duplica lo que ya exista con el mismo nombre.',
                 })}
+            />
+
+            <ConfirmDeleteDialog
+                open={modal.type === 'product-delete'}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+                title={t('delete.product_title')}
+                description={t('delete.product_confirm', {
+                    name:
+                        modal.type === 'product-delete'
+                            ? modal.producto.nombre
+                            : '',
+                })}
+                deleteUrl={
+                    modal.type === 'product-delete'
+                        ? carta.productos.destroy(modal.producto.id).url
+                        : null
+                }
+                loadingLabel={t('delete.deleting')}
+            />
+
+            <ConfirmDeleteDialog
+                open={modal.type === 'category-delete'}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+                title={t('delete.category_title')}
+                description={t('delete.category_confirm', {
+                    name:
+                        modal.type === 'category-delete'
+                            ? modal.categoria.nombre
+                            : '',
+                })}
+                deleteUrl={
+                    modal.type === 'category-delete'
+                        ? carta.categorias.destroy(modal.categoria.id).url
+                        : null
+                }
+                loadingLabel={t('delete.deleting')}
             />
         </>
     );

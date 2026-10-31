@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox, type ComboboxOption } from '@/components/ui/combobox';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import { Input } from '@/components/ui/input';
 import { usePermission } from '@/hooks/use-permission';
 import {
@@ -147,6 +148,7 @@ export function ProductoFormModal({
     );
     const [creatingArea, setCreatingArea] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [areaToDelete, setAreaToDelete] = useState<AreaCarta | null>(null);
     const ordenTouchedRef = useRef(false);
     const canSubmit =
         isFormValid(data) && !saving && categorias.length > 0;
@@ -228,30 +230,12 @@ export function ProductoFormModal({
         );
     };
 
-    const deleteArea = (areaId: string) => {
+    const askDeleteArea = (areaId: string) => {
         const area = areas.find((a) => a.id === areaId);
         if (!area) {
             return;
         }
-
-        if (
-            !window.confirm(
-                t('producto_form.fields.area_delete_confirm', {
-                    name: area.nombre,
-                }),
-            )
-        ) {
-            return;
-        }
-
-        router.delete(carta.areas.destroy(areaId).url, {
-            preserveScroll: true,
-            onSuccess: () => {
-                if (data.area_id === areaId) {
-                    setData('area_id', '');
-                }
-            },
-        });
+        setAreaToDelete(area);
     };
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -299,6 +283,7 @@ export function ProductoFormModal({
     };
 
     return (
+        <>
         <FormModal
             open={open}
             onOpenChange={handleClose}
@@ -440,7 +425,7 @@ export function ProductoFormModal({
                                 canManageAreas ? createArea : undefined
                             }
                             onDeleteOption={
-                                canManageAreas ? deleteArea : undefined
+                                canManageAreas ? askDeleteArea : undefined
                             }
                             deleteOptionLabel={(opt) =>
                                 t('producto_form.fields.area_delete', {
@@ -704,5 +689,31 @@ export function ProductoFormModal({
                 </FormSection>
             </div>
         </FormModal>
+
+        <ConfirmDeleteDialog
+            open={areaToDelete !== null}
+            onOpenChange={(next) => {
+                if (!next) {
+                    setAreaToDelete(null);
+                }
+            }}
+            title={t('delete.area_title')}
+            description={t('producto_form.fields.area_delete_confirm', {
+                name: areaToDelete?.nombre ?? '',
+            })}
+            deleteUrl={
+                areaToDelete
+                    ? carta.areas.destroy(areaToDelete.id).url
+                    : null
+            }
+            loadingLabel={t('delete.deleting')}
+            onSuccess={() => {
+                if (areaToDelete && data.area_id === areaToDelete.id) {
+                    setData('area_id', '');
+                }
+                setAreaToDelete(null);
+            }}
+        />
+        </>
     );
 }

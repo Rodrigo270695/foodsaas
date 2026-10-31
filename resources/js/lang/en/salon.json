@@ -60,9 +60,13 @@
         "no_results_description": "No tables match the current filters."
     },
     "delete": {
-        "zona_confirm": "Delete zone \"{{name}}\"? Only allowed when it has no tables.",
-        "mesa_confirm": "Delete table \"{{code}}\"? This cannot be undone."
+        "zona_title": "Delete zone",
+        "zona_confirm": "Delete zone «{{name}}»? Only allowed when it has no tables.",
+        "mesa_title": "Delete table",
+        "mesa_confirm": "Delete table «{{code}}»? This cannot be undone.",
+        "deleting": "Deleting…"
     },
+
     "aria": {
         "results_count_one": "{{count}} table found",
         "results_count_other": "{{count}} tables found"

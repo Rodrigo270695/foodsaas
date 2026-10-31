@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { CopyToSedeModal } from '@/components/copy-to-sede-modal';
 import { EmptyState, PageHeader } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import { usePlanLimitReached } from '@/hooks/use-plan-limits';
 import { usePermission } from '@/hooks/use-permission';
 import { toastManager } from '@/lib/toast';
@@ -44,8 +45,10 @@ type ModalState =
     | { type: 'idle' }
     | { type: 'zona-create' }
     | { type: 'zona-edit'; zona: ZonaSalon }
+    | { type: 'zona-delete'; zona: ZonaSalon }
     | { type: 'mesa-create' }
-    | { type: 'mesa-edit'; mesa: MesaSalon };
+    | { type: 'mesa-edit'; mesa: MesaSalon }
+    | { type: 'mesa-delete'; mesa: MesaSalon };
 
 const DEFAULT_ESTADO: SalonEstadoFilter = 'todos';
 
@@ -111,37 +114,13 @@ export default function Index({
         [filters, t],
     );
 
-    const deleteZona = useCallback(
-        (zona: ZonaSalon) => {
-            if (
-                !window.confirm(
-                    t('delete.zona_confirm', { name: zona.nombre }),
-                )
-            ) {
-                return;
-            }
-            router.delete(salon.zonas.destroy(zona.id).url, {
-                preserveScroll: true,
-            });
-        },
-        [t],
-    );
+    const askDeleteZona = useCallback((zona: ZonaSalon) => {
+        setModal({ type: 'zona-delete', zona });
+    }, []);
 
-    const deleteMesa = useCallback(
-        (mesa: MesaSalon) => {
-            if (
-                !window.confirm(
-                    t('delete.mesa_confirm', { code: mesa.codigo }),
-                )
-            ) {
-                return;
-            }
-            router.delete(salon.mesas.destroy(mesa.id).url, {
-                preserveScroll: true,
-            });
-        },
-        [t],
-    );
+    const askDeleteMesa = useCallback((mesa: MesaSalon) => {
+        setModal({ type: 'mesa-delete', mesa });
+    }, []);
 
     const unirMesas = useCallback((mesaIds: [string, string]) => {
         router.post(
@@ -314,7 +293,7 @@ export default function Index({
                             onEditZona={(zona) =>
                                 setModal({ type: 'zona-edit', zona })
                             }
-                            onDeleteZona={deleteZona}
+                            onDeleteZona={askDeleteZona}
                         />
 
                         {zonas.length === 0 ? (
@@ -384,7 +363,7 @@ export default function Index({
                                 onEdit={(mesa) =>
                                     setModal({ type: 'mesa-edit', mesa })
                                 }
-                                onDelete={deleteMesa}
+                                onDelete={askDeleteMesa}
                                 onUnir={unirMesas}
                                 onSeparar={separarMesa}
                                 onDissolveUnion={dissolveUnion}
@@ -441,6 +420,46 @@ export default function Index({
                     defaultValue:
                         'Copia zonas y mesas a la sede destino. No duplica códigos que ya existan.',
                 })}
+            />
+
+            <ConfirmDeleteDialog
+                open={modal.type === 'zona-delete'}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+                title={t('delete.zona_title')}
+                description={t('delete.zona_confirm', {
+                    name:
+                        modal.type === 'zona-delete' ? modal.zona.nombre : '',
+                })}
+                deleteUrl={
+                    modal.type === 'zona-delete'
+                        ? salon.zonas.destroy(modal.zona.id).url
+                        : null
+                }
+                loadingLabel={t('delete.deleting')}
+            />
+
+            <ConfirmDeleteDialog
+                open={modal.type === 'mesa-delete'}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+                title={t('delete.mesa_title')}
+                description={t('delete.mesa_confirm', {
+                    code:
+                        modal.type === 'mesa-delete' ? modal.mesa.codigo : '',
+                })}
+                deleteUrl={
+                    modal.type === 'mesa-delete'
+                        ? salon.mesas.destroy(modal.mesa.id).url
+                        : null
+                }
+                loadingLabel={t('delete.deleting')}
             />
         </>
     );
