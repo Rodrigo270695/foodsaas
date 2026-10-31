@@ -86,3 +86,12 @@ export function formatArqueoMoney(
         currency: moneda === 'USD' ? 'USD' : 'PEN',
     }).format(n);
 }
+
+export function arqueoCsrfToken(): string {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta instanceof HTMLMetaElement && meta.content) {
+        return meta.content;
+    }
+
+    return '';
+}
