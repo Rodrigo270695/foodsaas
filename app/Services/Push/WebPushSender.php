@@ -27,11 +27,18 @@ final class WebPushSender
     /**
      * @param  Collection<int, User>|list<int|string>  $usersOrIds
      * @param  array{title: string, body: string, url: string, tag: string}  $payload
+     * @return array{sent: int, failed: int, missing_subs: bool}
      */
-    public function sendToUsers(Collection|array $usersOrIds, array $payload): void
+    public function sendToUsers(Collection|array $usersOrIds, array $payload): array
     {
+        $empty = ['sent' => 0, 'failed' => 0, 'missing_subs' => true];
+
         if (! $this->isConfigured()) {
-            return;
+            Log::info('Web push omitido: VAPID no configurado', [
+                'tag' => $payload['tag'] ?? 'unknown',
+            ]);
+
+            return $empty;
         }
 
         $ids = $usersOrIds instanceof Collection
@@ -40,7 +47,11 @@ final class WebPushSender
 
         $ids = array_values(array_unique(array_filter($ids)));
         if ($ids === []) {
-            return;
+            Log::info('Web push omitido: sin destinatarios', [
+                'tag' => $payload['tag'] ?? 'unknown',
+            ]);
+
+            return $empty;
         }
 
         $subscriptions = PushSubscription::query()
@@ -48,7 +59,12 @@ final class WebPushSender
             ->get();
 
         if ($subscriptions->isEmpty()) {
-            return;
+            Log::info('Web push omitido: usuarios sin suscripción en BD', [
+                'tag' => $payload['tag'] ?? 'unknown',
+                'user_ids' => $ids,
+            ]);
+
+            return $empty;
         }
 
         try {
@@ -68,7 +84,7 @@ final class WebPushSender
                 'error' => $e->getMessage(),
             ]);
 
-            return;
+            return ['sent' => 0, 'failed' => 0, 'missing_subs' => false];
         }
 
         $json = json_encode($payload, JSON_THROW_ON_ERROR);
@@ -79,21 +95,51 @@ final class WebPushSender
                     'endpoint' => $subscription->endpoint,
                     'publicKey' => $subscription->public_key,
                     'authToken' => $subscription->auth_token,
-                    'contentEncoding' => $subscription->content_encoding,
+                    'contentEncoding' => $subscription->content_encoding ?: 'aes128gcm',
                 ]),
                 $json,
             );
         }
 
+        $sent = 0;
+        $failed = 0;
+
         foreach ($webPush->flush() as $report) {
             if ($report->isSuccess()) {
+                $sent++;
+
                 continue;
             }
 
+            $failed++;
             $endpoint = $report->getRequest()?->getUri()?->__toString();
-            if (is_string($endpoint) && $endpoint !== '') {
+            $status = $report->getResponse()?->getStatusCode();
+
+            Log::warning('Web push envío falló', [
+                'tag' => $payload['tag'] ?? 'unknown',
+                'reason' => $report->getReason(),
+                'status' => $status,
+                'expired' => $report->isSubscriptionExpired(),
+                'endpoint' => is_string($endpoint) ? substr($endpoint, 0, 80) : null,
+            ]);
+
+            // Solo borrar si el push service dice que la suscripción ya no existe.
+            if (
+                $report->isSubscriptionExpired()
+                && is_string($endpoint)
+                && $endpoint !== ''
+            ) {
                 PushSubscription::query()->where('endpoint', $endpoint)->delete();
             }
         }
+
+        Log::info('Web push flush', [
+            'tag' => $payload['tag'] ?? 'unknown',
+            'targets' => $subscriptions->count(),
+            'sent' => $sent,
+            'failed' => $failed,
+        ]);
+
+        return ['sent' => $sent, 'failed' => $failed, 'missing_subs' => false];
     }
 }

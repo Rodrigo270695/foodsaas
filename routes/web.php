@@ -62,10 +62,14 @@ Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-chan
     });
 
     // Web Push (tablet/PWA): suena aunque la app esté minimizada u otra pestaña.
+    Route::get('push/status', [PushSubscriptionController::class, 'status'])
+        ->name('push.status');
     Route::post('push/subscribe', [PushSubscriptionController::class, 'store'])
         ->name('push.subscribe');
     Route::delete('push/subscribe', [PushSubscriptionController::class, 'destroy'])
         ->name('push.unsubscribe');
+    Route::post('push/test', [PushSubscriptionController::class, 'test'])
+        ->name('push.test');
 });
 
 Route::middleware(['tenant.required', 'throttle:60,1'])

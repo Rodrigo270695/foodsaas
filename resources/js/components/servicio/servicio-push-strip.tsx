@@ -14,9 +14,12 @@ export function ServicioPushStrip() {
         subscribed,
         swReady,
         loading,
+        testing,
         error,
+        testMessage,
         enable,
         disable,
+        sendTest,
     } = usePushNotifications();
 
     if (!browserSupported || !configured) {
@@ -25,27 +28,53 @@ export function ServicioPushStrip() {
 
     if (subscribed) {
         return (
-            <div className="flex items-center justify-between gap-2 border-t border-border/70 px-3 py-2">
-                <p className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <BellRing className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span className="truncate">
-                        Avisos del sistema activos (suenan minimizado)
-                    </span>
-                </p>
+            <div className="space-y-1.5 border-t border-border/70 px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                    <p className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <BellRing className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span className="truncate">
+                            Avisos del sistema activos
+                        </span>
+                    </p>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 shrink-0 px-2 text-[11px]"
+                        onClick={() => void disable()}
+                        disabled={loading || testing}
+                    >
+                        {loading ? (
+                            <LoaderCircle className="size-3 animate-spin" />
+                        ) : (
+                            'Quitar'
+                        )}
+                    </Button>
+                </div>
                 <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-7 shrink-0 px-2 text-[11px]"
-                    onClick={() => void disable()}
-                    disabled={loading}
+                    className="h-7 w-full text-[11px]"
+                    onClick={() => void sendTest()}
+                    disabled={loading || testing}
                 >
-                    {loading ? (
-                        <LoaderCircle className="size-3 animate-spin" />
+                    {testing ? (
+                        <LoaderCircle className="size-3.5 animate-spin" />
                     ) : (
-                        'Quitar'
+                        'Probar aviso ahora'
                     )}
                 </Button>
+                {testMessage ? (
+                    <p className="text-[11px] leading-snug text-emerald-700 dark:text-emerald-400">
+                        {testMessage}
+                    </p>
+                ) : null}
+                {error ? (
+                    <p className="text-[11px] leading-snug text-red-600 dark:text-red-400">
+                        {error}
+                    </p>
+                ) : null}
             </div>
         );
     }

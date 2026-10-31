@@ -21,10 +21,37 @@ type UsePushNotificationsResult = {
     subscribed: boolean;
     swReady: boolean;
     loading: boolean;
+    testing: boolean;
     error: string | null;
+    testMessage: string | null;
     enable: () => Promise<void>;
     disable: () => Promise<void>;
+    sendTest: () => Promise<void>;
 };
+
+function readXsrfToken(): string {
+    const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
+
+    return m?.[1] ? decodeURIComponent(m[1]) : '';
+}
+
+async function fetchPushStatus(): Promise<boolean> {
+    const response = await fetch('/push/status', {
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+    });
+
+    if (!response.ok) {
+        return false;
+    }
+
+    const data = (await response.json()) as { subscribed?: boolean };
+
+    return Boolean(data.subscribed);
+}
 
 export function usePushNotifications(): UsePushNotificationsResult {
     const { push } = usePage().props as { push?: PushShared | null };
@@ -36,7 +63,9 @@ export function usePushNotifications(): UsePushNotificationsResult {
     const [subscribed, setSubscribed] = useState(false);
     const [swReady, setSwReady] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [testing, setTesting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [testMessage, setTestMessage] = useState<string | null>(null);
 
     const supported = browserSupported && configured;
 
@@ -55,12 +84,20 @@ export function usePushNotifications(): UsePushNotificationsResult {
                     return;
                 }
 
-                // Fuerza actualización del SW para tomar listeners de push nuevos.
                 void registration.update();
 
                 const existing = await registration.pushManager.getSubscription();
-                setSubscribed(existing !== null);
+                const onServer = await fetchPushStatus();
+
+                // Activo de verdad = navegador + fila en BD (antes solo mirábamos el browser).
+                setSubscribed(existing !== null && onServer);
                 setSwReady(isServiceWorkerControlling());
+
+                if (existing !== null && !onServer) {
+                    setError(
+                        'El navegador tiene permiso, pero el servidor no tiene tu suscripción. Pulsa Activar de nuevo.',
+                    );
+                }
             } catch {
                 if (!cancelled) {
                     setSwReady(false);
@@ -89,6 +126,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
 
         setLoading(true);
         setError(null);
+        setTestMessage(null);
 
         try {
             const registration = await waitForServiceWorker();
@@ -102,8 +140,15 @@ export function usePushNotifications(): UsePushNotificationsResult {
             }
 
             await subscribeToPush(registration, push.vapidPublicKey);
-            setSubscribed(true);
+            const onServer = await fetchPushStatus();
+            setSubscribed(onServer);
             setSwReady(isServiceWorkerControlling());
+
+            if (!onServer) {
+                setError(
+                    'El navegador se suscribió, pero el servidor no guardó la suscripción. Revisa la consola/red (POST /push/subscribe).',
+                );
+            }
         } catch (caught) {
             setError(caught instanceof Error ? caught.message : 'No se pudo activar push.');
             setSubscribed(false);
@@ -115,6 +160,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
     const disable = useCallback(async () => {
         setLoading(true);
         setError(null);
+        setTestMessage(null);
 
         try {
             const registration = await waitForServiceWorker();
@@ -127,6 +173,55 @@ export function usePushNotifications(): UsePushNotificationsResult {
         }
     }, []);
 
+    const sendTest = useCallback(async () => {
+        setTesting(true);
+        setError(null);
+        setTestMessage(null);
+
+        try {
+            const response = await fetch('/push/test', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': readXsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: '{}',
+            });
+
+            const data = (await response.json().catch(() => ({}))) as {
+                ok?: boolean;
+                message?: string;
+            };
+
+            if (!response.ok || !data.ok) {
+                setError(
+                    data.message ??
+                        `No se pudo enviar la prueba (${response.status}).`,
+                );
+                if (response.status === 422) {
+                    setSubscribed(false);
+                }
+                return;
+            }
+
+            setTestMessage(
+                data.message ??
+                    'Prueba enviada. Mira el centro de notificaciones del sistema.',
+            );
+        } catch (caught) {
+            setError(
+                caught instanceof Error
+                    ? caught.message
+                    : 'Error de red al enviar la prueba.',
+            );
+        } finally {
+            setTesting(false);
+        }
+    }, []);
+
     return {
         browserSupported,
         configured,
@@ -135,8 +230,11 @@ export function usePushNotifications(): UsePushNotificationsResult {
         subscribed,
         swReady,
         loading,
+        testing,
         error,
+        testMessage,
         enable,
         disable,
+        sendTest,
     };
 }
