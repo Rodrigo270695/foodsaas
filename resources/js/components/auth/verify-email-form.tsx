@@ -5,18 +5,22 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { logout } from '@/routes';
-import { send } from '@/routes/verification';
 
 /**
- * Pantalla intermedia que pide al usuario que verifique su correo.
- * Ofrece reenviar el correo de verificación y cerrar sesión.
+ * Pantalla intermedia (legacy). La verificación por correo está desactivada
+ * en FoodSaaS (usuarios los crea el admin), pero el formulario se mantiene
+ * sin depender de Wayfinder `@/routes/verification`.
  */
 export default function VerifyEmailForm() {
     const { t } = useTranslation('auth');
 
     return (
         <div className="flex flex-col">
-            <Form {...send.form()} className="flex flex-col">
+            <Form
+                method="post"
+                action="/email/verification-notification"
+                className="flex flex-col"
+            >
                 {({ processing }) => (
                     <div className="grid gap-4">
                         <Button
@@ -29,7 +33,10 @@ export default function VerifyEmailForm() {
                             {processing ? (
                                 <Spinner />
                             ) : (
-                                <MailCheck className="size-4" strokeWidth={2.25} />
+                                <MailCheck
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                />
                             )}
                             {processing
                                 ? t('common.submit_loading')
