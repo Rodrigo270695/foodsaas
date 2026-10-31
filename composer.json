@@ -16,6 +16,7 @@
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
+        "minishlink/web-push": "^11.0",
         "phpoffice/phpspreadsheet": "^5.10",
         "spatie/laravel-permission": "7.4"
     },

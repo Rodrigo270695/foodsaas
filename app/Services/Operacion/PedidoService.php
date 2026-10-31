@@ -189,12 +189,14 @@ class PedidoService
 
         $now = now();
         $enviadoPor = Auth::id();
+        $enviadas = [];
         foreach ($lineas as $linea) {
             $linea->estado = PedidoLinea::ESTADO_EN_COLA;
             $linea->enviado_at = $now;
             // Dueño del ida-y-vuelta: solo este mesero recibe el “listo” y puede llevar a mesa.
             $linea->enviado_por = $enviadoPor;
             $linea->save();
+            $enviadas[] = $linea;
         }
 
         if ($pedido->estado === Pedido::ESTADO_BORRADOR) {
@@ -204,6 +206,9 @@ class PedidoService
             $pedido->enviado_at = $now;
         }
         $pedido->save();
+
+        $pedido->loadMissing('mesa');
+        app(ServicioPushNotifier::class)->notificarCocinaNuevos($pedido, $enviadas);
 
         return $lineas->count();
     }
@@ -219,6 +224,8 @@ class PedidoService
         $linea->estado = PedidoLinea::ESTADO_LISTO;
         $linea->listo_at = now();
         $linea->save();
+
+        app(ServicioPushNotifier::class)->notificarMeseroListo($linea);
 
         return $linea;
     }

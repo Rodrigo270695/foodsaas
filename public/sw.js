@@ -1,7 +1,7 @@
 /**
- * Service Worker FoodSaaS — caché mínima para instalación PWA.
+ * Service Worker FoodSaaS — caché PWA + Web Push (mesero/cocina).
  */
-const STATIC_CACHE = 'foodsaas-static-v1';
+const STATIC_CACHE = 'foodsaas-static-v2';
 
 const PRECACHE_URLS = [
     '/',
@@ -64,4 +64,59 @@ self.addEventListener('fetch', (event) => {
             }),
         );
     }
+});
+
+self.addEventListener('push', (event) => {
+    let payload = {};
+
+    try {
+        payload = event.data ? event.data.json() : {};
+    } catch {
+        payload = { body: event.data ? event.data.text() : '' };
+    }
+
+    const title = payload.title || 'FoodSaaS';
+    const options = {
+        body: payload.body || '',
+        icon: '/icons/pwa/icon-192.png',
+        badge: '/icons/pwa/icon-192.png',
+        tag: payload.tag || 'foodsaas-servicio',
+        renotify: true,
+        requireInteraction: true,
+        data: {
+            url: payload.url || '/pedidos',
+        },
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const targetUrl =
+        (event.notification.data && event.notification.data.url) || '/pedidos';
+
+    event.waitUntil(
+        self.clients
+            .matchAll({ type: 'window', includeUncontrolled: true })
+            .then((clientList) => {
+                for (const client of clientList) {
+                    if ('focus' in client) {
+                        if (
+                            typeof client.url === 'string' &&
+                            client.url.includes(targetUrl)
+                        ) {
+                            return client.focus();
+                        }
+                    }
+                }
+
+                if (self.clients.openWindow) {
+                    return self.clients.openWindow(targetUrl);
+                }
+
+                return undefined;
+            }),
+    );
 });

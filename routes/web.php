@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\BootstrapLoginController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\GeoController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\TenantImpersonationController;
 use Illuminate\Support\Facades\Route;
 
@@ -59,6 +60,12 @@ Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-chan
         Route::get('provincias', [GeoController::class, 'provincias'])->name('provincias');
         Route::get('distritos', [GeoController::class, 'distritos'])->name('distritos');
     });
+
+    // Web Push (tablet/PWA): suena aunque la app esté minimizada u otra pestaña.
+    Route::post('push/subscribe', [PushSubscriptionController::class, 'store'])
+        ->name('push.subscribe');
+    Route::delete('push/subscribe', [PushSubscriptionController::class, 'destroy'])
+        ->name('push.unsubscribe');
 });
 
 Route::middleware(['tenant.required', 'throttle:60,1'])

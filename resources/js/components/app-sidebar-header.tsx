@@ -1,5 +1,6 @@
 import { ActiveSedeSwitcher } from '@/components/active-sede-switcher';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { PushNotificationPrompt } from '@/components/push/push-notification-prompt';
 import { PwaInstallHeaderButton } from '@/components/pwa-install-banner';
 import { ServicioFeedInbox } from '@/components/servicio/servicio-feed-inbox';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -20,6 +21,9 @@ export function AppSidebarHeader({
             </div>
 
             <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1 sm:gap-1.5">
+                <PushNotificationPrompt
+                    description="Activa avisos del sistema para cocina y salón aunque la app esté minimizada."
+                />
                 <ServicioFeedInbox />
                 <ActiveSedeSwitcher />
                 <PwaInstallHeaderButton />

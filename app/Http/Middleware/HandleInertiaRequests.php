@@ -201,6 +201,16 @@ class HandleInertiaRequests extends Middleware
             'active_sede' => static fn () => ActiveSedeContext::sharedPayload(),
             // Feed mesero ↔ cocina (polling parcial, estilo Agrovision inbox).
             'servicioFeed' => fn () => ServicioRealtimeFeed::forUser($user),
+            // Web Push (avisos de sistema con app minimizada).
+            'push' => static function () {
+                $public = config('webpush.vapid.public_key');
+                $private = config('webpush.vapid.private_key');
+
+                return [
+                    'enabled' => filled($public) && filled($private),
+                    'vapidPublicKey' => filled($public) ? (string) $public : null,
+                ];
+            },
         ];
     }
 
