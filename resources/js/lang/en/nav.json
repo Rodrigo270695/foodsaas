@@ -29,6 +29,7 @@
         "pedidos": "Orders",
         "cocina": "Kitchen",
         "caja": "Cash register",
+        "ventas": "Sales",
         "sedes": "Branches",
         "platform_settings": "General settings",
         "operaciones": "Operations",

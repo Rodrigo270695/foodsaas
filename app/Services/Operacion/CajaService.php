@@ -2,6 +2,7 @@
 
 namespace App\Services\Operacion;
 
+use App\Models\CajaEgreso;
 use App\Models\CajaSesion;
 use App\Models\MovimientoInventario;
 use App\Models\Pago;
@@ -63,7 +64,12 @@ class CajaService
             ->where('medio', Pago::MEDIO_EFECTIVO)
             ->sum('monto');
 
-        $sistema = round((float) $sesion->monto_apertura + $efectivoVentas, 2);
+        $efectivoEgresos = (float) CajaEgreso::query()
+            ->where('caja_sesion_id', $sesion->id)
+            ->where('medio', Pago::MEDIO_EFECTIVO)
+            ->sum('monto');
+
+        $sistema = round((float) $sesion->monto_apertura + $efectivoVentas - $efectivoEgresos, 2);
 
         $sesion->forceFill([
             'estado' => CajaSesion::ESTADO_CERRADA,
@@ -212,6 +218,52 @@ class CajaService
 
             return $venta->load('pagos');
         });
+    }
+
+    /**
+     * @param  array{monto: float|string, medio?: string, motivo: string, notas?: string|null}  $data
+     */
+    public function registrarEgreso(CajaSesion $sesion, array $data): CajaEgreso
+    {
+        if (! $sesion->isAbierta()) {
+            throw ValidationException::withMessages([
+                'caja' => 'La sesión de caja ya está cerrada.',
+            ]);
+        }
+
+        $motivo = (string) ($data['motivo'] ?? '');
+        if (! in_array($motivo, CajaEgreso::MOTIVOS, true)) {
+            throw ValidationException::withMessages([
+                'motivo' => 'Motivo de egreso no válido.',
+            ]);
+        }
+
+        $medio = (string) ($data['medio'] ?? Pago::MEDIO_EFECTIVO);
+        if (! in_array($medio, Pago::MEDIOS, true)) {
+            throw ValidationException::withMessages([
+                'medio' => 'Medio no válido.',
+            ]);
+        }
+
+        $monto = round((float) ($data['monto'] ?? 0), 2);
+        if ($monto <= 0) {
+            throw ValidationException::withMessages([
+                'monto' => 'El monto debe ser mayor a cero.',
+            ]);
+        }
+
+        $notas = isset($data['notas']) && is_string($data['notas']) && trim($data['notas']) !== ''
+            ? trim($data['notas'])
+            : null;
+
+        return CajaEgreso::query()->create([
+            'caja_sesion_id' => $sesion->id,
+            'monto' => $monto,
+            'medio' => $medio,
+            'motivo' => $motivo,
+            'notas' => $notas,
+            'created_by' => Auth::id(),
+        ]);
     }
 
     private function descontarStockLinea(PedidoLinea $linea, Venta $venta, int $numeroPedido): void

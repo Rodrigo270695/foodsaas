@@ -1,0 +1,56 @@
+{
+    "title": "Sales",
+    "description": "Charge pending orders and review today's tickets.",
+    "caja_cerrada": "Register closed",
+    "caja_cerrada_hint": "Open a cash session before charging.",
+    "ir_caja": "Go to register",
+    "stats": {
+        "pendientes": "To charge",
+        "ventas_hoy": "Sales today",
+        "total_hoy": "Total today"
+    },
+    "sections": {
+        "pendientes": "Orders to charge",
+        "hoy": "Today's sales"
+    },
+    "columns": {
+        "pedido": "Order",
+        "mesa": "Table",
+        "mesero": "Waiter",
+        "total": "Total",
+        "acciones": "Actions",
+        "hora": "Time",
+        "medios": "Methods",
+        "cajero": "Cashier"
+    },
+    "actions": {
+        "cobrar": "Charge"
+    },
+    "empty": {
+        "pendientes": "No orders to charge",
+        "pendientes_hint": "Orders with kitchen or ready items will show up here.",
+        "ventas": "No sales today",
+        "ventas_hint": "Today's charges are listed here."
+    },
+    "cobrar": {
+        "title": "Charge order #{{numero}}",
+        "items": "Items to charge",
+        "subtotal": "Subtotal",
+        "total": "Total",
+        "descuento": "Discount",
+        "medio": "Payment method",
+        "monto": "Amount",
+        "confirm": "Confirm payment"
+    },
+    "estado_linea": {
+        "pendiente": "Pending",
+        "en_cola": "In kitchen",
+        "listo": "Ready",
+        "anulado": "Cancelled"
+    },
+    "canal": {
+        "mesa": "Table",
+        "llevar": "Takeaway",
+        "delivery": "Delivery"
+    }
+}

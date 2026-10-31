@@ -132,6 +132,13 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             permission: 'caja.view',
                             context: 'tenant',
                         },
+                        {
+                            title: t('items.ventas'),
+                            href: '/ventas',
+                            icon: Receipt,
+                            permission: ['ventas.view', 'caja.view'],
+                            context: 'tenant',
+                        },
                     ],
                 },
                 {

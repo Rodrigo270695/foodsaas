@@ -29,7 +29,8 @@ class PermissionsSeeder extends Seeder
         // view = propios; view-all = todos los de la sede (admin/gerente/cajero o rol custom).
         'pedidos' => ['view', 'view-all', 'create', 'update', 'enviar', 'anular', 'cobrar'],
         'cocina' => ['view', 'update'],
-        'caja' => ['view', 'abrir', 'cerrar', 'cobrar'],
+        'caja' => ['view', 'abrir', 'cerrar', 'egreso', 'cobrar'],
+        'ventas' => ['view', 'create'],
         'config-general' => ['view', 'update'],
         'series' => ['view', 'create', 'update', 'delete'],
         'sedes' => ['view', 'create', 'update', 'delete', 'export', 'bulk-delete'],

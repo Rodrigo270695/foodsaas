@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Models\CajaEgreso;
 use App\Models\CajaSesion;
 use App\Models\Pago;
-use App\Models\Pedido;
 use App\Models\Venta;
 use App\Services\Operacion\CajaService;
 use App\Support\Sedes\ActiveSedeContext;
@@ -28,34 +28,25 @@ class CajaController extends Controller
         $sedeId = ActiveSedeContext::id() ?? '';
         $sesion = $sedeId === '' ? null : $caja->sesionAbierta($sedeId);
 
-        $ventasHoy = $sedeId === ''
+        $sesiones = $sedeId === ''
             ? collect()
-            : Venta::query()
-                ->with(['pedido:id,numero,canal,mesa_id', 'pedido.mesa:id,codigo,nombre', 'pagos'])
+            : CajaSesion::query()
+                ->with(['openedBy:id,name', 'closedBy:id,name'])
                 ->where('sede_id', $sedeId)
-                ->where('estado', Venta::ESTADO_PAGADA)
-                ->whereDate('created_at', now()->toDateString())
-                ->orderByDesc('created_at')
-                ->limit(50)
+                ->orderByDesc('opened_at')
+                ->limit(40)
                 ->get();
-
-        $pedidosPendientes = $sedeId === ''
-            ? collect()
-            : Pedido::query()
-                ->with(['mesa:id,codigo,nombre'])
-                ->where('sede_id', $sedeId)
-                ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
-                ->where('total', '>', 0)
-                ->orderByDesc('updated_at')
-                ->get(['id', 'numero', 'mesa_id', 'canal', 'estado', 'total', 'subtotal', 'descuento', 'updated_at']);
 
         $totalesSesion = [
             'ventas' => 0.0,
             'efectivo' => 0.0,
             'tarjeta' => 0.0,
             'otros' => 0.0,
+            'egresos' => 0.0,
             'conteo' => 0,
         ];
+
+        $egresos = collect();
 
         if ($sesion !== null) {
             $ventasSesion = Venta::query()
@@ -78,19 +69,42 @@ class CajaController extends Controller
                 }
             }
 
+            $egresos = CajaEgreso::query()
+                ->with(['createdBy:id,name'])
+                ->where('caja_sesion_id', $sesion->id)
+                ->orderByDesc('created_at')
+                ->get();
+
+            $totalesSesion['egresos'] = round((float) $egresos->sum('monto'), 2);
             $totalesSesion['efectivo'] = round($totalesSesion['efectivo'], 2);
             $totalesSesion['tarjeta'] = round($totalesSesion['tarjeta'], 2);
             $totalesSesion['otros'] = round($totalesSesion['otros'], 2);
         }
 
+        $sistemaEfectivo = $sesion
+            ? round(
+                (float) $sesion->monto_apertura
+                + $totalesSesion['efectivo']
+                - (float) $egresos->where('medio', Pago::MEDIO_EFECTIVO)->sum('monto'),
+                2,
+            )
+            : 0.0;
+
         return Inertia::render('caja/index', [
             'sesion' => $sesion?->load(['openedBy:id,name']),
+            'sesiones' => $sesiones,
+            'egresos' => $egresos,
             'totales_sesion' => $totalesSesion,
-            'ventas_hoy' => $ventasHoy,
-            'pedidos_pendientes' => $pedidosPendientes,
+            'sistema_efectivo' => $sistemaEfectivo,
+            'motivos_egreso' => CajaEgreso::MOTIVOS,
             'medios' => Pago::MEDIOS,
             'filters' => [
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
+            ],
+            'stats' => [
+                'sesiones' => $sesiones->count(),
+                'abiertas' => $sesiones->where('estado', CajaSesion::ESTADO_ABIERTA)->count(),
+                'cerradas' => $sesiones->where('estado', CajaSesion::ESTADO_CERRADA)->count(),
             ],
         ]);
     }
@@ -129,27 +143,25 @@ class CajaController extends Controller
         return back()->with('success', 'Caja cerrada.');
     }
 
-    public function cobrar(Request $request, Pedido $pedido, CajaService $caja): RedirectResponse
+    public function egreso(Request $request, CajaService $caja): RedirectResponse
     {
         $this->tenantIdOrAbort();
-        ActiveSedeContext::assertAccessible((string) $pedido->sede_id);
+        $sedeId = $this->activeSedeIdOrAbort();
+
+        $sesion = $caja->sesionAbierta($sedeId);
+        if ($sesion === null) {
+            return back()->with('error', 'No hay caja abierta.');
+        }
 
         $data = $request->validate([
-            'descuento' => ['nullable', 'numeric', 'min:0'],
-            'pagos' => ['required', 'array', 'min:1'],
-            'pagos.*.medio' => ['required', Rule::in(Pago::MEDIOS)],
-            'pagos.*.monto' => ['required', 'numeric', 'min:0.01'],
-            'pagos.*.referencia' => ['nullable', 'string', 'max:120'],
+            'monto' => ['required', 'numeric', 'min:0.01', 'max:999999'],
+            'medio' => ['required', Rule::in(Pago::MEDIOS)],
+            'motivo' => ['required', Rule::in(CajaEgreso::MOTIVOS)],
+            'notas' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $venta = $caja->cobrarPedido(
-            $pedido,
-            $data['pagos'],
-            isset($data['descuento']) ? (float) $data['descuento'] : null,
-        );
+        $caja->registrarEgreso($sesion, $data);
 
-        return redirect()
-            ->route('caja.index')
-            ->with('success', 'Venta registrada por S/ '.number_format((float) $venta->total, 2));
+        return back()->with('success', 'Egreso registrado.');
     }
 }

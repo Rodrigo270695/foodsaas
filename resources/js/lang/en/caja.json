@@ -1,30 +1,61 @@
 {
-    "title": "Cash register",
-    "description": "Open and close shifts, charge orders, and review today's sales.",
+    "title": "Cash sessions",
+    "description": "Sessions are per branch and shift. Open, record payouts, and close when done.",
     "sesion": {
         "abierta": "Register open",
         "cerrada": "No open register",
+        "cerrada_hint": "Open a session to record payouts and allow charging in Sales.",
+        "tu_abierta": "Your open session",
+        "abierta_hint": "Close it at the end of the shift or before opening another at this branch.",
         "apertura": "Opening float",
         "contado": "Cash counted",
         "sistema": "System",
+        "notas": "Notes",
         "opened_by": "Opened by {{name}}",
-        "abrir": "Open register",
-        "cerrar": "Close register"
+        "abrir": "Open session",
+        "cerrar": "Close session",
+        "ir_cerrar": "Go to close",
+        "estado_abierta": "Open",
+        "estado_cerrada": "Closed"
     },
     "stats": {
-        "ventas": "Shift sales",
+        "ventas": "Period sales",
+        "apertura": "Opening balance",
         "efectivo": "Cash",
-        "tarjeta": "Card",
-        "otros": "Other",
+        "egresos": "Payouts",
         "conteo": "Tickets"
     },
     "sections": {
-        "pendientes": "Orders to charge",
-        "ventas_hoy": "Today's sales"
+        "egresos": "Session payouts",
+        "sesiones": "Session history"
+    },
+    "columns": {
+        "estado": "Status",
+        "apertura": "Opened",
+        "cierre": "Closed",
+        "saldo_apertura": "Opening balance",
+        "efectivo_cierre": "Closing cash",
+        "abierta_por": "Opened by"
     },
     "empty": {
-        "pendientes": "No orders waiting to be charged.",
-        "ventas": "No sales yet today."
+        "egresos": "No payouts in this session.",
+        "sesiones": "No sessions yet",
+        "sesiones_hint": "Open the first cash session for this branch."
+    },
+    "egreso": {
+        "registrar": "Record payout",
+        "guardar": "Save payout",
+        "monto": "Amount",
+        "motivo": "Reason",
+        "medio": "Method",
+        "motivos": {
+            "insumos": "Supplies",
+            "delivery": "Delivery",
+            "servicios": "Services",
+            "personal": "Staff",
+            "cambio": "Change",
+            "otros": "Other"
+        }
     },
     "medios": {
         "efectivo": "Cash",

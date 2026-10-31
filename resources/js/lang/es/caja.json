@@ -1,30 +1,61 @@
 {
-    "title": "Caja",
-    "description": "Abre y cierra turno, cobra pedidos y revisa ventas del día.",
+    "title": "Sesiones de caja",
+    "description": "Las sesiones son por sede y turno. Abre, registra egresos y cierra al finalizar.",
     "sesion": {
         "abierta": "Caja abierta",
         "cerrada": "Sin caja abierta",
+        "cerrada_hint": "Abre una sesión para registrar egresos y permitir cobros en Ventas.",
+        "tu_abierta": "Tu sesión abierta",
+        "abierta_hint": "Ciérrala al finalizar el turno o antes de abrir otra en la misma sede.",
         "apertura": "Monto de apertura",
         "contado": "Efectivo contado",
         "sistema": "Sistema",
+        "notas": "Notas",
         "opened_by": "Abierta por {{name}}",
-        "abrir": "Abrir caja",
-        "cerrar": "Cerrar caja"
+        "abrir": "Abrir sesión",
+        "cerrar": "Cerrar sesión",
+        "ir_cerrar": "Ir a cerrar",
+        "estado_abierta": "Abierta",
+        "estado_cerrada": "Cerrada"
     },
     "stats": {
-        "ventas": "Ventas sesión",
+        "ventas": "Ventas del periodo",
+        "apertura": "Saldo apertura",
         "efectivo": "Efectivo",
-        "tarjeta": "Tarjeta",
-        "otros": "Otros",
+        "egresos": "Egresos",
         "conteo": "Tickets"
     },
     "sections": {
-        "pendientes": "Pedidos por cobrar",
-        "ventas_hoy": "Ventas de hoy"
+        "egresos": "Egresos de la sesión",
+        "sesiones": "Historial de sesiones"
+    },
+    "columns": {
+        "estado": "Estado",
+        "apertura": "Apertura",
+        "cierre": "Cierre",
+        "saldo_apertura": "Saldo apertura",
+        "efectivo_cierre": "Efectivo cierre",
+        "abierta_por": "Apertura por"
     },
     "empty": {
-        "pendientes": "No hay pedidos pendientes de cobro.",
-        "ventas": "Aún no hay ventas hoy."
+        "egresos": "Sin egresos en esta sesión.",
+        "sesiones": "Aún no hay sesiones",
+        "sesiones_hint": "Abre la primera sesión de caja de esta sede."
+    },
+    "egreso": {
+        "registrar": "Registrar egreso",
+        "guardar": "Guardar egreso",
+        "monto": "Monto",
+        "motivo": "Motivo",
+        "medio": "Medio",
+        "motivos": {
+            "insumos": "Insumos",
+            "delivery": "Delivery / envíos",
+            "servicios": "Servicios",
+            "personal": "Personal",
+            "cambio": "Cambio / vuelto",
+            "otros": "Otros"
+        }
     },
     "medios": {
         "efectivo": "Efectivo",

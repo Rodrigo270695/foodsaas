@@ -9,6 +9,7 @@ use App\Http\Controllers\CocinaController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SalonController;
+use App\Http\Controllers\VentaController;
 use Illuminate\Support\Facades\Route;
 
 // Push en tenant (sin middleware verified: el fetch JSON no debe caer en redirect de verificación).
@@ -210,8 +211,22 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:caja.cerrar')
                     ->post('cerrar', [CajaController::class, 'cerrar'])
                     ->name('cerrar');
-                Route::middleware('permission:caja.cobrar|pedidos.cobrar')
-                    ->post('cobrar/{pedido}', [CajaController::class, 'cobrar'])
+                Route::middleware('permission:caja.egreso')
+                    ->post('egresos', [CajaController::class, 'egreso'])
+                    ->name('egresos.store');
+            });
+
+        Route::prefix('ventas')
+            ->name('ventas.')
+            ->group(function (): void {
+                Route::middleware('permission:ventas.view|caja.view')
+                    ->get('/', [VentaController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
+                    ->get('desde-pedido/{pedido}', [VentaController::class, 'cobrarForm'])
+                    ->name('desde-pedido');
+                Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
+                    ->post('cobrar/{pedido}', [VentaController::class, 'cobrar'])
                     ->name('cobrar');
             });
     });

@@ -1,0 +1,56 @@
+{
+    "title": "Ventas",
+    "description": "Cobra pedidos pendientes y revisa los tickets del día.",
+    "caja_cerrada": "Caja cerrada",
+    "caja_cerrada_hint": "Debes abrir una sesión de caja antes de cobrar.",
+    "ir_caja": "Ir a caja",
+    "stats": {
+        "pendientes": "Por cobrar",
+        "ventas_hoy": "Ventas hoy",
+        "total_hoy": "Total hoy"
+    },
+    "sections": {
+        "pendientes": "Pedidos por cobrar",
+        "hoy": "Ventas de hoy"
+    },
+    "columns": {
+        "pedido": "Pedido",
+        "mesa": "Mesa",
+        "mesero": "Mesero",
+        "total": "Total",
+        "acciones": "Acciones",
+        "hora": "Hora",
+        "medios": "Medios",
+        "cajero": "Cajero"
+    },
+    "actions": {
+        "cobrar": "Cobrar"
+    },
+    "empty": {
+        "pendientes": "No hay pedidos por cobrar",
+        "pendientes_hint": "Cuando haya ítems en cocina o listos, aparecerán aquí.",
+        "ventas": "Sin ventas hoy",
+        "ventas_hint": "Los cobros del día se listan aquí."
+    },
+    "cobrar": {
+        "title": "Cobrar pedido #{{numero}}",
+        "items": "Ítems a cobrar",
+        "subtotal": "Subtotal",
+        "total": "Total",
+        "descuento": "Descuento",
+        "medio": "Medio de pago",
+        "monto": "Monto",
+        "confirm": "Confirmar cobro"
+    },
+    "estado_linea": {
+        "pendiente": "Pendiente",
+        "en_cola": "En cocina",
+        "listo": "Listo",
+        "anulado": "Anulado"
+    },
+    "canal": {
+        "mesa": "Mesa",
+        "llevar": "Para llevar",
+        "delivery": "Delivery"
+    }
+}

@@ -83,4 +83,12 @@ class CajaSesion extends Model
     {
         return $this->hasMany(Venta::class, 'caja_sesion_id');
     }
+
+    /**
+     * @return HasMany<CajaEgreso, $this>
+     */
+    public function egresos(): HasMany
+    {
+        return $this->hasMany(CajaEgreso::class, 'caja_sesion_id')->orderByDesc('created_at');
+    }
 }
