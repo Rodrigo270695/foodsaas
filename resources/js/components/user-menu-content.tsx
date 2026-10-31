@@ -11,6 +11,7 @@ import {
     DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
+import { useOptionalSidebar } from '@/components/ui/sidebar';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import {
     LOCALE_STORAGE_KEY,
@@ -34,9 +35,18 @@ const LOCALE_LABELS: Record<SupportedLocale, { native: string; flag: string }> =
 export function UserMenuContent({ user }: Props) {
     const { t, i18n } = useTranslation(['nav', 'common']);
     const cleanup = useMobileNavigation();
+    const sidebar = useOptionalSidebar();
+
+    const closeMobileChrome = () => {
+        cleanup();
+        // Igual que los ítems del nav: en celular cierra el sheet del sidebar.
+        if (sidebar?.isMobile) {
+            sidebar.setOpenMobile(false);
+        }
+    };
 
     const handleLogout = () => {
-        cleanup();
+        closeMobileChrome();
         router.flushAll();
     };
 
@@ -65,7 +75,7 @@ export function UserMenuContent({ user }: Props) {
                         className="block w-full cursor-pointer"
                         href={edit()}
                         prefetch
-                        onClick={cleanup}
+                        onClick={closeMobileChrome}
                     >
                         <Settings className="mr-2" />
                         {t('nav:user_menu.settings')}
@@ -76,7 +86,7 @@ export function UserMenuContent({ user }: Props) {
                     <DropdownMenuItem
                         className="cursor-pointer"
                         onSelect={() => {
-                            cleanup();
+                            closeMobileChrome();
                             openPwaInstallHelp();
                         }}
                     >

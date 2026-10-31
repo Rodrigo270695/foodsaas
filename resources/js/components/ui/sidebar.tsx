@@ -51,6 +51,11 @@ function useSidebar() {
   return context
 }
 
+/** Como useSidebar, pero null si no hay SidebarProvider (p. ej. layout header). */
+function useOptionalSidebar() {
+  return React.useContext(SidebarContext)
+}
+
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -720,4 +725,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  useOptionalSidebar,
 }

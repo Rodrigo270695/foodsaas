@@ -20,8 +20,8 @@ export type PageHeaderProps = {
  * Cabecera de página estándar para listados / CRUDs.
  *
  * - Sticky al hacer scroll (dentro del área de contenido del layout).
- * - Descripción oculta en móvil (`sm+`); título y acciones siempre visibles.
- * - Desktop: título + descripción a la izquierda, acción a la derecha.
+ * - Título + acciones en la misma fila (móvil y desktop) para evitar hueco vacío.
+ * - Descripción oculta en móvil (`sm+`).
  */
 export function PageHeader({
     title,
@@ -37,21 +37,21 @@ export function PageHeader({
                 className,
             )}
         >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex items-start justify-between gap-3 sm:gap-6">
+                <div className="min-w-0 flex-1">
                     <h1 className="text-2xl font-semibold tracking-tight text-brand-600 sm:text-3xl">
                         {title}
                     </h1>
 
                     {description ? (
-                        <p className="hidden text-sm leading-relaxed text-muted-foreground sm:block">
+                        <p className="mt-2 hidden text-sm leading-relaxed text-muted-foreground sm:block">
                             {description}
                         </p>
                     ) : null}
                 </div>
 
                 {action ? (
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:self-start">
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 pt-0.5">
                         {action}
                     </div>
                 ) : null}
