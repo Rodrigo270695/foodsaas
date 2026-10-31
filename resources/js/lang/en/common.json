@@ -13,7 +13,30 @@
         "remove": "Remove",
         "undo": "Undo",
         "reload": "Refresh",
-        "more": "More actions"
+        "more": "More actions",
+        "clear": "Clear",
+        "apply": "Apply"
+    },
+    "date_range": {
+        "all_dates": "All dates",
+        "pick_hint": "Pick start and end",
+        "prev_month": "Previous month",
+        "next_month": "Next month",
+        "aria_filter": "Filter by date range",
+        "aria_clear": "Clear date filter",
+        "aria_close": "Close date filter",
+        "presets": {
+            "today": "Today",
+            "yesterday": "Yesterday",
+            "tomorrow": "Tomorrow",
+            "last_7": "Last 7 days",
+            "last_30": "Last 30 days",
+            "this_week": "This week",
+            "last_week": "Last week",
+            "this_month": "This month",
+            "last_month": "Last month",
+            "this_year": "This year"
+        }
     },
     "delete": {
         "title": "Confirm deletion",

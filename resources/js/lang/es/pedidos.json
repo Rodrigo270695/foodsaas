@@ -16,7 +16,7 @@
         "estado": "Estado",
         "activos": "Activos",
         "historico": "Histórico",
-        "historico_hint": "Cobrados y anulados del día seleccionado.",
+        "historico_hint": "Cobrados y anulados en el rango elegido.",
         "fecha": "Fecha",
         "cerrados": "Cerrados",
         "anulados": "Anulados",

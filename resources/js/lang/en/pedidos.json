@@ -16,7 +16,7 @@
         "estado": "Status",
         "activos": "Open",
         "historico": "History",
-        "historico_hint": "Paid and cancelled tickets for the selected day.",
+        "historico_hint": "Paid and cancelled tickets in the selected range.",
         "fecha": "Date",
         "cerrados": "Closed",
         "anulados": "Cancelled",

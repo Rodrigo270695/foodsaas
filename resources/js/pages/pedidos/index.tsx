@@ -17,6 +17,7 @@ import {
     type DataTableColumn,
 } from '@/components/data-page';
 import { Can } from '@/components/can';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -28,8 +29,6 @@ import {
     FilterSelect,
     type FilterSelectOption,
 } from '@/components/ui/filter-select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
@@ -61,7 +60,8 @@ type Props = {
     mesas_libres: MesaLibre[];
     filters: {
         estado: string;
-        fecha: string | null;
+        desde: string | null;
+        hasta: string | null;
         sede_id: string | null;
     };
     stats: { activos: number; en_cola: number; cerrados_hoy: number };
@@ -117,7 +117,8 @@ export default function Index({
 
     const { isLoading, setPerPage, applyFilter } = useDataTablePage<{
         estado: string;
-        fecha: string | null;
+        desde: string | null;
+        hasta: string | null;
     }>({
         routeUrl: pedidos.index().url,
         initialFilters: {
@@ -130,6 +131,14 @@ export default function Index({
         storageKey: 'foodsaas.pedidos.prefs',
         defaults: { per_page: 20 },
     });
+
+    const showDateRange =
+        isHistorico ||
+        filters.estado === 'todos' ||
+        filters.estado === 'cerrados' ||
+        filters.estado === 'anulados';
+
+    const todayIso = () => new Date().toISOString().slice(0, 10);
 
     const estadoOptions = useMemo<readonly FilterSelectOption<string>[]>(
         () => [
@@ -292,60 +301,59 @@ export default function Index({
                     }
                 />
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                     <FilterSelect
                         ariaLabel={t('filters.estado')}
                         value={filters.estado}
                         onChange={(estado) => {
                             if (estado === 'historico') {
+                                const day = todayIso();
                                 applyFilter({
                                     estado,
-                                    fecha:
-                                        filters.fecha ??
-                                        new Date().toISOString().slice(0, 10),
+                                    desde: filters.desde ?? day,
+                                    hasta: filters.hasta ?? day,
                                 });
                                 return;
                             }
-                            applyFilter({
-                                estado,
-                                fecha: null,
-                            });
+                            if (estado === 'activos') {
+                                applyFilter({
+                                    estado,
+                                    desde: null,
+                                    hasta: null,
+                                });
+                                return;
+                            }
+                            applyFilter({ estado });
                         }}
                         options={estadoOptions}
                         disabled={isLoading}
                     />
 
-                    {isHistorico || filters.estado === 'todos' ? (
-                        <div className="grid gap-1.5">
-                            <Label
-                                htmlFor="pedidos-fecha"
-                                className="text-xs text-muted-foreground"
-                            >
-                                {t('filters.fecha', {
-                                    defaultValue: 'Fecha',
-                                })}
-                            </Label>
-                            <Input
-                                id="pedidos-fecha"
-                                type="date"
-                                className="w-auto min-w-[11rem]"
-                                value={filters.fecha ?? ''}
-                                disabled={isLoading}
-                                onChange={(e) =>
-                                    applyFilter({
-                                        fecha: e.target.value || null,
-                                    })
+                    {showDateRange ? (
+                        <DateRangeFilter
+                            desde={filters.desde}
+                            hasta={filters.hasta}
+                            disabled={isLoading}
+                            onApply={(desde, hasta) =>
+                                applyFilter({ desde, hasta })
+                            }
+                            onClear={() => {
+                                if (filters.estado === 'historico') {
+                                    const day = todayIso();
+                                    applyFilter({ desde: day, hasta: day });
+                                    return;
                                 }
-                            />
-                        </div>
+                                applyFilter({ desde: null, hasta: null });
+                            }}
+                        />
                     ) : null}
 
                     {filters.estado === 'historico' ? (
-                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground sm:pb-2">
-                            <History className="size-3.5" />
+                        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <History className="size-3.5 shrink-0" />
                             {t('filters.historico_hint', {
                                 defaultValue:
-                                    'Cobrados y anulados del día seleccionado.',
+                                    'Cobrados y anulados en el rango elegido.',
                             })}
                         </p>
                     ) : null}
@@ -362,7 +370,8 @@ export default function Index({
                             onPerPageChange={setPerPage}
                             preservedQuery={{
                                 estado: filters.estado,
-                                fecha: filters.fecha || undefined,
+                                desde: filters.desde || undefined,
+                                hasta: filters.hasta || undefined,
                             }}
                         />
                     }

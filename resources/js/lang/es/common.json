@@ -13,7 +13,30 @@
         "remove": "Quitar",
         "undo": "Deshacer",
         "reload": "Actualizar",
-        "more": "Más acciones"
+        "more": "Más acciones",
+        "clear": "Limpiar",
+        "apply": "Aplicar"
+    },
+    "date_range": {
+        "all_dates": "Todas las fechas",
+        "pick_hint": "Elige el inicio y el fin",
+        "prev_month": "Mes anterior",
+        "next_month": "Mes siguiente",
+        "aria_filter": "Filtrar por rango de fechas",
+        "aria_clear": "Quitar filtro de fecha",
+        "aria_close": "Cerrar filtro de fechas",
+        "presets": {
+            "today": "Hoy",
+            "yesterday": "Ayer",
+            "tomorrow": "Mañana",
+            "last_7": "Últimos 7 días",
+            "last_30": "Últimos 30 días",
+            "this_week": "Esta semana",
+            "last_week": "Semana pasada",
+            "this_month": "Este mes",
+            "last_month": "Mes anterior",
+            "this_year": "Este año"
+        }
     },
     "delete": {
         "title": "Confirmar eliminación",

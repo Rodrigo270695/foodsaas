@@ -33,14 +33,31 @@ class PedidoController extends Controller
             $estado = 'activos';
         }
 
-        $fecha = trim((string) $request->string('fecha', ''));
-        if ($fecha !== '' && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-            $fecha = '';
+        $parseDate = static function (string $value): string {
+            $value = trim($value);
+
+            return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : '';
+        };
+
+        $desde = $parseDate((string) $request->string('desde', ''));
+        $hasta = $parseDate((string) $request->string('hasta', ''));
+
+        // Compatibilidad con filtro antiguo `fecha` (un solo día).
+        $fechaLegacy = $parseDate((string) $request->string('fecha', ''));
+        if ($desde === '' && $hasta === '' && $fechaLegacy !== '') {
+            $desde = $fechaLegacy;
+            $hasta = $fechaLegacy;
         }
 
-        // Histórico sin fecha → hoy (evita listar años de tickets de golpe).
-        if ($estado === 'historico' && $fecha === '') {
-            $fecha = now()->toDateString();
+        // Histórico sin rango → hoy.
+        if ($estado === 'historico' && $desde === '' && $hasta === '') {
+            $hoyDefault = now()->toDateString();
+            $desde = $hoyDefault;
+            $hasta = $hoyDefault;
+        }
+
+        if ($desde !== '' && $hasta !== '' && $desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
         }
 
         $query = Pedido::query()
@@ -65,8 +82,11 @@ class PedidoController extends Controller
             default => null,
         };
 
-        if ($fecha !== '') {
-            $query->whereDate('created_at', $fecha);
+        if ($desde !== '') {
+            $query->whereDate('created_at', '>=', $desde);
+        }
+        if ($hasta !== '') {
+            $query->whereDate('created_at', '<=', $hasta);
         }
 
         $pedidos = $query->paginate((int) $request->integer('per_page', 20))->withQueryString();
@@ -87,7 +107,8 @@ class PedidoController extends Controller
             'mesas_libres' => $mesasLibres,
             'filters' => [
                 'estado' => $estado,
-                'fecha' => $fecha !== '' ? $fecha : null,
+                'desde' => $desde !== '' ? $desde : null,
+                'hasta' => $hasta !== '' ? $hasta : null,
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
             ],
             'stats' => [
