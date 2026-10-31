@@ -60,8 +60,10 @@ Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-chan
         Route::get('provincias', [GeoController::class, 'provincias'])->name('provincias');
         Route::get('distritos', [GeoController::class, 'distritos'])->name('distritos');
     });
+});
 
-    // Web Push (tablet/PWA): suena aunque la app esté minimizada u otra pestaña.
+// Web Push: auth suficiente (sin verified) para no romper fetch JSON si el correo no está marcado.
+Route::middleware(['auth', 'tenant.match-user', 'force-password-change'])->group(function () {
     Route::get('push/status', [PushSubscriptionController::class, 'status'])
         ->name('push.status');
     Route::post('push/subscribe', [PushSubscriptionController::class, 'store'])

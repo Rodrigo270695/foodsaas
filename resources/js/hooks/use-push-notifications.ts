@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 import {
+    fetchPushStatusDetailed,
     isPushSupported,
     isServiceWorkerControlling,
     subscribeToPush,
@@ -35,24 +36,6 @@ function readXsrfToken(): string {
     return m?.[1] ? decodeURIComponent(m[1]) : '';
 }
 
-async function fetchPushStatus(): Promise<boolean> {
-    const response = await fetch('/push/status', {
-        headers: {
-            Accept: 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-        credentials: 'same-origin',
-    });
-
-    if (!response.ok) {
-        return false;
-    }
-
-    const data = (await response.json()) as { subscribed?: boolean };
-
-    return Boolean(data.subscribed);
-}
-
 export function usePushNotifications(): UsePushNotificationsResult {
     const { push } = usePage().props as { push?: PushShared | null };
     const browserSupported = isPushSupported();
@@ -85,19 +68,58 @@ export function usePushNotifications(): UsePushNotificationsResult {
                 }
 
                 void registration.update();
-
-                const existing = await registration.pushManager.getSubscription();
-                const onServer = await fetchPushStatus();
-
-                // Activo de verdad = navegador + fila en BD (antes solo mirábamos el browser).
-                setSubscribed(existing !== null && onServer);
                 setSwReady(isServiceWorkerControlling());
 
-                if (existing !== null && !onServer) {
-                    setError(
-                        'El navegador tiene permiso, pero el servidor no tiene tu suscripción. Pulsa Activar de nuevo.',
-                    );
+                const existing = await registration.pushManager.getSubscription();
+                const status = await fetchPushStatusDetailed();
+
+                if (cancelled) {
+                    return;
                 }
+
+                if (!status.ok) {
+                    setSubscribed(false);
+                    setError(
+                        status.message ??
+                            'No se pudo hablar con el servidor de push. ¿Desplegaste las rutas /push/*?',
+                    );
+                    return;
+                }
+
+                if (existing !== null && !status.subscribed) {
+                    // Autocuración: Chrome ya tiene la suscripción; la reenviamos al servidor.
+                    try {
+                        await subscribeToPush(
+                            registration,
+                            push?.vapidPublicKey ?? '',
+                        );
+                        const again = await fetchPushStatusDetailed();
+                        if (cancelled) {
+                            return;
+                        }
+                        setSubscribed(again.subscribed);
+                        setError(
+                            again.subscribed
+                                ? null
+                                : (again.message ??
+                                  'No se pudo guardar la suscripción en el servidor. Pulsa Activar.'),
+                        );
+                        return;
+                    } catch (caught) {
+                        if (!cancelled) {
+                            setSubscribed(false);
+                            setError(
+                                caught instanceof Error
+                                    ? caught.message
+                                    : 'El navegador tiene permiso, pero el servidor rechazó la suscripción.',
+                            );
+                        }
+                        return;
+                    }
+                }
+
+                setSubscribed(existing !== null && status.subscribed);
+                setError(null);
             } catch {
                 if (!cancelled) {
                     setSwReady(false);
@@ -111,7 +133,7 @@ export function usePushNotifications(): UsePushNotificationsResult {
         return () => {
             cancelled = true;
         };
-    }, [supported]);
+    }, [supported, push?.vapidPublicKey]);
 
     const enable = useCallback(async () => {
         if (!browserSupported) {
@@ -140,13 +162,14 @@ export function usePushNotifications(): UsePushNotificationsResult {
             }
 
             await subscribeToPush(registration, push.vapidPublicKey);
-            const onServer = await fetchPushStatus();
-            setSubscribed(onServer);
+            const status = await fetchPushStatusDetailed();
+            setSubscribed(status.subscribed);
             setSwReady(isServiceWorkerControlling());
 
-            if (!onServer) {
+            if (!status.subscribed) {
                 setError(
-                    'El navegador se suscribió, pero el servidor no guardó la suscripción. Revisa la consola/red (POST /push/subscribe).',
+                    status.message ??
+                        'El servidor no confirmó la suscripción. Revisa la pestaña Red → POST /push/subscribe.',
                 );
             }
         } catch (caught) {

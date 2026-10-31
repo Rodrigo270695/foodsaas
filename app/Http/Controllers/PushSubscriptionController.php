@@ -47,7 +47,7 @@ final class PushSubscriptionController extends Controller
             'contentEncoding' => ['nullable', 'string', 'max:32'],
         ]);
 
-        PushSubscription::query()->updateOrCreate(
+        $subscription = PushSubscription::query()->updateOrCreate(
             ['endpoint' => $data['endpoint']],
             [
                 'user_id' => $user->id,
@@ -57,7 +57,11 @@ final class PushSubscriptionController extends Controller
             ],
         );
 
-        return response()->json(['ok' => true]);
+        return response()->json([
+            'ok' => true,
+            'id' => $subscription->id,
+            'user_id' => $subscription->user_id,
+        ]);
     }
 
     public function destroy(Request $request): Response
