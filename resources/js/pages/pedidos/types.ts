@@ -17,6 +17,9 @@ export type PedidoRow = {
     created_at: string;
     cerrado_at?: string | null;
     mesa?: { id: string; codigo: string; nombre: string | null } | null;
+    /** Relación Eloquent `openedBy` (quien abrió la comanda). */
+    openedBy?: { id: number; name: string } | null;
+    opened_by?: { id: number; name: string } | null;
 };
 
 export type PedidosFilters = {
@@ -37,6 +40,7 @@ export type PedidosIndexProps = {
     mesas_libres: MesaLibre[];
     filters: PedidosFilters;
     stats: PedidosStats;
+    can_view_all?: boolean;
 };
 
 export function money(value: string | number): string {

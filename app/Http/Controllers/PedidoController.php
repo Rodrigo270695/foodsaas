@@ -11,9 +11,11 @@ use App\Models\Pedido;
 use App\Models\PedidoLinea;
 use App\Models\ProductoCarta;
 use App\Services\Operacion\PedidoService;
+use App\Support\Operacion\PedidoVisibility;
 use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -64,6 +66,9 @@ class PedidoController extends Controller
             [$desde, $hasta] = [$hasta, $desde];
         }
 
+        $user = Auth::user();
+        $canViewAll = PedidoVisibility::canViewAll($user);
+
         $query = Pedido::query()
             ->with(['mesa:id,codigo,nombre', 'openedBy:id,name'])
             ->withCount([
@@ -77,6 +82,8 @@ class PedidoController extends Controller
         } else {
             $query->whereRaw('1 = 0');
         }
+
+        PedidoVisibility::constrainQuery($query, $user);
 
         match ($estado) {
             'activos' => $query->whereIn('estado', Pedido::ESTADOS_ACTIVOS),
@@ -106,6 +113,18 @@ class PedidoController extends Controller
 
         $hoy = now()->toDateString();
 
+        $scopedPedidos = static function () use ($sedeId, $user) {
+            $q = Pedido::query();
+            if ($sedeId === '') {
+                return $q->whereRaw('1 = 0');
+            }
+
+            return PedidoVisibility::constrainQuery(
+                $q->where('sede_id', $sedeId),
+                $user,
+            );
+        };
+
         return Inertia::render('pedidos/index', [
             'pedidos' => $pedidos,
             'mesas_libres' => $mesasLibres,
@@ -116,17 +135,20 @@ class PedidoController extends Controller
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
             ],
             'stats' => [
-                'activos' => $sedeId === '' ? 0 : Pedido::query()->where('sede_id', $sedeId)->whereIn('estado', Pedido::ESTADOS_ACTIVOS)->count(),
+                'activos' => $scopedPedidos()->whereIn('estado', Pedido::ESTADOS_ACTIVOS)->count(),
                 'en_cola' => $sedeId === '' ? 0 : PedidoLinea::query()
                     ->where('estado', PedidoLinea::ESTADO_EN_COLA)
-                    ->whereHas('pedido', fn ($q) => $q->where('sede_id', $sedeId)->whereIn('estado', Pedido::ESTADOS_ACTIVOS))
+                    ->whereHas('pedido', function ($q) use ($sedeId, $user): void {
+                        $q->where('sede_id', $sedeId)->whereIn('estado', Pedido::ESTADOS_ACTIVOS);
+                        PedidoVisibility::constrainQuery($q, $user);
+                    })
                     ->count(),
-                'cerrados_hoy' => $sedeId === '' ? 0 : Pedido::query()
-                    ->where('sede_id', $sedeId)
+                'cerrados_hoy' => $scopedPedidos()
                     ->where('estado', Pedido::ESTADO_CERRADO)
                     ->whereDate('created_at', $hoy)
                     ->count(),
             ],
+            'can_view_all' => $canViewAll,
         ]);
     }
 
@@ -160,8 +182,7 @@ class PedidoController extends Controller
 
     public function show(Pedido $pedido): Response
     {
-        $this->tenantIdOrAbort();
-        ActiveSedeContext::assertAccessible((string) $pedido->sede_id);
+        $this->assertPedidoAccessible($pedido);
 
         $pedido->load([
             'mesa:id,codigo,nombre,capacidad',
@@ -306,6 +327,7 @@ class PedidoController extends Controller
     {
         $this->tenantIdOrAbort();
         ActiveSedeContext::assertAccessible((string) $pedido->sede_id);
+        PedidoVisibility::assertCanView($pedido, Auth::user());
     }
 
     private function assertLineaDelPedido(Pedido $pedido, PedidoLinea $linea): void

@@ -7,6 +7,7 @@ import {
     Unlink2,
     Users,
 } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -166,8 +167,9 @@ export function MesaUnionCard({
     joinHighlight = null,
     onJoinDragStart,
 }: MesaUnionCardProps) {
-    const { t } = useTranslation(['salon', 'common']);
+    const { t } = useTranslation(['salon', 'pedidos', 'common']);
     const { can } = usePermission();
+    const page = usePage<{ auth?: { user?: { id?: number | string } } }>();
     const primary = mesas[0];
     if (!primary) {
         return null;
@@ -181,6 +183,11 @@ export function MesaUnionCard({
     const occupied = mesas.some((m) => Boolean(m.pedidos?.[0]));
     const canPedido =
         can('pedidos.view') || can('pedidos.create');
+    const pedidoAccess = {
+        userId: page.props.auth?.user?.id,
+        canViewAll: can('pedidos.view-all'),
+        ajenoMessage: t('salon.pedido_ajeno', { ns: 'pedidos' }),
+    };
     const primaryEnabled = isGestionar
         ? Boolean(onJoinTap)
         : Boolean(onJoinTap || (allActive && canPedido));
@@ -364,7 +371,7 @@ export function MesaUnionCard({
                         return;
                     }
                     if (!isGestionar && canPedido) {
-                        openOrCreateUnionPedido(mesas);
+                        openOrCreateUnionPedido(mesas, pedidoAccess);
                     }
                 }}
                 onKeyDown={(e) => {
@@ -378,7 +385,7 @@ export function MesaUnionCard({
                             return;
                         }
                         if (!isGestionar && canPedido) {
-                            openOrCreateUnionPedido(mesas);
+                            openOrCreateUnionPedido(mesas, pedidoAccess);
                         }
                     }
                 }}

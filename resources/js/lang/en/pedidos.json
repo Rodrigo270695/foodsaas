@@ -32,11 +32,19 @@
     "columns": {
         "numero": "No.",
         "mesa": "Table",
+        "mesero": "Waiter",
         "canal": "Channel",
         "estado": "Status",
         "total": "Total",
         "fecha": "Date",
         "hora": "Time"
+    },
+    "scope": {
+        "own_only": "You only see orders you opened.",
+        "all": "You see all orders for this venue."
+    },
+    "salon": {
+        "pedido_ajeno": "Another waiter opened this order. You do not have permission to view it."
     },
     "estado": {
         "borrador": "Draft",

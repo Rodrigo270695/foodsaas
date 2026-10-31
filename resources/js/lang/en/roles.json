@@ -158,6 +158,9 @@
         "carta": "Menu",
         "almacen": "Warehouse",
         "salon": "Dining room",
+        "pedidos": "Orders",
+        "cocina": "Kitchen",
+        "caja": "Cashier",
         "roles": "Roles",
         "horarios": "Schedules",
         "bloqueos": "Time blocks",
@@ -199,6 +202,12 @@
         "manage-categorias": "Manage categories",
         "manage-areas": "Manage areas",
         "armar": "Build menu",
-        "ajustar": "Adjust stock"
+        "ajustar": "Adjust stock",
+        "view-all": "View all (not only own)",
+        "enviar": "Send to kitchen",
+        "anular": "Void",
+        "cobrar": "Charge",
+        "abrir": "Open session",
+        "cerrar": "Close session"
     }
 }

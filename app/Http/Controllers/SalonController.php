@@ -56,7 +56,7 @@ class SalonController extends Controller
                 'zona:id,nombre',
                 'pedidos' => fn ($q) => $q
                     ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
-                    ->select(['id', 'mesa_id', 'numero', 'estado', 'total', 'comensales'])
+                    ->select(['id', 'mesa_id', 'numero', 'estado', 'total', 'comensales', 'opened_by'])
                     ->latest('created_at')
                     ->limit(1),
             ])

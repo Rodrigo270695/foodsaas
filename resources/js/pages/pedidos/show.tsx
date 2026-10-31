@@ -62,6 +62,8 @@ type PedidoShow = {
     total: string | number;
     notas: string | null;
     mesa?: { id: string; codigo: string; nombre: string | null } | null;
+    openedBy?: { id: number; name: string } | null;
+    opened_by?: { id: number; name: string } | null;
     lineas: Linea[];
 };
 
@@ -225,11 +227,16 @@ export default function Show({ pedido, productos, categorias }: Props) {
             <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('show_title', { numero: pedido.numero })}
-                    description={
+                    description={[
                         pedido.mesa
                             ? `${t('form.mesa')}: ${pedido.mesa.nombre?.trim() || pedido.mesa.codigo}`
-                            : t(`canal.${pedido.canal}`)
-                    }
+                            : t(`canal.${pedido.canal}`),
+                        (pedido.openedBy?.name || pedido.opened_by?.name)
+                            ? `${t('columns.mesero')}: ${pedido.openedBy?.name ?? pedido.opened_by?.name}`
+                            : null,
+                    ]
+                        .filter(Boolean)
+                        .join(' · ')}
                     action={
                         <div className="flex flex-wrap items-center gap-2">
                             <Button variant="outline" size="sm" asChild>

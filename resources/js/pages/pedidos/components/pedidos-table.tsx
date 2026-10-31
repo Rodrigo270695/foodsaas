@@ -61,6 +61,17 @@ export function PedidosTable({
                         : t(`canal.${row.canal}`),
             },
             {
+                key: 'mesero',
+                header: t('columns.mesero'),
+                cell: (row) => (
+                    <span className="text-sm text-muted-foreground">
+                        {row.openedBy?.name?.trim() ||
+                            row.opened_by?.name?.trim() ||
+                            '—'}
+                    </span>
+                ),
+            },
+            {
                 key: 'estado',
                 header: t('columns.estado'),
                 cell: (row) => (

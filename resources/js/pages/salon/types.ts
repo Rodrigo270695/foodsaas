@@ -25,6 +25,7 @@ export type MesaPedidoActivo = {
     estado: string;
     total: string | number;
     comensales: number;
+    opened_by?: number | string | null;
 };
 
 export type MesaSalon = {

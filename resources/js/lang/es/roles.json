@@ -158,6 +158,9 @@
         "carta": "Carta",
         "almacen": "Almacén",
         "salon": "Salón",
+        "pedidos": "Pedidos",
+        "cocina": "Cocina",
+        "caja": "Caja",
         "roles": "Roles",
         "horarios": "Horarios",
         "bloqueos": "Bloqueos",
@@ -199,6 +202,12 @@
         "manage-categorias": "Gestionar categorías",
         "manage-areas": "Gestionar áreas",
         "armar": "Armar carta",
-        "ajustar": "Ajustar stock"
+        "ajustar": "Ajustar stock",
+        "view-all": "Ver todos (no solo los propios)",
+        "enviar": "Enviar a cocina",
+        "anular": "Anular",
+        "cobrar": "Cobrar",
+        "abrir": "Abrir sesión",
+        "cerrar": "Cerrar sesión"
     }
 }

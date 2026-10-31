@@ -59,6 +59,7 @@ class TenantRolesSeeder extends Seeder
                 'salon.update',
                 'salon.delete',
                 'pedidos.view',
+                'pedidos.view-all',
                 'pedidos.create',
                 'pedidos.update',
                 'pedidos.enviar',
@@ -87,6 +88,7 @@ class TenantRolesSeeder extends Seeder
                 'almacen.view',
                 'salon.view',
                 'pedidos.view',
+                'pedidos.view-all',
                 'pedidos.create',
                 'pedidos.update',
                 'pedidos.enviar',
@@ -98,7 +100,8 @@ class TenantRolesSeeder extends Seeder
             ],
         ],
         'mesero' => [
-            'description' => 'Mesas y pedidos en sala.',
+            // Sin view-all: solo ve/edita pedidos que él abrió (opened_by).
+            'description' => 'Mesas y pedidos en sala (solo los suyos).',
             'permissions' => [
                 'dashboard.view',
                 'carta.view',

@@ -28,11 +28,15 @@ export default function Index({
     mesas_libres,
     filters,
     stats,
+    can_view_all = false,
 }: PedidosIndexProps) {
     const { t } = useTranslation(['pedidos', 'common']);
     const { can } = usePermission();
     const [openNew, setOpenNew] = useState(false);
     const historico = isHistoricoEstado(filters.estado);
+    const scopeHint = can_view_all
+        ? t('scope.all')
+        : t('scope.own_only');
 
     const { isLoading, setPerPage, applyFilter } = useDataTablePage<{
         estado: string;
@@ -80,7 +84,7 @@ export default function Index({
             <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('title')}
-                    description={t('description')}
+                    description={`${t('description')} ${scopeHint}`}
                     stats={[
                         {
                             label: t('stats.activos'),

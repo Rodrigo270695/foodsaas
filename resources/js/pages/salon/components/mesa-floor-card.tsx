@@ -7,6 +7,7 @@ import {
     Unlink2,
     Users,
 } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -151,10 +152,16 @@ export function MesaFloorCard({
     joinHighlight = null,
     onJoinDragStart,
 }: MesaFloorCardProps) {
-    const { t } = useTranslation(['salon', 'common']);
+    const { t } = useTranslation(['salon', 'pedidos', 'common']);
     const { can } = usePermission();
+    const page = usePage<{ auth?: { user?: { id?: number | string } } }>();
     const isGestionar = mode === 'gestionar';
     const pedidoActivo = mesa.pedidos?.[0] ?? null;
+    const pedidoAccess = {
+        userId: page.props.auth?.user?.id,
+        canViewAll: can('pedidos.view-all'),
+        ajenoMessage: t('salon.pedido_ajeno', { ns: 'pedidos' }),
+    };
     const occupied = Boolean(pedidoActivo);
     const available = mesa.activa && !occupied;
     const joined = Boolean(mesa.union_id);
@@ -354,7 +361,7 @@ export function MesaFloorCard({
                             (available && can('pedidos.create')) ||
                             (occupied && can('pedidos.view'))
                         ) {
-                            openOrCreateMesaPedido(mesa);
+                            openOrCreateMesaPedido(mesa, pedidoAccess);
                         }
                         return;
                     }

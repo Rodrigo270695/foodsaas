@@ -32,11 +32,19 @@
     "columns": {
         "numero": "Nº",
         "mesa": "Mesa",
+        "mesero": "Mesero",
         "canal": "Canal",
         "estado": "Estado",
         "total": "Total",
         "fecha": "Fecha",
         "hora": "Hora"
+    },
+    "scope": {
+        "own_only": "Ves solo los pedidos que abriste.",
+        "all": "Ves todos los pedidos de la sede."
+    },
+    "salon": {
+        "pedido_ajeno": "Este pedido lo abrió otro mesero. No tienes permiso para verlo."
     },
     "estado": {
         "borrador": "Borrador",
