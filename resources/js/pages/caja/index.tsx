@@ -587,8 +587,10 @@ export default function Index({
             <SesionEgresoModal
                 open={egresoOpen}
                 onOpenChange={setEgresoOpen}
+                egresos={egresos}
                 motivos={motivos_egreso}
                 medios={medios}
+                moneda={sesion?.moneda ?? sesion_sede?.moneda ?? 'PEN'}
             />
 
             <SesionReabrirDialog
