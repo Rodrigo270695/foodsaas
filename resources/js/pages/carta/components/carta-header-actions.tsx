@@ -177,7 +177,7 @@ export function CartaHeaderActions({
                     <ActionTip label={t('actions.export')}>
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="export"
                             size="icon"
                             asChild
                             className="cursor-pointer"

@@ -370,7 +370,7 @@ export default function Index({
                             {canExport && (
                                 <Button
                                     asChild
-                                    variant="outline"
+                                    variant="export"
                                     className="cursor-pointer gap-2"
                                 >
                                     <a href={exportUrl} download>

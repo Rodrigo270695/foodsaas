@@ -347,7 +347,7 @@ export default function Index({ productos: paginated, filters, stats }: Props) {
                                     <TooltipTrigger asChild>
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            variant="export"
                                             onClick={exportStock}
                                             className="cursor-pointer gap-2"
                                         >

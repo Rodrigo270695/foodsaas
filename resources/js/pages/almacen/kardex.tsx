@@ -136,7 +136,7 @@ export default function Kardex({ producto, movimientos, filters }: Props) {
                             <Can permission="almacen.export">
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="export"
                                     className="cursor-pointer gap-2"
                                     onClick={() => {
                                         window.location.href =
