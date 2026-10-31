@@ -1,0 +1,73 @@
+{
+    "title": "Orders",
+    "description": "Open dining-room or counter tickets, send to kitchen, and charge.",
+    "show_title": "Order #{{numero}}",
+    "actions": {
+        "new": "New order",
+        "new_short": "Order",
+        "mostrador": "Counter",
+        "enviar": "Send to kitchen",
+        "anular": "Cancel order",
+        "cobrar": "Charge",
+        "add_item": "Add",
+        "open": "Open"
+    },
+    "filters": {
+        "estado": "Status",
+        "activos": "Open",
+        "cerrados": "Closed",
+        "anulados": "Cancelled",
+        "todos": "All"
+    },
+    "stats": {
+        "activos": "Open",
+        "en_cola": "In kitchen"
+    },
+    "columns": {
+        "numero": "No.",
+        "mesa": "Table",
+        "canal": "Channel",
+        "estado": "Status",
+        "total": "Total",
+        "hora": "Time"
+    },
+    "estado": {
+        "borrador": "Draft",
+        "abierto": "Open",
+        "cerrado": "Closed",
+        "anulado": "Cancelled"
+    },
+    "linea_estado": {
+        "pendiente": "Pending",
+        "en_cola": "In kitchen",
+        "listo": "Ready",
+        "anulado": "Cancelled"
+    },
+    "canal": {
+        "salon": "Dining room",
+        "mostrador": "Counter",
+        "delivery": "Delivery"
+    },
+    "empty": {
+        "title": "No orders",
+        "description": "Open an order here or tap a free table in the dining room."
+    },
+    "form": {
+        "mesa": "Table",
+        "comensales": "Guests",
+        "notas": "Notes",
+        "cantidad": "Qty",
+        "buscar_producto": "Search product…"
+    },
+    "cobro": {
+        "title": "Charge order",
+        "medio": "Method",
+        "monto": "Amount",
+        "descuento": "Discount",
+        "total": "Amount due",
+        "confirm": "Confirm payment"
+    },
+    "toast": {
+        "load_error": "Could not load orders."
+    }
+}

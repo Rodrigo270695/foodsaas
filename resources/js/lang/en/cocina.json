@@ -1,0 +1,29 @@
+{
+    "title": "Kitchen",
+    "description": "Prep queue by station. Mark items ready to serve.",
+    "filters": {
+        "area": "Station",
+        "area_all": "All stations",
+        "vista": "View",
+        "cola": "Queue",
+        "listos": "Ready",
+        "todos": "All"
+    },
+    "stats": {
+        "en_cola": "In queue",
+        "listos": "Ready"
+    },
+    "actions": {
+        "listo": "Ready",
+        "refresh": "Refresh"
+    },
+    "ticket": {
+        "pedido": "Order #{{numero}}",
+        "mesa": "Table {{codigo}}",
+        "mostrador": "Counter"
+    },
+    "empty": {
+        "title": "Kitchen is clear",
+        "description": "Tickets appear here when the floor sends them."
+    }
+}

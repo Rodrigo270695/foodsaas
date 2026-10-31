@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Http\Requests\MesaRequest;
 use App\Http\Requests\ZonaRequest;
 use App\Models\Mesa;
+use App\Models\Pedido;
 use App\Models\Sede;
 use App\Models\Zona;
 use App\Services\Sedes\CopySalonToSedeService;
@@ -51,7 +52,14 @@ class SalonController extends Controller
         }
 
         $mesasQuery = Mesa::query()
-            ->with(['zona:id,nombre'])
+            ->with([
+                'zona:id,nombre',
+                'pedidos' => fn ($q) => $q
+                    ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+                    ->select(['id', 'mesa_id', 'numero', 'estado', 'total', 'comensales'])
+                    ->latest('created_at')
+                    ->limit(1),
+            ])
             ->orderBy('codigo');
 
         if ($sedeId !== '') {

@@ -1,0 +1,37 @@
+{
+    "title": "Cash register",
+    "description": "Open and close shifts, charge orders, and review today's sales.",
+    "sesion": {
+        "abierta": "Register open",
+        "cerrada": "No open register",
+        "apertura": "Opening float",
+        "contado": "Cash counted",
+        "sistema": "System",
+        "opened_by": "Opened by {{name}}",
+        "abrir": "Open register",
+        "cerrar": "Close register"
+    },
+    "stats": {
+        "ventas": "Shift sales",
+        "efectivo": "Cash",
+        "tarjeta": "Card",
+        "otros": "Other",
+        "conteo": "Tickets"
+    },
+    "sections": {
+        "pendientes": "Orders to charge",
+        "ventas_hoy": "Today's sales"
+    },
+    "empty": {
+        "pendientes": "No orders waiting to be charged.",
+        "ventas": "No sales yet today."
+    },
+    "medios": {
+        "efectivo": "Cash",
+        "tarjeta": "Card",
+        "yape": "Yape",
+        "plin": "Plin",
+        "transferencia": "Transfer",
+        "otro": "Other"
+    }
+}

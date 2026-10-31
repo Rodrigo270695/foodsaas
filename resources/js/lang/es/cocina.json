@@ -1,0 +1,29 @@
+{
+    "title": "Cocina",
+    "description": "Cola de preparación por área. Marca ítems listos para servir.",
+    "filters": {
+        "area": "Área",
+        "area_all": "Todas las áreas",
+        "vista": "Vista",
+        "cola": "En cola",
+        "listos": "Listos",
+        "todos": "Todos"
+    },
+    "stats": {
+        "en_cola": "En cola",
+        "listos": "Listos"
+    },
+    "actions": {
+        "listo": "Listo",
+        "refresh": "Actualizar"
+    },
+    "ticket": {
+        "pedido": "Pedido #{{numero}}",
+        "mesa": "Mesa {{codigo}}",
+        "mostrador": "Mostrador"
+    },
+    "empty": {
+        "title": "Nada en cocina",
+        "description": "Cuando envíen pedidos desde salón aparecerán aquí."
+    }
+}

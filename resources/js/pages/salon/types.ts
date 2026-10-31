@@ -18,6 +18,15 @@ export type MesaZonaRef = {
     nombre: string;
 };
 
+export type MesaPedidoActivo = {
+    id: string;
+    mesa_id: string;
+    numero: number;
+    estado: string;
+    total: string | number;
+    comensales: number;
+};
+
 export type MesaSalon = {
     id: string;
     sede_id: string;
@@ -29,6 +38,8 @@ export type MesaSalon = {
     /** Mesas con el mismo union_id forman un grupo unido. */
     union_id?: string | null;
     zona?: MesaZonaRef | null;
+    /** Pedido activo cargado desde el backend (máx. 1). */
+    pedidos?: MesaPedidoActivo[];
 };
 
 export type SalonStats = {

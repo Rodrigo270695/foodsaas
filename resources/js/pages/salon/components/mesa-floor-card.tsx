@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import {
     Link2,
     MoreHorizontal,
@@ -9,6 +10,7 @@ import {
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { usePermission } from '@/hooks/use-permission';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -55,11 +57,13 @@ function TableDiagram({
     codigo,
     capacidad,
     available,
+    occupied,
     joined,
 }: {
     codigo: string;
     capacidad: number;
     available: boolean;
+    occupied?: boolean;
     joined?: boolean;
 }) {
     const seats = Math.max(1, Math.min(capacidad, MAX_VISIBLE_CHAIRS));
@@ -76,9 +80,11 @@ function TableDiagram({
                     'absolute top-1/2 left-1/2 flex size-[3.25rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 shadow-sm sm:size-[3.75rem]',
                     joined
                         ? 'border-[#660033]/70 bg-[#660033]/10'
-                        : available
-                          ? 'border-emerald-500/55 bg-emerald-500/12'
-                          : 'border-border bg-muted/50',
+                        : occupied
+                          ? 'border-amber-500/60 bg-amber-500/15'
+                          : available
+                            ? 'border-emerald-500/55 bg-emerald-500/12'
+                            : 'border-border bg-muted/50',
                 )}
             >
                 <span className="font-mono text-sm font-bold tracking-tight text-foreground sm:text-base">
@@ -143,10 +149,14 @@ export function MesaFloorCard({
     onJoinDragStart,
 }: MesaFloorCardProps) {
     const { t } = useTranslation(['salon', 'common']);
-    const available = mesa.activa;
+    const { can } = usePermission();
+    const pedidoActivo = mesa.pedidos?.[0] ?? null;
+    const occupied = Boolean(pedidoActivo);
+    const available = mesa.activa && !occupied;
     const joined = Boolean(mesa.union_id);
     const showActions = canUpdate || canDelete;
     const displayName = mesa.nombre?.trim() || mesa.codigo;
+    const canOpenPedido = can('pedidos.view') || can('pedidos.create');
 
     return (
         <article
@@ -161,9 +171,11 @@ export function MesaFloorCard({
                 !joinHighlight &&
                     (joined
                         ? 'border-[#660033]/45 hover:border-[#660033]/70'
-                        : available
-                          ? 'border-emerald-500/35 hover:border-emerald-500/55'
-                          : 'border-border/70 opacity-90 hover:border-border'),
+                        : occupied
+                          ? 'border-amber-500/45 hover:border-amber-500/65'
+                          : available
+                            ? 'border-emerald-500/35 hover:border-emerald-500/55'
+                            : 'border-border/70 opacity-90 hover:border-border'),
             )}
         >
             <div className="mb-1 flex items-start justify-between gap-2">
@@ -171,15 +183,26 @@ export function MesaFloorCard({
                     <span
                         className={cn(
                             'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
-                            available
-                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-muted text-muted-foreground',
+                            occupied
+                                ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                                : available
+                                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                  : 'bg-muted text-muted-foreground',
                         )}
                     >
-                        {available
-                            ? t('floor.available')
-                            : t('floor.inactive')}
+                        {occupied
+                            ? t('floor.occupied', {
+                                  defaultValue: 'Ocupada',
+                              })
+                            : available
+                              ? t('floor.available')
+                              : t('floor.inactive')}
                     </span>
+                    {occupied && pedidoActivo ? (
+                        <span className="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-200">
+                            #{pedidoActivo.numero}
+                        </span>
+                    ) : null}
                     {joined ? (
                         <span className="inline-flex items-center gap-1 rounded-md bg-[#660033]/12 px-2 py-0.5 text-[10px] font-semibold text-[#660033]">
                             <Link2 className="size-3" />
@@ -296,19 +319,51 @@ export function MesaFloorCard({
 
             <button
                 type="button"
-                disabled={!canUpdate && !onJoinTap}
+                disabled={!canUpdate && !onJoinTap && !canOpenPedido}
                 onClick={() => {
                     if (onJoinTap) {
                         onJoinTap();
+                        return;
+                    }
+                    if (occupied && pedidoActivo && can('pedidos.view')) {
+                        router.visit(`/pedidos/${pedidoActivo.id}`);
+                        return;
+                    }
+                    if (
+                        available &&
+                        can('pedidos.create') &&
+                        !canUpdate
+                    ) {
+                        router.post('/pedidos', {
+                            canal: 'salon',
+                            mesa_id: mesa.id,
+                            comensales: mesa.capacidad || 1,
+                        });
                         return;
                     }
                     if (canUpdate) {
                         onEdit(mesa);
                     }
                 }}
+                onDoubleClick={() => {
+                    if (onJoinTap) {
+                        return;
+                    }
+                    if (occupied && pedidoActivo && can('pedidos.view')) {
+                        router.visit(`/pedidos/${pedidoActivo.id}`);
+                        return;
+                    }
+                    if (available && can('pedidos.create')) {
+                        router.post('/pedidos', {
+                            canal: 'salon',
+                            mesa_id: mesa.id,
+                            comensales: mesa.capacidad || 1,
+                        });
+                    }
+                }}
                 className={cn(
                     'flex flex-1 flex-col items-center gap-2.5 rounded-xl px-1 py-2 text-center outline-none',
-                    canUpdate || onJoinTap
+                    canUpdate || onJoinTap || canOpenPedido
                         ? 'cursor-pointer'
                         : 'cursor-default',
                 )}
@@ -317,6 +372,7 @@ export function MesaFloorCard({
                     codigo={mesa.codigo}
                     capacidad={mesa.capacidad}
                     available={available}
+                    occupied={occupied}
                     joined={joined}
                 />
 

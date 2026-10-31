@@ -1,0 +1,73 @@
+{
+    "title": "Pedidos",
+    "description": "Abre comandas de salón o mostrador, envía a cocina y cobra.",
+    "show_title": "Pedido #{{numero}}",
+    "actions": {
+        "new": "Nuevo pedido",
+        "new_short": "Pedido",
+        "mostrador": "Mostrador",
+        "enviar": "Enviar a cocina",
+        "anular": "Anular pedido",
+        "cobrar": "Cobrar",
+        "add_item": "Agregar",
+        "open": "Abrir"
+    },
+    "filters": {
+        "estado": "Estado",
+        "activos": "Activos",
+        "cerrados": "Cerrados",
+        "anulados": "Anulados",
+        "todos": "Todos"
+    },
+    "stats": {
+        "activos": "Activos",
+        "en_cola": "En cocina"
+    },
+    "columns": {
+        "numero": "Nº",
+        "mesa": "Mesa",
+        "canal": "Canal",
+        "estado": "Estado",
+        "total": "Total",
+        "hora": "Hora"
+    },
+    "estado": {
+        "borrador": "Borrador",
+        "abierto": "Abierto",
+        "cerrado": "Cerrado",
+        "anulado": "Anulado"
+    },
+    "linea_estado": {
+        "pendiente": "Pendiente",
+        "en_cola": "En cocina",
+        "listo": "Listo",
+        "anulado": "Anulado"
+    },
+    "canal": {
+        "salon": "Salón",
+        "mostrador": "Mostrador",
+        "delivery": "Delivery"
+    },
+    "empty": {
+        "title": "Sin pedidos",
+        "description": "Abre un pedido desde aquí o toca una mesa libre en el salón."
+    },
+    "form": {
+        "mesa": "Mesa",
+        "comensales": "Comensales",
+        "notas": "Notas",
+        "cantidad": "Cant.",
+        "buscar_producto": "Buscar producto…"
+    },
+    "cobro": {
+        "title": "Cobrar pedido",
+        "medio": "Medio",
+        "monto": "Monto",
+        "descuento": "Descuento",
+        "total": "Total a pagar",
+        "confirm": "Confirmar cobro"
+    },
+    "toast": {
+        "load_error": "No se pudieron cargar los pedidos."
+    }
+}

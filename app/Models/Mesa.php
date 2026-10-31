@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $id
@@ -55,5 +56,13 @@ class Mesa extends Model
     public function zona(): BelongsTo
     {
         return $this->belongsTo(Zona::class, 'zona_id');
+    }
+
+    /**
+     * @return HasMany<Pedido, $this>
+     */
+    public function pedidos(): HasMany
+    {
+        return $this->hasMany(Pedido::class, 'mesa_id');
     }
 }

@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\ActiveSedeController;
 use App\Http\Controllers\AlmacenController;
+use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CartaController;
 use App\Http\Controllers\CartaMenuController;
+use App\Http\Controllers\CocinaController;
+use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\SalonController;
 use Illuminate\Support\Facades\Route;
 
@@ -136,5 +139,62 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:salon.delete')
                     ->delete('mesas/{mesa}', [SalonController::class, 'destroyMesa'])
                     ->name('mesas.destroy');
+            });
+
+        Route::prefix('pedidos')
+            ->name('pedidos.')
+            ->group(function (): void {
+                Route::middleware('permission:pedidos.view')
+                    ->get('/', [PedidoController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:pedidos.create')
+                    ->post('/', [PedidoController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:pedidos.view')
+                    ->get('{pedido}', [PedidoController::class, 'show'])
+                    ->name('show');
+                Route::middleware('permission:pedidos.update')
+                    ->post('{pedido}/lineas', [PedidoController::class, 'storeLinea'])
+                    ->name('lineas.store');
+                Route::middleware('permission:pedidos.update')
+                    ->patch('{pedido}/lineas/{linea}', [PedidoController::class, 'updateLinea'])
+                    ->name('lineas.update');
+                Route::middleware('permission:pedidos.update')
+                    ->delete('{pedido}/lineas/{linea}', [PedidoController::class, 'destroyLinea'])
+                    ->name('lineas.destroy');
+                Route::middleware('permission:pedidos.enviar')
+                    ->post('{pedido}/enviar', [PedidoController::class, 'enviar'])
+                    ->name('enviar');
+                Route::middleware('permission:pedidos.anular')
+                    ->post('{pedido}/anular', [PedidoController::class, 'anular'])
+                    ->name('anular');
+            });
+
+        Route::prefix('cocina')
+            ->name('cocina.')
+            ->group(function (): void {
+                Route::middleware('permission:cocina.view')
+                    ->get('/', [CocinaController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:cocina.update')
+                    ->post('lineas/{linea}/listo', [CocinaController::class, 'marcarListo'])
+                    ->name('lineas.listo');
+            });
+
+        Route::prefix('caja')
+            ->name('caja.')
+            ->group(function (): void {
+                Route::middleware('permission:caja.view')
+                    ->get('/', [CajaController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:caja.abrir')
+                    ->post('abrir', [CajaController::class, 'abrir'])
+                    ->name('abrir');
+                Route::middleware('permission:caja.cerrar')
+                    ->post('cerrar', [CajaController::class, 'cerrar'])
+                    ->name('cerrar');
+                Route::middleware('permission:caja.cobrar|pedidos.cobrar')
+                    ->post('cobrar/{pedido}', [CajaController::class, 'cobrar'])
+                    ->name('cobrar');
             });
     });

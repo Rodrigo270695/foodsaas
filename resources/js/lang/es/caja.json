@@ -1,0 +1,37 @@
+{
+    "title": "Caja",
+    "description": "Abre y cierra turno, cobra pedidos y revisa ventas del día.",
+    "sesion": {
+        "abierta": "Caja abierta",
+        "cerrada": "Sin caja abierta",
+        "apertura": "Monto de apertura",
+        "contado": "Efectivo contado",
+        "sistema": "Sistema",
+        "opened_by": "Abierta por {{name}}",
+        "abrir": "Abrir caja",
+        "cerrar": "Cerrar caja"
+    },
+    "stats": {
+        "ventas": "Ventas sesión",
+        "efectivo": "Efectivo",
+        "tarjeta": "Tarjeta",
+        "otros": "Otros",
+        "conteo": "Tickets"
+    },
+    "sections": {
+        "pendientes": "Pedidos por cobrar",
+        "ventas_hoy": "Ventas de hoy"
+    },
+    "empty": {
+        "pendientes": "No hay pedidos pendientes de cobro.",
+        "ventas": "Aún no hay ventas hoy."
+    },
+    "medios": {
+        "efectivo": "Efectivo",
+        "tarjeta": "Tarjeta",
+        "yape": "Yape",
+        "plin": "Plin",
+        "transferencia": "Transferencia",
+        "otro": "Otro"
+    }
+}
