@@ -52,20 +52,12 @@ export default function Index({
     });
 
     function changeEstado(estado: string) {
-        if (estado === 'historico') {
-            const day = todayIso();
-            applyFilter({
-                estado,
-                desde: filters.desde ?? day,
-                hasta: filters.hasta ?? day,
-            });
-            return;
-        }
-        if (estado === 'activos') {
-            applyFilter({ estado, desde: null, hasta: null });
-            return;
-        }
-        applyFilter({ estado });
+        const day = todayIso();
+        applyFilter({
+            estado,
+            desde: filters.desde ?? day,
+            hasta: filters.hasta ?? day,
+        });
     }
 
     function goHistoricoHoy() {
@@ -74,7 +66,12 @@ export default function Index({
     }
 
     function goActivos() {
-        applyFilter({ estado: 'activos', desde: null, hasta: null });
+        const day = todayIso();
+        applyFilter({
+            estado: 'activos',
+            desde: filters.desde ?? day,
+            hasta: filters.hasta ?? day,
+        });
     }
 
     return (
@@ -131,23 +128,11 @@ export default function Index({
                     isLoading={isLoading}
                     onEstadoChange={changeEstado}
                     onRangeApply={(desde, hasta) => {
-                        if (filters.estado === 'activos') {
-                            applyFilter({
-                                estado: 'historico',
-                                desde,
-                                hasta,
-                            });
-                            return;
-                        }
                         applyFilter({ desde, hasta });
                     }}
                     onRangeClear={() => {
-                        if (filters.estado === 'historico') {
-                            const day = todayIso();
-                            applyFilter({ desde: day, hasta: day });
-                            return;
-                        }
-                        applyFilter({ desde: null, hasta: null });
+                        const day = todayIso();
+                        applyFilter({ desde: day, hasta: day });
                     }}
                 />
 

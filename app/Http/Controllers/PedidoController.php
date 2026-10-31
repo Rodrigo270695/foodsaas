@@ -49,11 +49,15 @@ class PedidoController extends Controller
             $hasta = $fechaLegacy;
         }
 
-        // Histórico sin rango → hoy.
-        if ($estado === 'historico' && $desde === '' && $hasta === '') {
-            $hoyDefault = now()->toDateString();
+        // Sin rango → siempre hoy (Activos, Histórico, etc.).
+        $hoyDefault = now()->toDateString();
+        if ($desde === '' && $hasta === '') {
             $desde = $hoyDefault;
             $hasta = $hoyDefault;
+        } elseif ($desde === '') {
+            $desde = $hasta;
+        } elseif ($hasta === '') {
+            $hasta = $desde;
         }
 
         if ($desde !== '' && $hasta !== '' && $desde > $hasta) {

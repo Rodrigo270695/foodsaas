@@ -64,23 +64,12 @@ export function PedidosToolbar({
                 disabled={isLoading}
                 onApply={onRangeApply}
                 onClear={onRangeClear}
-                emptyLabel={
-                    filters.estado === 'activos'
-                        ? t('filters.sin_rango')
-                        : undefined
-                }
             />
 
             {filters.estado === 'historico' ? (
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <History className="size-3.5 shrink-0" />
                     {t('filters.historico_hint')}
-                </p>
-            ) : null}
-
-            {filters.estado === 'activos' && !filters.desde ? (
-                <p className="text-xs text-muted-foreground sm:max-w-sm">
-                    {t('filters.activos_hint')}
                 </p>
             ) : null}
         </div>
