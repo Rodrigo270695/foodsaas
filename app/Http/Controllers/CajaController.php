@@ -9,25 +9,32 @@ use App\Models\CajaSesion;
 use App\Models\Pago;
 use App\Models\Venta;
 use App\Services\Operacion\CajaService;
+use App\Services\Operacion\CajaSesionArqueoPdfService;
+use App\Services\Operacion\CajaSesionArqueoService;
 use App\Support\Caja\CajaBilleteras;
+use App\Support\Caja\TicketAnchoMm;
 use App\Support\Sedes\ActiveSedeContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 
 class CajaController extends Controller
 {
     use ResolvesActiveSede;
     use ResolvesTenantId;
 
-    public function index(CajaService $caja): Response
+    public function index(CajaService $caja): InertiaResponse
     {
         $this->tenantIdOrAbort();
 
         $sedeId = ActiveSedeContext::id() ?? '';
         $sesion = $sedeId === '' ? null : $caja->sesionAbierta($sedeId);
+        $authId = Auth::id();
 
         $sesiones = $sedeId === ''
             ? collect()
@@ -37,6 +44,20 @@ class CajaController extends Controller
                 ->orderByDesc('opened_at')
                 ->limit(40)
                 ->get();
+
+        $sedesConAbierta = CajaSesion::query()
+            ->where('estado', CajaSesion::ESTADO_ABIERTA)
+            ->pluck('sede_id')
+            ->flip();
+
+        $sesiones = $sesiones->map(function (CajaSesion $s) use ($sedesConAbierta): CajaSesion {
+            $s->setAttribute(
+                'puede_reabrir',
+                $s->estaDentroDeVentanaReabrir() && ! $sedesConAbierta->has($s->sede_id),
+            );
+
+            return $s;
+        });
 
         $totalesSesion = [
             'ventas' => 0.0,
@@ -93,7 +114,7 @@ class CajaController extends Controller
 
         return Inertia::render('caja/index', [
             'sesion' => $sesion?->load(['openedBy:id,name']),
-            'sesiones' => $sesiones,
+            'sesiones' => $sesiones->values(),
             'egresos' => $egresos,
             'totales_sesion' => $totalesSesion,
             'sistema_efectivo' => $sistemaEfectivo,
@@ -108,6 +129,7 @@ class CajaController extends Controller
                 'abiertas' => $sesiones->where('estado', CajaSesion::ESTADO_ABIERTA)->count(),
                 'cerradas' => $sesiones->where('estado', CajaSesion::ESTADO_CERRADA)->count(),
             ],
+            'auth_user_id' => $authId,
         ]);
     }
 
@@ -139,13 +161,69 @@ class CajaController extends Controller
         }
 
         $data = $request->validate([
-            'monto_contado' => ['required', 'numeric', 'min:0', 'max:999999'],
+            'saldo_cierre_efectivo' => ['required_without:monto_contado', 'numeric', 'min:0', 'max:999999'],
+            'monto_contado' => ['required_without:saldo_cierre_efectivo', 'numeric', 'min:0', 'max:999999'],
+            // El esperado de una billetera puede quedar bajo cero si los egresos de
+            // ese canal superan lo cobrado; el modal precarga ese número.
+            ...CajaBilleteras::validationRules('saldos_cierre', false, allowNegative: true),
             'notas' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $caja->cerrarSesion($sesion, (float) $data['monto_contado'], $data['notas'] ?? null);
+        $caja->cerrarSesion($sesion, $data);
 
         return back()->with('success', 'Caja cerrada.');
+    }
+
+    public function reabrir(CajaSesion $cajaSesion, CajaService $caja): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $caja->reabrirSesion($cajaSesion);
+
+        return back()->with('success', 'Sesión de caja reabierta.');
+    }
+
+    public function arqueo(CajaSesion $cajaSesion, CajaSesionArqueoService $arqueoService): JsonResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $contado = $cajaSesion->monto_cierre_contado !== null
+            ? (string) $cajaSesion->monto_cierre_contado
+            : null;
+
+        $billeteras = is_array($cajaSesion->saldos_cierre_json) && $cajaSesion->saldos_cierre_json !== []
+            ? CajaBilleteras::normalize($cajaSesion->saldos_cierre_json)
+            : null;
+
+        if (is_array($cajaSesion->arqueo_json) && $cajaSesion->arqueo_json !== [] && ! $cajaSesion->isAbierta()) {
+            $arqueo = $cajaSesion->arqueo_json;
+            if (! isset($arqueo['billeteras']) || ! is_array($arqueo['billeteras'])) {
+                $arqueo = $arqueoService->build($cajaSesion, $contado, $billeteras);
+            }
+
+            return response()->json(['arqueo' => $arqueo]);
+        }
+
+        return response()->json([
+            'arqueo' => $arqueoService->build($cajaSesion, $contado, $billeteras),
+        ]);
+    }
+
+    public function arqueoPdf(
+        CajaSesion $cajaSesion,
+        CajaSesionArqueoPdfService $pdfService,
+        Request $request,
+    ): Response {
+        $tenantId = $this->tenantIdOrAbort();
+
+        $cajaSesion->loadMissing(['openedBy:id,name', 'closedBy:id,name']);
+
+        $formato = CajaSesionArqueoPdfService::normalizeFormato(
+            (string) $request->string('formato', 'a4'),
+            TicketAnchoMm::DEFAULT,
+        );
+
+        return $pdfService->stream($cajaSesion, $tenantId, null, $formato);
     }
 
     public function egreso(Request $request, CajaService $caja): RedirectResponse

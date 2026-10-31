@@ -39,14 +39,6 @@
         "egresos": "Session payouts",
         "sesiones": "Session history"
     },
-    "columns": {
-        "estado": "Status",
-        "apertura": "Opened",
-        "cierre": "Closed",
-        "saldo_apertura": "Opening balance",
-        "efectivo_cierre": "Closing cash",
-        "abierta_por": "Opened by"
-    },
     "empty": {
         "egresos": "No payouts in this session.",
         "sesiones": "No sessions yet",
@@ -76,5 +68,97 @@
         "agora": "Agora",
         "sip": "Sip",
         "otro": "Other"
+    },
+    "sesiones": {
+        "columns": {
+            "estado": "Status",
+            "moneda": "Currency",
+            "apertura": "Opened",
+            "cierre": "Closed",
+            "saldo_apertura": "Opening balance",
+            "efectivo_cierre": "Closing cash",
+            "abierta_por": "Opened by",
+            "acciones": "Actions"
+        },
+        "actions": {
+            "reabrir": "Reopen session",
+            "imprimir": "Print cash count",
+            "arqueo_ver": "View cash count",
+            "cerrar": "Close session"
+        },
+        "row": {
+            "cerrar_solo_si_abriste": "Only the opener can close"
+        },
+        "dialog_detalle": {
+            "title": "Session cash count",
+            "description": "Summary of sales, payouts, and shift reconciliation.",
+            "close": "Close"
+        },
+        "fields": {
+            "saldo_cierre": "Cash counted",
+            "notas_cierre": "Closing notes",
+            "saldos_billeteras": "Wallets",
+            "saldos_billeteras_hint": "Expected balance per channel at closing time."
+        },
+        "dialog_cerrar": {
+            "title": "Cash count and closing",
+            "description": "Review sales, payouts, and methods. Match cash and each wallet balance against expected.",
+            "cancel": "Cancel",
+            "submit": "Confirm closing",
+            "submit_error": "Could not close the session.",
+            "loading_arqueo": "Loading cash count…",
+            "arqueo_error": "Could not load this session's cash count.",
+            "contado_hint": "Count the physical cash in the register before confirming.",
+            "notas_placeholder": "Closing remarks (optional)",
+            "billeteras_hint": "Balance counted in each digital wallet when closing.",
+            "kpi_ventas": "Sales",
+            "kpi_otros": "Other methods",
+            "kpi_otros_hint": "non-cash",
+            "kpi_esperado": "Expected cash",
+            "kpi_esperado_hint": "opening + cash − payouts",
+            "kpi_egresos": "Payouts",
+            "kpi_egresos_hint": "{{count}} payout(s)",
+            "kpi_diferencia": "Difference",
+            "diff_ok": "Matches exactly",
+            "diff_over": "Cash surplus",
+            "diff_short": "Cash short",
+            "diff_pending": "Enter the counted cash",
+            "clarify": "{{count}} sale(s) this shift for {{total}}. Expected cash {{esperado}}; other methods (card, wallets) {{otros}}; cash payouts {{egresos}}.",
+            "billeteras_title": "Wallets",
+            "billeteras_col_apertura": "Opening",
+            "billeteras_col_ventas": "Sales",
+            "billeteras_col_egresos": "Payouts",
+            "billeteras_col_esperado": "Expected",
+            "billeteras_col_contado": "Counted",
+            "billeteras_col_diff": "Diff.",
+            "egresos_title": "Shift payouts",
+            "egresos_total": "Total payouts",
+            "metodos_title": "Payment methods",
+            "metodos_total": "Total",
+            "formula": "Opening {{apertura}} + cash sales {{ventas}} − payouts {{egresos}} = expected {{esperado}}",
+            "anuladas_hint": "{{count}} voided sale(s) for {{total}} excluded from the cash count."
+        },
+        "dialog_imprimir": {
+            "title": "Print cash count",
+            "description": "Preview of the closing report as A4 or thermal ticket.",
+            "format_label": "Format",
+            "format_a4": "A4",
+            "formatos": {
+                "56": "56 mm",
+                "57": "57 mm",
+                "58": "58 mm",
+                "80": "80 mm"
+            },
+            "hint_a4": "Full report with sales and payout detail.",
+            "hint_ticket": "Compact summary for a thermal printer.",
+            "hint_config": "The configured ticket width is {{ancho}}.",
+            "iframe_title": "Cash count preview",
+            "print": "Print"
+        },
+        "dialog_reabrir": {
+            "title": "Reopen session",
+            "description": "This will reopen the closed session. Available up to 24 hours after closing and only if the branch has no other open session.",
+            "submit": "Reopen"
+        }
     }
 }

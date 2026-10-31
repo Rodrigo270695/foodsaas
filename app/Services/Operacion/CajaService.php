@@ -69,13 +69,30 @@ class CajaService
         ]);
     }
 
-    public function cerrarSesion(CajaSesion $sesion, float $montoContado, ?string $notas = null): CajaSesion
+    /**
+     * @param  array{
+     *     monto_contado?: float|int|string|null,
+     *     saldo_cierre_efectivo?: float|int|string|null,
+     *     saldos_cierre?: array<string, mixed>|null,
+     *     notas?: string|null
+     * }  $data
+     */
+    public function cerrarSesion(CajaSesion $sesion, array $data): CajaSesion
     {
         if (! $sesion->isAbierta()) {
             throw ValidationException::withMessages([
                 'caja' => 'La sesión de caja ya está cerrada.',
             ]);
         }
+
+        if ((string) $sesion->opened_by !== (string) Auth::id()) {
+            throw ValidationException::withMessages([
+                'caja' => 'Solo quien abrió la sesión puede cerrarla.',
+            ]);
+        }
+
+        $montoContado = (float) ($data['saldo_cierre_efectivo'] ?? $data['monto_contado'] ?? 0);
+        $saldosCierre = CajaBilleteras::normalize($data['saldos_cierre'] ?? null);
 
         $efectivoVentas = (float) Pago::query()
             ->whereHas('venta', function ($q) use ($sesion): void {
@@ -92,16 +109,87 @@ class CajaService
 
         $sistema = round((float) $sesion->monto_apertura + $efectivoVentas - $efectivoEgresos, 2);
 
+        $arqueo = app(CajaSesionArqueoService::class)->build(
+            $sesion,
+            number_format(max(0, $montoContado), 2, '.', ''),
+            $saldosCierre,
+        );
+
         $sesion->forceFill([
             'estado' => CajaSesion::ESTADO_CERRADA,
             'monto_cierre_sistema' => $sistema,
             'monto_cierre_contado' => round(max(0, $montoContado), 2),
-            'notas_cierre' => $notas !== null && trim($notas) !== '' ? trim($notas) : null,
+            'saldos_cierre_json' => $saldosCierre,
+            'arqueo_json' => $arqueo,
+            'notas_cierre' => isset($data['notas']) && is_string($data['notas']) && trim($data['notas']) !== ''
+                ? trim($data['notas'])
+                : null,
             'closed_by' => Auth::id(),
             'closed_at' => now(),
         ])->save();
 
         return $sesion;
+    }
+
+    /**
+     * Reabre una sesión cerrada hace menos de CajaSesion::REABRIR_HORAS,
+     * siempre que la sede no tenga otra sesión abierta.
+     */
+    public function reabrirSesion(CajaSesion $sesion): CajaSesion
+    {
+        if ($sesion->isAbierta()) {
+            throw ValidationException::withMessages([
+                'caja' => 'La sesión ya está abierta.',
+            ]);
+        }
+
+        if (! $sesion->estaDentroDeVentanaReabrir()) {
+            throw ValidationException::withMessages([
+                'caja' => 'Ya pasaron más de 24 horas desde el cierre; no se puede reabrir.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($sesion): CajaSesion {
+            /** @var CajaSesion $locked */
+            $locked = CajaSesion::query()->whereKey($sesion->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($locked->isAbierta()) {
+                throw ValidationException::withMessages([
+                    'caja' => 'La sesión ya está abierta.',
+                ]);
+            }
+
+            if (! $locked->estaDentroDeVentanaReabrir()) {
+                throw ValidationException::withMessages([
+                    'caja' => 'Ya pasaron más de 24 horas desde el cierre; no se puede reabrir.',
+                ]);
+            }
+
+            $otraAbierta = CajaSesion::query()
+                ->where('sede_id', $locked->sede_id)
+                ->where('estado', CajaSesion::ESTADO_ABIERTA)
+                ->whereKeyNot($locked->getKey())
+                ->lockForUpdate()
+                ->exists();
+
+            if ($otraAbierta) {
+                throw ValidationException::withMessages([
+                    'caja' => 'Ya hay una sesión de caja abierta en esta sede.',
+                ]);
+            }
+
+            $locked->forceFill([
+                'estado' => CajaSesion::ESTADO_ABIERTA,
+                'monto_cierre_sistema' => null,
+                'monto_cierre_contado' => null,
+                'saldos_cierre_json' => null,
+                'arqueo_json' => null,
+                'closed_by' => null,
+                'closed_at' => null,
+            ])->save();
+
+            return $locked;
+        });
     }
 
     /**

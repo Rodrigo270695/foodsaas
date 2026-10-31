@@ -41,7 +41,10 @@ const emptyForm = (): FormData => ({
     notas: '',
 });
 
-export function SesionAbrirModal({ open, onOpenChange }: SesionAbrirModalProps) {
+export function SesionAbrirModal({
+    open,
+    onOpenChange,
+}: SesionAbrirModalProps) {
     const { t } = useTranslation(['caja', 'common']);
     const { data, setData, post, processing, errors, reset, clearErrors } =
         useForm<FormData>(emptyForm);
@@ -107,7 +110,10 @@ export function SesionAbrirModal({ open, onOpenChange }: SesionAbrirModalProps) 
                         className="cursor-pointer gap-2"
                     >
                         {processing ? (
-                            <Loader2 className="size-4 animate-spin" aria-hidden />
+                            <Loader2
+                                className="size-4 animate-spin"
+                                aria-hidden
+                            />
                         ) : null}
                         {t('abrir.submit')}
                     </Button>
@@ -115,7 +121,11 @@ export function SesionAbrirModal({ open, onOpenChange }: SesionAbrirModalProps) 
             }
         >
             <div className="flex w-full min-w-0 flex-col gap-4">
-                <FormField id="abrir-moneda" label={t('abrir.moneda')} error={errors.moneda}>
+                <FormField
+                    id="abrir-moneda"
+                    label={t('abrir.moneda')}
+                    error={errors.moneda}
+                >
                     <Select
                         value={data.moneda}
                         onValueChange={(v) => setData('moneda', v)}
@@ -141,7 +151,9 @@ export function SesionAbrirModal({ open, onOpenChange }: SesionAbrirModalProps) 
                         min={0}
                         step="0.01"
                         value={data.monto_apertura}
-                        onChange={(ev) => setData('monto_apertura', ev.target.value)}
+                        onChange={(ev) =>
+                            setData('monto_apertura', ev.target.value)
+                        }
                         className="tabular-nums"
                     />
                 </FormField>
@@ -159,7 +171,11 @@ export function SesionAbrirModal({ open, onOpenChange }: SesionAbrirModalProps) 
                     }
                 />
 
-                <FormField id="abrir-notas" label={t('abrir.notas')} error={errors.notas}>
+                <FormField
+                    id="abrir-notas"
+                    label={t('abrir.notas')}
+                    error={errors.notas}
+                >
                     <Textarea
                         value={data.notas}
                         onChange={(ev) => setData('notas', ev.target.value)}

@@ -39,14 +39,6 @@
         "egresos": "Egresos de la sesión",
         "sesiones": "Historial de sesiones"
     },
-    "columns": {
-        "estado": "Estado",
-        "apertura": "Apertura",
-        "cierre": "Cierre",
-        "saldo_apertura": "Saldo apertura",
-        "efectivo_cierre": "Efectivo cierre",
-        "abierta_por": "Apertura por"
-    },
     "empty": {
         "egresos": "Sin egresos en esta sesión.",
         "sesiones": "Aún no hay sesiones",
@@ -76,5 +68,97 @@
         "agora": "Agora",
         "sip": "Sip",
         "otro": "Otro"
+    },
+    "sesiones": {
+        "columns": {
+            "estado": "Estado",
+            "moneda": "Moneda",
+            "apertura": "Apertura",
+            "cierre": "Cierre",
+            "saldo_apertura": "Saldo apertura",
+            "efectivo_cierre": "Efectivo cierre",
+            "abierta_por": "Apertura por",
+            "acciones": "Acciones"
+        },
+        "actions": {
+            "reabrir": "Reabrir sesión",
+            "imprimir": "Imprimir arqueo",
+            "arqueo_ver": "Ver arqueo",
+            "cerrar": "Cerrar sesión"
+        },
+        "row": {
+            "cerrar_solo_si_abriste": "Solo quien abrió puede cerrar"
+        },
+        "dialog_detalle": {
+            "title": "Arqueo de la sesión",
+            "description": "Resumen de ventas, egresos y cuadre del turno.",
+            "close": "Cerrar"
+        },
+        "fields": {
+            "saldo_cierre": "Efectivo contado",
+            "notas_cierre": "Notas de cierre",
+            "saldos_billeteras": "Billeteras",
+            "saldos_billeteras_hint": "Saldo esperado por canal al momento del cierre."
+        },
+        "dialog_cerrar": {
+            "title": "Arqueo y cierre de caja",
+            "description": "Revisa ventas, egresos y métodos. Cuadra el efectivo y el saldo de cada billetera contra lo esperado.",
+            "cancel": "Cancelar",
+            "submit": "Confirmar cierre",
+            "submit_error": "No se pudo cerrar la sesión.",
+            "loading_arqueo": "Cargando arqueo…",
+            "arqueo_error": "No se pudo cargar el arqueo de esta sesión.",
+            "contado_hint": "Cuenta el efectivo físico de la caja antes de confirmar.",
+            "notas_placeholder": "Observaciones del cierre (opcional)",
+            "billeteras_hint": "Saldo contado en cada billetera digital al cerrar.",
+            "kpi_ventas": "Ventas",
+            "kpi_otros": "Otros medios",
+            "kpi_otros_hint": "no efectivo",
+            "kpi_esperado": "Efectivo esperado",
+            "kpi_esperado_hint": "apertura + efectivo − egresos",
+            "kpi_egresos": "Egresos",
+            "kpi_egresos_hint": "{{count}} egreso(s)",
+            "kpi_diferencia": "Diferencia",
+            "diff_ok": "Cuadra exacto",
+            "diff_over": "Sobra efectivo",
+            "diff_short": "Falta efectivo",
+            "diff_pending": "Ingresa el efectivo contado",
+            "clarify": "{{count}} venta(s) del turno por {{total}}. Efectivo esperado {{esperado}}; otros medios (tarjeta, billeteras) {{otros}}; egresos en efectivo {{egresos}}.",
+            "billeteras_title": "Billeteras",
+            "billeteras_col_apertura": "Apertura",
+            "billeteras_col_ventas": "Ventas",
+            "billeteras_col_egresos": "Egresos",
+            "billeteras_col_esperado": "Esperado",
+            "billeteras_col_contado": "Contado",
+            "billeteras_col_diff": "Dif.",
+            "egresos_title": "Egresos del turno",
+            "egresos_total": "Total egresos",
+            "metodos_title": "Métodos de pago",
+            "metodos_total": "Total",
+            "formula": "Apertura {{apertura}} + ventas efectivo {{ventas}} − egresos {{egresos}} = esperado {{esperado}}",
+            "anuladas_hint": "{{count}} venta(s) anulada(s) por {{total}} excluidas del arqueo."
+        },
+        "dialog_imprimir": {
+            "title": "Imprimir arqueo de caja",
+            "description": "Elige A4 para el reporte completo, o ticket térmico con el resumen del cierre.",
+            "format_label": "Formato de impresión",
+            "format_a4": "A4",
+            "formatos": {
+                "56": "56 mm",
+                "57": "57 mm",
+                "58": "58 mm",
+                "80": "80 mm"
+            },
+            "hint_a4": "Reporte general: métodos, detalle de ventas y branding.",
+            "hint_ticket": "Resumen compacto para impresora térmica.",
+            "hint_config": "El ancho configurado del ticket es {{ancho}}.",
+            "iframe_title": "Vista previa del arqueo",
+            "print": "Imprimir"
+        },
+        "dialog_reabrir": {
+            "title": "Reabrir sesión",
+            "description": "Se reabrirá la sesión cerrada. Disponible hasta 24 horas después del cierre y solo si la sede no tiene otra sesión abierta.",
+            "submit": "Reabrir"
+        }
     }
 }

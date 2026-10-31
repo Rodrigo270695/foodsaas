@@ -12,7 +12,7 @@ type BilleterasMontosFieldsProps = {
     values: SaldosBilleterasForm;
     onChange: (codigo: CajaBilleteraCodigo, value: string) => void;
     errors?: Record<string, string | undefined>;
-    errorPrefix?: string;
+    errorPrefix?: 'saldos_apertura' | 'saldos_cierre';
 };
 
 function nestedError(
@@ -35,13 +35,20 @@ export function BilleterasMontosFields({
     errorPrefix = 'saldos_apertura',
 }: BilleterasMontosFieldsProps) {
     const { t } = useTranslation('caja');
+    const isCierre = errorPrefix === 'saldos_cierre';
 
     return (
         <div className="flex flex-col gap-3">
             <div>
-                <p className="text-sm font-medium">{t('abrir.billeteras')}</p>
+                <p className="text-sm font-medium">
+                    {isCierre
+                        ? t('sesiones.fields.saldos_billeteras')
+                        : t('abrir.billeteras')}
+                </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t('abrir.billeteras_hint')}
+                    {isCierre
+                        ? t('sesiones.dialog_cerrar.billeteras_hint')
+                        : t('abrir.billeteras_hint')}
                 </p>
             </div>
             <ul className="divide-y divide-border/50 overflow-hidden rounded-xl border border-border/60">
@@ -59,7 +66,9 @@ export function BilleterasMontosFields({
                                 min={0}
                                 step="0.01"
                                 value={values[codigo]}
-                                onChange={(ev) => onChange(codigo, ev.target.value)}
+                                onChange={(ev) =>
+                                    onChange(codigo, ev.target.value)
+                                }
                                 className="tabular-nums"
                             />
                         </FormField>

@@ -1,0 +1,273 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Operacion;
+
+use App\Models\CajaSesion;
+use App\Models\RestaurantSetting;
+use App\Models\Tenant;
+use App\Support\Caja\CajaBilleteras;
+use App\Support\Caja\TicketAnchoMm;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
+
+/**
+ * PDF imprimible del arqueo de una sesión de caja (A4 o ticket térmico).
+ */
+final class CajaSesionArqueoPdfService
+{
+    public function __construct(
+        private readonly CajaSesionArqueoService $arqueoService,
+    ) {}
+
+    /**
+     * @param  array<string, mixed>|null  $arqueo
+     * @param  string  $formato  'a4' o ancho de ticket ('56'|'57'|'58'|'80')
+     */
+    public function stream(
+        CajaSesion $sesion,
+        string $tenantId,
+        ?array $arqueo = null,
+        string $formato = 'a4',
+    ): Response {
+        $arqueo = $this->resolveArqueo($sesion, $arqueo);
+        $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
+        $tenant = Tenant::query()->find($tenantId);
+
+        $nombre = $cfg?->nombre_comercial
+            ?: $cfg?->razon_social
+            ?: $tenant?->nombre_comercial
+            ?: $tenant?->razon_social
+            ?: config('app.name');
+
+        $colorPrimario = $this->sanitizeHex($cfg?->color_primario, '#660033');
+        $branding = $this->resolveContrastColors($colorPrimario);
+
+        $baseData = [
+            'arqueo' => $arqueo,
+            'sesion' => $sesion,
+            'clinic_nombre' => $nombre,
+            'clinic_ruc' => $cfg?->ruc ?: $tenant?->ruc,
+            'clinic_direccion' => $cfg?->direccion,
+            'clinic_telefono' => $cfg?->telefono,
+            'logoDataUri' => $this->resolveLogoDataUri($cfg),
+            'colorPrimario' => $branding['primary'],
+            'colorSecundario' => $branding['secondary'],
+            'colorOnPrimary' => $branding['on_primary'],
+            'colorText' => $branding['text'],
+            'colorMuted' => $branding['muted'],
+            'abierta_por' => $sesion->openedBy?->name,
+            'cerrada_por' => $sesion->closedBy?->name,
+            'notas_cierre' => $sesion->notas_cierre,
+        ];
+
+        $safeId = substr((string) $sesion->getKey(), 0, 8);
+
+        if ($formato === 'a4') {
+            $pdf = Pdf::loadView('pdf.caja-sesion-arqueo', $baseData)->setPaper('a4');
+
+            return $pdf->stream('arqueo-caja-'.$safeId.'-a4.pdf');
+        }
+
+        $anchoFallback = $cfg !== null ? $cfg->ticket_ancho_mm : TicketAnchoMm::DEFAULT;
+        $ancho = TicketAnchoMm::normalize($formato, $anchoFallback);
+        $tf = $this->ticketTypography($ancho);
+        $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
+        $metodosCount = is_array($arqueo['metodos'] ?? null) ? count($arqueo['metodos']) : 0;
+        $billeterasCount = is_array($arqueo['billeteras'] ?? null) ? count($arqueo['billeteras']) : 0;
+        $heightPt = max(460.0, 300.0 + ($metodosCount * 24.0) + ($billeterasCount * 52.0) + 180.0);
+
+        $pdf = Pdf::loadView('pdf.caja-sesion-arqueo-ticket', array_merge($baseData, [
+            'ancho_mm' => $ancho,
+            'tf' => $tf,
+        ]));
+        $pdf->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
+
+        return $pdf->stream('arqueo-caja-'.$safeId.'-'.$ancho.'mm.pdf');
+    }
+
+    /**
+     * Normaliza query `formato`: a4 | 56 | 57 | 58 | 80.
+     */
+    public static function normalizeFormato(?string $value, ?string $ticketFallback = null): string
+    {
+        $v = $value !== null ? trim($value) : '';
+        if ($v === 'a4' || $v === 'A4') {
+            return 'a4';
+        }
+
+        if (in_array($v, TicketAnchoMm::ALLOWED, true)) {
+            return $v;
+        }
+
+        // Sin formato explícito: A4 (reporte general).
+        if ($v === '') {
+            return 'a4';
+        }
+
+        return TicketAnchoMm::normalize($v, $ticketFallback);
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $arqueo
+     * @return array<string, mixed>
+     */
+    private function resolveArqueo(CajaSesion $sesion, ?array $arqueo): array
+    {
+        $contado = $sesion->monto_cierre_contado !== null
+            ? (string) $sesion->monto_cierre_contado
+            : null;
+        $billeteras = is_array($sesion->saldos_cierre_json) && $sesion->saldos_cierre_json !== []
+            ? CajaBilleteras::normalize($sesion->saldos_cierre_json)
+            : null;
+
+        $arqueo ??= is_array($sesion->arqueo_json) && $sesion->arqueo_json !== []
+            ? $sesion->arqueo_json
+            : $this->arqueoService->build($sesion, $contado, $billeteras);
+
+        if (! isset($arqueo['productos_total'])
+            || ! isset($arqueo['servicios_total'])
+            || ! isset($arqueo['metodos'])
+            || ! is_array($arqueo['metodos'])
+            || ! isset($arqueo['billeteras'])
+            || ! is_array($arqueo['billeteras'])) {
+            return $this->arqueoService->build($sesion, $contado, $billeteras);
+        }
+
+        return $arqueo;
+    }
+
+    private function resolveLogoDataUri(?RestaurantSetting $cfg): string
+    {
+        if ($cfg !== null) {
+            $path = $cfg->logo_path;
+            if (is_string($path) && $path !== '') {
+                $path = ltrim($path, '/');
+                if (Storage::disk('public')->exists($path)) {
+                    $binary = Storage::disk('public')->get($path);
+                    $mime = Storage::disk('public')->mimeType($path);
+                    if (! is_string($mime) || $mime === '') {
+                        $mime = 'image/png';
+                    }
+                    if (str_starts_with($mime, 'image/')) {
+                        return 'data:'.$mime.';base64,'.base64_encode((string) $binary);
+                    }
+                }
+            }
+        }
+
+        $fallback = public_path('logo.png');
+        if (is_file($fallback)) {
+            $binary = (string) file_get_contents($fallback);
+
+            return 'data:image/png;base64,'.base64_encode($binary);
+        }
+
+        return '';
+    }
+
+    /**
+     * Tamaños tipográficos según ancho de rollo térmico.
+     *
+     * @return array{fs: int, fs_sm: int, fs_title: int, logo_max: int, footer: int, pad_x: string}
+     */
+    private function ticketTypography(string $ancho): array
+    {
+        return match (TicketAnchoMm::normalize($ancho)) {
+            '56' => [
+                'fs' => 10,
+                'fs_sm' => 9,
+                'fs_title' => 12,
+                'logo_max' => 11,
+                'footer' => 8,
+                'pad_x' => '1.5mm',
+            ],
+            '57', '58' => [
+                'fs' => 10,
+                'fs_sm' => 9,
+                'fs_title' => 12,
+                'logo_max' => 12,
+                'footer' => 8,
+                'pad_x' => '2mm',
+            ],
+            default => [
+                'fs' => 12,
+                'fs_sm' => 11,
+                'fs_title' => 14,
+                'logo_max' => 14,
+                'footer' => 9,
+                'pad_x' => '1.5mm',
+            ],
+        };
+    }
+
+    /**
+     * @return array{primary: string, secondary: string, on_primary: string, text: string, muted: string}
+     */
+    private function resolveContrastColors(string $primary): array
+    {
+        $onPrimary = $this->relativeLuminance($primary) > 0.55 ? '#111827' : '#FFFFFF';
+        $secondary = $this->mixWithWhite($primary, 0.88);
+
+        return [
+            'primary' => $primary,
+            'secondary' => $secondary,
+            'on_primary' => $onPrimary,
+            'text' => '#111827',
+            'muted' => '#4B5563',
+        ];
+    }
+
+    private function sanitizeHex(?string $value, string $fallback): string
+    {
+        if ($value === null || $value === '') {
+            return $fallback;
+        }
+
+        $v = trim($value);
+        if (preg_match('/^#[0-9A-Fa-f]{6}$/', $v) === 1) {
+            return strtoupper($v);
+        }
+
+        return $fallback;
+    }
+
+    private function relativeLuminance(string $hex): float
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) !== 6) {
+            return 0.0;
+        }
+
+        $channels = [
+            hexdec(substr($hex, 0, 2)) / 255,
+            hexdec(substr($hex, 2, 2)) / 255,
+            hexdec(substr($hex, 4, 2)) / 255,
+        ];
+
+        $linear = array_map(static function (float $c): float {
+            return $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+        }, $channels);
+
+        return 0.2126 * $linear[0] + 0.7152 * $linear[1] + 0.0722 * $linear[2];
+    }
+
+    private function mixWithWhite(string $hex, float $whiteRatio): string
+    {
+        $hex = ltrim($hex, '#');
+        $r = (int) hexdec(substr($hex, 0, 2));
+        $g = (int) hexdec(substr($hex, 2, 2));
+        $b = (int) hexdec(substr($hex, 4, 2));
+        $w = max(0.0, min(1.0, $whiteRatio));
+
+        $nr = (int) round($r + (255 - $r) * $w);
+        $ng = (int) round($g + (255 - $g) * $w);
+        $nb = (int) round($b + (255 - $b) * $w);
+
+        return sprintf('#%02X%02X%02X', $nr, $ng, $nb);
+    }
+}

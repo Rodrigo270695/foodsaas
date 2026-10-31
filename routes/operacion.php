@@ -211,6 +211,15 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:caja.cerrar')
                     ->post('cerrar', [CajaController::class, 'cerrar'])
                     ->name('cerrar');
+                Route::middleware('permission:caja.abrir')
+                    ->post('{cajaSesion}/reabrir', [CajaController::class, 'reabrir'])
+                    ->name('reabrir');
+                Route::middleware('permission:caja.view')
+                    ->get('{cajaSesion}/arqueo', [CajaController::class, 'arqueo'])
+                    ->name('arqueo');
+                Route::middleware('permission:caja.view')
+                    ->get('{cajaSesion}/arqueo.pdf', [CajaController::class, 'arqueoPdf'])
+                    ->name('arqueo-pdf');
                 Route::middleware('permission:caja.egreso')
                     ->post('egresos', [CajaController::class, 'egreso'])
                     ->name('egresos.store');
