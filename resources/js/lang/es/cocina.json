@@ -13,17 +13,35 @@
         "en_cola": "En cola",
         "listos": "Listos"
     },
+    "board": {
+        "summary": "{{tickets}} tickets · {{cola}} en cola · {{listos}} listos"
+    },
     "actions": {
         "listo": "Listo",
+        "listo_aria": "Marcar {{nombre}} como listo",
+        "marking": "…",
         "refresh": "Actualizar"
     },
     "ticket": {
         "pedido": "Pedido #{{numero}}",
         "mesa": "Mesa {{codigo}}",
-        "mostrador": "Mostrador"
+        "mostrador": "Mostrador",
+        "wait_min": "{{count}} min",
+        "pending_count": "{{count}} por preparar",
+        "ready_count": "{{count}} listos",
+        "all_ready": "Todo listo"
+    },
+    "urgency": {
+        "fresh": "Recién llegado",
+        "warm": "En tiempo",
+        "hot": "Prioridad: lleva rato"
     },
     "empty": {
         "title": "Nada en cocina",
-        "description": "Cuando envíen pedidos desde salón aparecerán aquí."
+        "description": "Cuando envíen pedidos desde salón aparecerán aquí.",
+        "cola_title": "Cola vacía",
+        "cola_description": "No hay ítems pendientes de preparar en este filtro.",
+        "listos_title": "Sin platos listos",
+        "listos_description": "Cuando marques ítems como listos, aparecerán aquí."
     }
 }

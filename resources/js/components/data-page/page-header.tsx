@@ -59,13 +59,14 @@ export function PageHeader({
 
             {stats.length > 0 ? (
                 <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                    {stats.map(({ hideOnMobile, ...stat }) => (
+                    {stats.map(({ hideOnMobile, className: statClassName, ...stat }) => (
                         <StatBadge
                             key={stat.label}
                             {...stat}
-                            className={
-                                hideOnMobile ? 'hidden sm:inline-flex' : undefined
-                            }
+                            className={cn(
+                                hideOnMobile && 'hidden sm:inline-flex',
+                                statClassName,
+                            )}
                         />
                     ))}
                 </div>

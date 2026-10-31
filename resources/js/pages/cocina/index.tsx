@@ -1,9 +1,8 @@
 import { Head, router } from '@inertiajs/react';
 import { Check, ChefHat, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmptyState, PageHeader } from '@/components/data-page';
-import { Can } from '@/components/can';
 import { DateRangeFilter } from '@/components/date-range-filter';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,32 +11,16 @@ import {
 } from '@/components/ui/filter-select';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
-import { formatPeruTime } from '@/lib/format-peru-datetime';
 import { cn } from '@/lib/utils';
 import { todayIso } from '../pedidos/types';
+import {
+    CocinaTicketCard,
+    type CocinaTicket,
+} from './components/cocina-ticket-card';
 import cocina from './cocina-routes';
 
-type Linea = {
-    id: string;
-    nombre: string;
-    cantidad: string | number;
-    estado: string;
-    notas: string | null;
-    enviado_at: string | null;
-    area?: { id: string; nombre: string } | null;
-};
-
-type Ticket = {
-    pedido_id: string;
-    numero: number;
-    canal: string;
-    mesa?: { id: string; codigo: string; nombre: string | null } | null;
-    enviado_at: string | null;
-    lineas: Linea[];
-};
-
 type Props = {
-    tickets: Ticket[];
+    tickets: CocinaTicket[];
     areas: { id: string; nombre: string }[];
     filters: {
         area_id: string | null;
@@ -52,8 +35,9 @@ type Props = {
 export default function Index({ tickets, areas, filters, stats }: Props) {
     const { t } = useTranslation(['cocina', 'common']);
     const { can } = usePermission();
+    const [markingId, setMarkingId] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
 
-    // Recarga viva de la KDS (sonido/toast vienen del feed global de la campana)
     useEffect(() => {
         const id = window.setInterval(() => {
             router.reload({
@@ -119,13 +103,48 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
     }
 
     function marcarListo(lineaId: string) {
-        router.post(cocina.listo(lineaId).url, {}, { preserveScroll: true });
+        setMarkingId(lineaId);
+        router.post(
+            cocina.listo(lineaId).url,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setMarkingId(null),
+            },
+        );
     }
+
+    function refresh() {
+        setRefreshing(true);
+        router.reload({
+            only: ['tickets', 'stats', 'filters'],
+            onFinish: () => setRefreshing(false),
+        });
+    }
+
+    const emptyTitle =
+        filters.vista === 'listos'
+            ? t('empty.listos_title')
+            : filters.vista === 'cola'
+              ? t('empty.cola_title')
+              : t('empty.title');
+    const emptyDescription =
+        filters.vista === 'listos'
+            ? t('empty.listos_description')
+            : filters.vista === 'cola'
+              ? t('empty.cola_description')
+              : t('empty.description');
+
+    const boardSummary = t('board.summary', {
+        cola: stats.en_cola,
+        listos: stats.listos,
+        tickets: tickets.length,
+    });
 
     return (
         <>
             <Head title={t('title')} />
-            <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
+            <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-5 sm:p-6">
                 <PageHeader
                     title={t('title')}
                     description={t('description')}
@@ -135,12 +154,24 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
                             value: stats.en_cola,
                             variant: 'warning',
                             icon: ChefHat,
+                            onClick: () => visit({ vista: 'cola' }),
+                            className: cn(
+                                'cursor-pointer transition-all duration-150',
+                                filters.vista === 'cola' &&
+                                    'ring-2 ring-amber-500/50 ring-offset-2 ring-offset-background',
+                            ),
                         },
                         {
                             label: t('stats.listos'),
                             value: stats.listos,
                             variant: 'success',
                             icon: Check,
+                            onClick: () => visit({ vista: 'listos' }),
+                            className: cn(
+                                'cursor-pointer transition-all duration-150',
+                                filters.vista === 'listos' &&
+                                    'ring-2 ring-emerald-500/50 ring-offset-2 ring-offset-background',
+                            ),
                         },
                     ]}
                     action={
@@ -148,20 +179,23 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="gap-1.5"
-                            onClick={() =>
-                                router.reload({
-                                    only: ['tickets', 'stats', 'filters'],
-                                })
-                            }
+                            className="min-h-9 cursor-pointer gap-1.5"
+                            onClick={refresh}
+                            disabled={refreshing}
                         >
-                            <RefreshCw className="size-4" />
+                            <RefreshCw
+                                className={cn(
+                                    'size-4',
+                                    refreshing && 'animate-spin',
+                                )}
+                                aria-hidden
+                            />
                             {t('actions.refresh')}
                         </Button>
                     }
                 />
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <FilterSelect
                         ariaLabel={t('filters.area')}
                         value={filters.area_id ?? 'todas'}
@@ -185,101 +219,45 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
                     />
                 </div>
 
+                <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                    {boardSummary}
+                </p>
+
                 {tickets.length === 0 ? (
                     <EmptyState
                         icon={ChefHat}
-                        title={t('empty.title')}
-                        description={t('empty.description')}
+                        title={emptyTitle}
+                        description={emptyDescription}
                     />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                        {tickets.map((ticket) => (
-                            <article
+                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
+                        {tickets.map((ticket, index) => (
+                            <CocinaTicketCard
                                 key={ticket.pedido_id}
-                                className="flex flex-col rounded-2xl border border-amber-500/30 bg-card/90 shadow-sm"
-                            >
-                                <header className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
-                                    <div>
-                                        <p className="font-semibold text-[#660033]">
-                                            {t('ticket.pedido', {
-                                                numero: ticket.numero,
-                                            })}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {ticket.mesa
-                                                ? t('ticket.mesa', {
-                                                      codigo:
-                                                          ticket.mesa.nombre?.trim() ||
-                                                          ticket.mesa.codigo,
-                                                  })
-                                                : t('ticket.mostrador')}
-                                        </p>
-                                    </div>
-                                    {ticket.enviado_at ? (
-                                        <time className="text-xs tabular-nums text-muted-foreground">
-                                            {formatPeruTime(ticket.enviado_at)}
-                                        </time>
-                                    ) : null}
-                                </header>
-                                <ul className="flex flex-1 flex-col gap-2 p-3">
-                                    {ticket.lineas.map((linea) => (
-                                        <li
-                                            key={linea.id}
-                                            className={cn(
-                                                'flex items-start justify-between gap-2 rounded-xl border px-3 py-2',
-                                                linea.estado === 'listo'
-                                                    ? 'border-emerald-500/30 bg-emerald-500/8'
-                                                    : 'border-amber-500/25 bg-amber-500/5',
-                                            )}
-                                        >
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-medium">
-                                                    <span className="mr-1 font-bold tabular-nums">
-                                                        {Number(linea.cantidad)}
-                                                    </span>
-                                                    {linea.nombre}
-                                                </p>
-                                                {linea.notas ? (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {linea.notas}
-                                                    </p>
-                                                ) : null}
-                                                {linea.area ? (
-                                                    <p className="text-[11px] text-muted-foreground">
-                                                        {linea.area.nombre}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                            {linea.estado === 'en_cola' &&
-                                            can('cocina.update') ? (
-                                                <Can permission="cocina.update">
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        className="shrink-0 gap-1"
-                                                        onClick={() =>
-                                                            marcarListo(
-                                                                linea.id,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Check className="size-3.5" />
-                                                        {t('actions.listo')}
-                                                    </Button>
-                                                </Can>
-                                            ) : (
-                                                <span className="shrink-0 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                                                    Listo
-                                                </span>
-                                            )}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </article>
+                                ticket={ticket}
+                                canMarkReady={can('cocina.update')}
+                                markingId={markingId}
+                                onMarkReady={marcarListo}
+                                style={{
+                                    animationDelay: `${Math.min(index, 12) * 40}ms`,
+                                }}
+                            />
                         ))}
                     </div>
                 )}
             </div>
+
+            <style>{`
+                @media (prefers-reduced-motion: no-preference) {
+                    .cocina-ticket-enter {
+                        animation: cocina-ticket-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+                    }
+                }
+                @keyframes cocina-ticket-in {
+                    from { opacity: 0; transform: translateY(10px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+            `}</style>
         </>
     );
 }

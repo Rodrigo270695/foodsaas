@@ -13,17 +13,35 @@
         "en_cola": "In queue",
         "listos": "Ready"
     },
+    "board": {
+        "summary": "{{tickets}} tickets · {{cola}} in queue · {{listos}} ready"
+    },
     "actions": {
         "listo": "Ready",
+        "listo_aria": "Mark {{nombre}} as ready",
+        "marking": "…",
         "refresh": "Refresh"
     },
     "ticket": {
         "pedido": "Order #{{numero}}",
         "mesa": "Table {{codigo}}",
-        "mostrador": "Counter"
+        "mostrador": "Counter",
+        "wait_min": "{{count}} min",
+        "pending_count": "{{count}} to prep",
+        "ready_count": "{{count}} ready",
+        "all_ready": "All ready"
+    },
+    "urgency": {
+        "fresh": "Just arrived",
+        "warm": "On time",
+        "hot": "Priority: waiting long"
     },
     "empty": {
         "title": "Kitchen is clear",
-        "description": "Tickets appear here when the floor sends them."
+        "description": "Tickets appear here when the floor sends them.",
+        "cola_title": "Queue is empty",
+        "cola_description": "No items waiting to be prepared for this filter.",
+        "listos_title": "No ready dishes",
+        "listos_description": "Items you mark ready will show up here."
     }
 }
