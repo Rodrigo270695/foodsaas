@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { formatPeruTime } from '@/lib/format-peru-datetime';
 import pedidos from '../pedidos/pedidos-routes';
 import caja from './caja-routes';
 
@@ -268,12 +269,7 @@ export default function Index({
                                                 : ''}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            {new Date(
-                                                v.created_at,
-                                            ).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
+                                            {formatPeruTime(v.created_at)}
                                             {' · '}
                                             {v.pagos
                                                 .map((p) =>

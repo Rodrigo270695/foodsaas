@@ -1,3 +1,4 @@
+import { formatPeruDateTime } from '@/lib/format-peru-datetime';
 import type { Paginated } from '@/types';
 
 export type MesaLibre = {
@@ -43,18 +44,7 @@ export function money(value: string | number): string {
 }
 
 export function formatFechaHora(iso: string): { fecha: string; hora: string } {
-    const d = new Date(iso);
-    return {
-        fecha: d.toLocaleDateString(undefined, {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-        }),
-        hora: d.toLocaleTimeString(undefined, {
-            hour: '2-digit',
-            minute: '2-digit',
-        }),
-    };
+    return formatPeruDateTime(iso);
 }
 
 export function estadoTone(estado: string): string {
@@ -72,12 +62,14 @@ export function estadoTone(estado: string): string {
     }
 }
 
+/** Hoy en calendario Perú (America/Lima), formato YYYY-MM-DD. */
 export function todayIso(): string {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Lima',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(new Date());
 }
 
 export function isHistoricoEstado(estado: string): boolean {

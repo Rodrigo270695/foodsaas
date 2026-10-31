@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/filter-select';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
+import { formatPeruTime } from '@/lib/format-peru-datetime';
 import { cn } from '@/lib/utils';
 import { todayIso } from '../pedidos/types';
 import cocina from './cocina-routes';
@@ -216,12 +217,7 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
                                     </div>
                                     {ticket.enviado_at ? (
                                         <time className="text-xs tabular-nums text-muted-foreground">
-                                            {new Date(
-                                                ticket.enviado_at,
-                                            ).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
+                                            {formatPeruTime(ticket.enviado_at)}
                                         </time>
                                     ) : null}
                                 </header>
