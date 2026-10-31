@@ -69,8 +69,20 @@
         "notas_placeholder": "Optional",
         "cantidad": "Qty",
         "buscar_producto": "Search product…",
+        "buscar_categoria": "Search category…",
+        "categorias": "Categories",
+        "todas_categorias": "All",
+        "ver_categorias": "Browse all",
+        "carta": "Menu",
+        "sin_productos": "No products",
+        "sin_productos_hint": "Try another category or clear the search.",
         "modal_description": "Counter or delivery from here. Table orders: tap the table in Dining room → Serve.",
         "section_pedido": "Order details"
+    },
+    "comanda": {
+        "title": "Ticket",
+        "empty": "Tap a menu item to add it.",
+        "quitar": "Remove item"
     },
     "cobro": {
         "title": "Charge order",

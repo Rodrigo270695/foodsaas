@@ -6,7 +6,7 @@ import {
     Trash2,
     Wallet,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/components/data-page';
 import { Can } from '@/components/can';
@@ -31,6 +31,10 @@ import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import caja from '../caja/caja-routes';
+import {
+    ProductoPicker,
+    type PickerProducto,
+} from './components/producto-picker';
 import pedidos from './pedidos-routes';
 
 type Linea = {
@@ -42,15 +46,6 @@ type Linea = {
     estado: string;
     notas: string | null;
     area?: { id: string; nombre: string } | null;
-};
-
-type Producto = {
-    id: string;
-    nombre: string;
-    precio: string | number;
-    categoria_id: string;
-    stock: string | number | null;
-    control_inventario: string;
 };
 
 type PedidoShow = {
@@ -69,7 +64,7 @@ type PedidoShow = {
 
 type Props = {
     pedido: PedidoShow;
-    productos: Producto[];
+    productos: PickerProducto[];
     categorias: { id: string; nombre: string }[];
 };
 
@@ -77,13 +72,26 @@ function money(value: string | number): string {
     return `S/ ${Number(value).toFixed(2)}`;
 }
 
+function lineaTone(estado: string): string {
+    switch (estado) {
+        case 'pendiente':
+            return 'border-border/70 bg-card';
+        case 'en_cola':
+            return 'border-amber-500/30 bg-amber-500/5';
+        case 'listo':
+            return 'border-emerald-500/30 bg-emerald-500/5';
+        case 'anulado':
+            return 'border-border/50 bg-muted/40 opacity-60';
+        default:
+            return 'border-border/70 bg-card';
+    }
+}
+
 export default function Show({ pedido, productos, categorias }: Props) {
     const { t } = useTranslation(['pedidos', 'caja', 'common']);
     const { can } = usePermission();
     const activo =
         pedido.estado === 'borrador' || pedido.estado === 'abierto';
-    const [search, setSearch] = useState('');
-    const [categoriaId, setCategoriaId] = useState('todas');
     const [cobrarOpen, setCobrarOpen] = useState(false);
     const [medio, setMedio] = useState('efectivo');
     const [monto, setMonto] = useState(String(Number(pedido.total).toFixed(2)));
@@ -94,19 +102,6 @@ export default function Show({ pedido, productos, categorias }: Props) {
     const cobrables = pedido.lineas.filter((l) =>
         ['en_cola', 'listo'].includes(l.estado),
     );
-
-    const filtered = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        return productos.filter((p) => {
-            if (categoriaId !== 'todas' && p.categoria_id !== categoriaId) {
-                return false;
-            }
-            if (!q) {
-                return true;
-            }
-            return p.nombre.toLowerCase().includes(q);
-        });
-    }, [productos, search, categoriaId]);
 
     function addProducto(productoId: string) {
         if (!activo || !can('pedidos.update')) {
@@ -186,6 +181,9 @@ export default function Show({ pedido, productos, categorias }: Props) {
                                     >
                                         <CookingPot className="size-4" />
                                         {t('actions.enviar')}
+                                        <span className="rounded-full bg-white/20 px-1.5 text-[11px] tabular-nums">
+                                            {pendientes.length}
+                                        </span>
                                     </Button>
                                 </Can>
                             ) : null}
@@ -221,93 +219,68 @@ export default function Show({ pedido, productos, categorias }: Props) {
                     }
                 />
 
-                <div className="grid gap-5 lg:grid-cols-[1fr_22rem]">
-                    <section className="min-w-0 space-y-3">
+                <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
+                    <section className="min-w-0">
                         {activo ? (
-                            <>
-                                <div className="flex flex-col gap-2 sm:flex-row">
-                                    <Input
-                                        value={search}
-                                        onChange={(e) =>
-                                            setSearch(e.target.value)
-                                        }
-                                        placeholder={t('form.buscar_producto')}
-                                        className="sm:flex-1"
-                                    />
-                                    <Select
-                                        value={categoriaId}
-                                        onValueChange={setCategoriaId}
-                                    >
-                                        <SelectTrigger className="sm:w-48">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="todas">
-                                                Todas
-                                            </SelectItem>
-                                            {categorias.map((c) => (
-                                                <SelectItem
-                                                    key={c.id}
-                                                    value={c.id}
-                                                >
-                                                    {c.nombre}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid max-h-[28rem] grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3 xl:grid-cols-4">
-                                    {filtered.map((p) => (
-                                        <button
-                                            key={p.id}
-                                            type="button"
-                                            onClick={() => addProducto(p.id)}
-                                            disabled={!can('pedidos.update')}
-                                            className="flex flex-col items-start gap-1 rounded-xl border border-border/70 bg-card/70 p-3 text-left transition hover:border-[#660033]/40 hover:bg-[#660033]/5"
-                                        >
-                                            <span className="line-clamp-2 text-sm font-medium">
-                                                {p.nombre}
-                                            </span>
-                                            <span className="text-sm font-semibold tabular-nums text-[#660033]">
-                                                {money(p.precio)}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </>
+                            <ProductoPicker
+                                productos={productos}
+                                categorias={categorias}
+                                disabled={!can('pedidos.update')}
+                                onAdd={addProducto}
+                            />
                         ) : (
-                            <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+                            <p className="rounded-2xl border border-dashed p-8 text-sm text-muted-foreground">
                                 {t(`estado.${pedido.estado}`)}
                             </p>
                         )}
                     </section>
 
-                    <aside className="space-y-3 rounded-2xl border bg-card/80 p-4 shadow-sm">
+                    <aside className="space-y-3 rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm lg:sticky lg:top-24">
                         <div className="flex items-center justify-between gap-2">
-                            <h2 className="font-semibold">Comanda</h2>
-                            <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
+                            <h2 className="font-semibold tracking-tight">
+                                {t('comanda.title', {
+                                    defaultValue: 'Comanda',
+                                })}
+                            </h2>
+                            <span
+                                className={cn(
+                                    'rounded-md px-2 py-0.5 text-xs font-medium',
+                                    pedido.estado === 'abierto'
+                                        ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                                        : pedido.estado === 'cerrado'
+                                          ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                          : 'bg-muted text-muted-foreground',
+                                )}
+                            >
                                 {t(`estado.${pedido.estado}`)}
                             </span>
                         </div>
-                        <ul className="max-h-[22rem] space-y-2 overflow-y-auto">
+
+                        <ul className="max-h-[min(26rem,calc(100dvh-22rem))] space-y-2 overflow-y-auto overscroll-contain">
                             {pedido.lineas.length === 0 ? (
-                                <li className="text-sm text-muted-foreground">
-                                    Agrega productos de la carta.
+                                <li className="rounded-xl border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
+                                    {t('comanda.empty', {
+                                        defaultValue:
+                                            'Toca un plato de la carta para agregarlo.',
+                                    })}
                                 </li>
                             ) : (
                                 pedido.lineas.map((l) => (
                                     <li
                                         key={l.id}
                                         className={cn(
-                                            'rounded-lg border px-3 py-2',
+                                            'rounded-xl border px-3 py-2.5',
+                                            lineaTone(l.estado),
                                             l.estado === 'anulado' &&
-                                                'opacity-50 line-through',
+                                                'line-through',
                                         )}
                                     >
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-medium">
-                                                    {Number(l.cantidad)} ×{' '}
+                                                    <span className="mr-1 tabular-nums text-brand-600">
+                                                        {Number(l.cantidad)}×
+                                                    </span>
                                                     {l.nombre}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
@@ -319,20 +292,28 @@ export default function Show({ pedido, productos, categorias }: Props) {
                                                         : ''}
                                                 </p>
                                             </div>
-                                            <div className="flex shrink-0 items-center gap-1">
-                                                <span className="text-sm tabular-nums">
+                                            <div className="flex shrink-0 items-center gap-0.5">
+                                                <span className="text-sm font-medium tabular-nums">
                                                     {money(l.importe)}
                                                 </span>
                                                 {activo &&
-                                                ['pendiente', 'en_cola'].includes(
-                                                    l.estado,
-                                                ) ? (
+                                                [
+                                                    'pendiente',
+                                                    'en_cola',
+                                                ].includes(l.estado) ? (
                                                     <Can permission="pedidos.update">
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="size-7 text-destructive"
+                                                            className="size-8 text-destructive"
+                                                            aria-label={t(
+                                                                'comanda.quitar',
+                                                                {
+                                                                    defaultValue:
+                                                                        'Quitar ítem',
+                                                                },
+                                                            )}
                                                             onClick={() =>
                                                                 anularLinea(
                                                                     l.id,
@@ -349,26 +330,28 @@ export default function Show({ pedido, productos, categorias }: Props) {
                                 ))
                             )}
                         </ul>
-                        <div className="space-y-1 border-t pt-3 text-sm">
-                            <div className="flex justify-between">
+
+                        <div className="space-y-1.5 border-t border-border/70 pt-3 text-sm">
+                            <div className="flex justify-between text-muted-foreground">
                                 <span>Subtotal</span>
-                                <span className="tabular-nums">
+                                <span className="tabular-nums text-foreground">
                                     {money(pedido.subtotal)}
                                 </span>
                             </div>
                             <div className="flex justify-between text-base font-semibold">
                                 <span>Total</span>
-                                <span className="tabular-nums text-[#660033]">
+                                <span className="tabular-nums text-brand-600">
                                     {money(pedido.total)}
                                 </span>
                             </div>
                         </div>
+
                         {activo ? (
                             <Can permission="pedidos.anular">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="w-full text-destructive"
+                                    className="w-full text-destructive hover:text-destructive"
                                     onClick={anularPedido}
                                 >
                                     {t('actions.anular')}

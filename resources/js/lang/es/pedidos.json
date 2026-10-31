@@ -69,8 +69,20 @@
         "notas_placeholder": "Opcional",
         "cantidad": "Cant.",
         "buscar_producto": "Buscar producto…",
+        "buscar_categoria": "Buscar categoría…",
+        "categorias": "Categorías",
+        "todas_categorias": "Todas",
+        "ver_categorias": "Ver todas",
+        "carta": "Carta",
+        "sin_productos": "Sin productos",
+        "sin_productos_hint": "Prueba otra categoría o limpia la búsqueda.",
         "modal_description": "Mostrador o delivery desde aquí. Pedidos de mesa: tócala en Salón → Operar.",
         "section_pedido": "Datos del pedido"
+    },
+    "comanda": {
+        "title": "Comanda",
+        "empty": "Toca un plato de la carta para agregarlo.",
+        "quitar": "Quitar ítem"
     },
     "cobro": {
         "title": "Cobrar pedido",
