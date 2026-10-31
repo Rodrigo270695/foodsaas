@@ -14,6 +14,9 @@ const pedidos = {
         destroy: (pedidoId: string | number, lineaId: string | number) => ({
             url: `${base}/${pedidoId}/lineas/${lineaId}`,
         }),
+        entregado: (pedidoId: string | number, lineaId: string | number) => ({
+            url: `${base}/${pedidoId}/lineas/${lineaId}/entregado`,
+        }),
     },
     enviar: (id: string | number) => ({ url: `${base}/${id}/enviar` }),
     anular: (id: string | number) => ({ url: `${base}/${id}/anular` }),

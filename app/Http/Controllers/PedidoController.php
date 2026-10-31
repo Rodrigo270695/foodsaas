@@ -289,6 +289,19 @@ class PedidoController extends Controller
             ->with('success', 'Pedido anulado.');
     }
 
+    public function marcarEntregado(
+        Pedido $pedido,
+        PedidoLinea $linea,
+        PedidoService $service,
+    ): RedirectResponse {
+        $this->assertPedidoAccessible($pedido);
+        $this->assertLineaDelPedido($pedido, $linea);
+
+        $service->marcarLineaEntregado($linea);
+
+        return back()->with('success', 'Marcado como llevado a mesa.');
+    }
+
     private function assertPedidoAccessible(Pedido $pedido): void
     {
         $this->tenantIdOrAbort();

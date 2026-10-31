@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
- * Feed liviano para comunicación mesero ↔ cocina (estilo Agrovision inbox).
- * Se comparte por Inertia y se refresca con polling parcial.
+ * Feed mesero ↔ cocina.
+ * - Mesero: platos listos aún no llevados a mesa (entregado_at null).
+ * - Cocina: ítems en cola esperando preparación.
  */
 final class ServicioRealtimeFeed
 {
@@ -20,6 +21,7 @@ final class ServicioRealtimeFeed
      *     enabled: bool,
      *     signature: string,
      *     listos: list<array<string, mixed>>,
+     *     cola: list<array<string, mixed>>,
      *     cocina: array{en_cola: int, signature: string}|null
      * }|null
      */
@@ -50,49 +52,51 @@ final class ServicioRealtimeFeed
                 'enabled' => true,
                 'signature' => 'empty',
                 'listos' => [],
+                'cola' => [],
                 'cocina' => $canCocina
                     ? ['en_cola' => 0, 'signature' => 'empty']
                     : null,
             ];
         }
 
-        $listos = [];
-        if ($canPedidos) {
-            $listos = self::listosParaMesero($user->id, $sedeId);
-        }
+        $listos = $canPedidos ? self::listosParaMesero($user->id, $sedeId) : [];
+        $cola = $canCocina ? self::colaParaCocina($sedeId) : [];
 
         $cocina = null;
         if ($canCocina) {
-            $cocina = self::cocinaSnapshot($sedeId);
+            $ids = array_column($cola, 'id');
+            $cocina = [
+                'en_cola' => count($ids),
+                'signature' => $ids === [] ? 'empty' : sha1(implode(',', $ids)),
+            ];
         }
 
         $signature = sha1(json_encode([
             'listos' => array_column($listos, 'id'),
-            'cocina' => $cocina['signature'] ?? null,
+            'cola' => array_column($cola, 'id'),
         ], JSON_THROW_ON_ERROR));
 
         return [
             'enabled' => true,
             'signature' => $signature,
             'listos' => $listos,
+            'cola' => $cola,
             'cocina' => $cocina,
         ];
     }
 
     /**
-     * Ítems marcados listo recientemente en pedidos activos del mesero.
-     *
      * @return list<array<string, mixed>>
      */
     private static function listosParaMesero(string $userId, string $sedeId): array
     {
-        $rows = PedidoLinea::query()
+        $query = PedidoLinea::query()
             ->with([
                 'pedido:id,numero,mesa_id,opened_by,sede_id,estado',
                 'pedido.mesa:id,codigo,nombre',
             ])
             ->where('estado', PedidoLinea::ESTADO_LISTO)
-            ->where('listo_at', '>=', now()->subMinutes(45))
+            ->where('listo_at', '>=', now()->subMinutes(90))
             ->whereHas('pedido', function ($q) use ($userId, $sedeId) {
                 $q->where('sede_id', $sedeId)
                     ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
@@ -100,50 +104,72 @@ final class ServicioRealtimeFeed
                         $inner->where('opened_by', $userId)
                             ->orWhereNull('opened_by');
                     });
-            })
+            });
+
+        if (Schema::hasColumn('ope_pedido_lineas', 'entregado_at')) {
+            $query->whereNull('entregado_at');
+        }
+
+        $rows = $query
             ->orderByDesc('listo_at')
             ->limit(25)
             ->get(['id', 'pedido_id', 'nombre', 'cantidad', 'listo_at', 'area_id']);
 
-        return $rows->map(static function (PedidoLinea $linea): array {
-            $pedido = $linea->pedido;
-            $mesa = $pedido?->mesa;
-
-            return [
-                'id' => $linea->id,
-                'pedido_id' => $linea->pedido_id,
-                'numero' => $pedido?->numero,
-                'nombre' => $linea->nombre,
-                'cantidad' => (float) $linea->cantidad,
-                'listo_at' => optional($linea->listo_at)?->toIso8601String(),
-                'mesa' => $mesa
-                    ? [
-                        'codigo' => $mesa->codigo,
-                        'nombre' => $mesa->nombre,
-                    ]
-                    : null,
-            ];
-        })->values()->all();
+        return $rows->map(static fn (PedidoLinea $linea): array => self::mapItem($linea))->values()->all();
     }
 
     /**
-     * @return array{en_cola: int, signature: string}
+     * @return list<array<string, mixed>>
      */
-    private static function cocinaSnapshot(string $sedeId): array
+    private static function colaParaCocina(string $sedeId): array
     {
-        $ids = PedidoLinea::query()
+        $rows = PedidoLinea::query()
+            ->with([
+                'pedido:id,numero,mesa_id,opened_by,sede_id,estado',
+                'pedido.mesa:id,codigo,nombre',
+                'area:id,nombre',
+            ])
             ->where('estado', PedidoLinea::ESTADO_EN_COLA)
             ->whereHas('pedido', function ($q) use ($sedeId) {
                 $q->where('sede_id', $sedeId)
                     ->whereIn('estado', Pedido::ESTADOS_ACTIVOS);
             })
             ->orderBy('enviado_at')
-            ->pluck('id')
-            ->all();
+            ->limit(40)
+            ->get(['id', 'pedido_id', 'nombre', 'cantidad', 'enviado_at', 'area_id']);
+
+        return $rows->map(static function (PedidoLinea $linea): array {
+            $item = self::mapItem($linea);
+            $item['enviado_at'] = optional($linea->enviado_at)?->toIso8601String();
+            $item['area'] = $linea->area
+                ? ['id' => $linea->area->id, 'nombre' => $linea->area->nombre]
+                : null;
+
+            return $item;
+        })->values()->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function mapItem(PedidoLinea $linea): array
+    {
+        $pedido = $linea->pedido;
+        $mesa = $pedido?->mesa;
 
         return [
-            'en_cola' => count($ids),
-            'signature' => $ids === [] ? 'empty' : sha1(implode(',', $ids)),
+            'id' => $linea->id,
+            'pedido_id' => $linea->pedido_id,
+            'numero' => $pedido?->numero,
+            'nombre' => $linea->nombre,
+            'cantidad' => (float) $linea->cantidad,
+            'listo_at' => optional($linea->listo_at)?->toIso8601String(),
+            'mesa' => $mesa
+                ? [
+                    'codigo' => $mesa->codigo,
+                    'nombre' => $mesa->nombre,
+                ]
+                : null,
         ];
     }
 }

@@ -220,6 +220,30 @@ class PedidoService
         return $linea;
     }
 
+    /**
+     * Mesero confirma que llevó el plato a la mesa (sale de la campana).
+     */
+    public function marcarLineaEntregado(PedidoLinea $linea): PedidoLinea
+    {
+        $pedido = $linea->pedido;
+        $this->assertActivo($pedido);
+
+        if ($linea->estado !== PedidoLinea::ESTADO_LISTO) {
+            throw ValidationException::withMessages([
+                'linea' => 'Solo se pueden marcar como entregados los ítems listos.',
+            ]);
+        }
+
+        if ($linea->entregado_at !== null) {
+            return $linea;
+        }
+
+        $linea->entregado_at = now();
+        $linea->save();
+
+        return $linea;
+    }
+
     public function anularPedido(Pedido $pedido): Pedido
     {
         $this->assertActivo($pedido);

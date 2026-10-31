@@ -46,6 +46,7 @@ type Linea = {
     importe: string | number;
     estado: string;
     notas: string | null;
+    entregado_at?: string | null;
     area?: { id: string; nombre: string } | null;
 };
 
@@ -147,6 +148,17 @@ export default function Show({ pedido, productos, categorias }: Props) {
         router.delete(pedidos.lineas.destroy(pedido.id, lineaId).url, {
             preserveScroll: true,
         });
+    }
+
+    function marcarEntregado(lineaId: string) {
+        router.post(
+            pedidos.lineas.entregado(pedido.id, lineaId).url,
+            {},
+            {
+                preserveScroll: true,
+                only: ['pedido', 'servicioFeed'],
+            },
+        );
     }
 
     function enviarCocina() {
@@ -326,9 +338,18 @@ export default function Show({ pedido, productos, categorias }: Props) {
                                                     {l.nombre}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {t(
-                                                        `linea_estado.${l.estado}`,
-                                                    )}
+                                                    {l.estado === 'listo' &&
+                                                    l.entregado_at
+                                                        ? t(
+                                                              'linea_estado.entregado',
+                                                              {
+                                                                  defaultValue:
+                                                                      'En mesa',
+                                                              },
+                                                          )
+                                                        : t(
+                                                              `linea_estado.${l.estado}`,
+                                                          )}
                                                     {l.area
                                                         ? ` · ${l.area.nombre}`
                                                         : ''}
@@ -338,6 +359,39 @@ export default function Show({ pedido, productos, categorias }: Props) {
                                                 <span className="text-sm font-medium tabular-nums">
                                                     {money(l.importe)}
                                                 </span>
+                                                {activo &&
+                                                l.estado === 'listo' &&
+                                                !l.entregado_at ? (
+                                                    <Can permission="pedidos.update">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-8 text-emerald-700 dark:text-emerald-400"
+                                                            aria-label={t(
+                                                                'comanda.llevar_mesa',
+                                                                {
+                                                                    defaultValue:
+                                                                        'Llevé a mesa',
+                                                                },
+                                                            )}
+                                                            title={t(
+                                                                'comanda.llevar_mesa',
+                                                                {
+                                                                    defaultValue:
+                                                                        'Llevé a mesa',
+                                                                },
+                                                            )}
+                                                            onClick={() =>
+                                                                marcarEntregado(
+                                                                    l.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Check className="size-3.5" />
+                                                        </Button>
+                                                    </Can>
+                                                ) : null}
                                                 {activo &&
                                                 l.estado === 'pendiente' ? (
                                                     <Can permission="pedidos.update">

@@ -49,6 +49,7 @@ class PedidoLinea extends Model
         'orden',
         'enviado_at',
         'listo_at',
+        'entregado_at',
     ];
 
     protected function casts(): array
@@ -60,6 +61,7 @@ class PedidoLinea extends Model
             'orden' => 'integer',
             'enviado_at' => 'datetime',
             'listo_at' => 'datetime',
+            'entregado_at' => 'datetime',
         ];
     }
 

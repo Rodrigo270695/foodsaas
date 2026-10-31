@@ -165,6 +165,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:pedidos.enviar')
                     ->post('{pedido}/enviar', [PedidoController::class, 'enviar'])
                     ->name('enviar');
+                Route::middleware('permission:pedidos.update')
+                    ->post('{pedido}/lineas/{linea}/entregado', [PedidoController::class, 'marcarEntregado'])
+                    ->name('lineas.entregado');
                 Route::middleware('permission:pedidos.anular')
                     ->post('{pedido}/anular', [PedidoController::class, 'anular'])
                     ->name('anular');

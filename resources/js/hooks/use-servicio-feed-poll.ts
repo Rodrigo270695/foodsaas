@@ -5,11 +5,12 @@ import { toastManager } from '@/lib/toast';
 import type { ServicioFeed, ServicioListoItem } from '@/types/servicio-feed';
 
 const POLL_MS = 8000;
-const SEEN_KEY = 'foodsaas.servicioFeed.seenListos';
+const SEEN_LISTOS_KEY = 'foodsaas.servicioFeed.seenListos';
+const SEEN_COLA_KEY = 'foodsaas.servicioFeed.seenCola';
 
-function readSeen(): Set<string> {
+function readSeen(key: string): Set<string> {
     try {
-        const raw = sessionStorage.getItem(SEEN_KEY);
+        const raw = sessionStorage.getItem(key);
         if (!raw) {
             return new Set();
         }
@@ -23,12 +24,9 @@ function readSeen(): Set<string> {
     }
 }
 
-function writeSeen(ids: Set<string>): void {
+function writeSeen(key: string, ids: Set<string>): void {
     try {
-        sessionStorage.setItem(
-            SEEN_KEY,
-            JSON.stringify([...ids].slice(-80)),
-        );
+        sessionStorage.setItem(key, JSON.stringify([...ids].slice(-100)));
     } catch {
         // ignore quota
     }
@@ -42,8 +40,7 @@ function mesaLabel(item: ServicioListoItem): string {
 }
 
 /**
- * Polling del feed compartido (estilo Agrovision observation inbox).
- * Mesero: toast + sonido cuando cocina marca un plato como listo.
+ * Polling del feed: toasts/sonidos al llegar listos (mesero) o cola (cocina).
  */
 export function useServicioFeedPoll(): void {
     const page = usePage();
@@ -73,14 +70,22 @@ export function useServicioFeedPoll(): void {
             return;
         }
 
+        const cola = feed.cola ?? [];
+        const listos = feed.listos ?? [];
+
         if (!bootstrapped.current) {
             bootstrapped.current = true;
             knownSig.current = feed.signature;
-            const seen = readSeen();
-            for (const item of feed.listos) {
-                seen.add(item.id);
+            const seenListos = readSeen(SEEN_LISTOS_KEY);
+            const seenCola = readSeen(SEEN_COLA_KEY);
+            for (const item of listos) {
+                seenListos.add(item.id);
             }
-            writeSeen(seen);
+            for (const item of cola) {
+                seenCola.add(item.id);
+            }
+            writeSeen(SEEN_LISTOS_KEY, seenListos);
+            writeSeen(SEEN_COLA_KEY, seenCola);
             return;
         }
 
@@ -89,26 +94,50 @@ export function useServicioFeedPoll(): void {
         }
         knownSig.current = feed.signature;
 
-        const seen = readSeen();
-        const nuevos = feed.listos.filter((item) => !seen.has(item.id));
+        const seenListos = readSeen(SEEN_LISTOS_KEY);
+        const nuevosListos = listos.filter((item) => !seenListos.has(item.id));
+        if (nuevosListos.length > 0) {
+            for (const item of nuevosListos) {
+                seenListos.add(item.id);
+            }
+            writeSeen(SEEN_LISTOS_KEY, seenListos);
 
-        if (nuevos.length === 0) {
-            return;
+            const first = nuevosListos[0];
+            const extra =
+                nuevosListos.length > 1
+                    ? ` (+${nuevosListos.length - 1} más)`
+                    : '';
+            playNotifyChime('ready');
+            toastManager.success({
+                title: 'Listo para servir',
+                description: `${first.nombre} · Pedido #${first.numero ?? '—'} · ${mesaLabel(first)}${extra}`,
+                duration: 6000,
+            });
         }
 
-        for (const item of nuevos) {
-            seen.add(item.id);
+        const seenCola = readSeen(SEEN_COLA_KEY);
+        const nuevosCola = cola.filter((item) => !seenCola.has(item.id));
+        if (nuevosCola.length > 0) {
+            for (const item of nuevosCola) {
+                seenCola.add(item.id);
+            }
+            writeSeen(SEEN_COLA_KEY, seenCola);
+
+            // En /cocina ya hay chime propio; aquí avisamos si el cocinero está en otra pantalla
+            const onCocina = window.location.pathname.includes('/cocina');
+            if (!onCocina) {
+                const first = nuevosCola[0];
+                const extra =
+                    nuevosCola.length > 1
+                        ? ` (+${nuevosCola.length - 1} más)`
+                        : '';
+                playNotifyChime('kitchen');
+                toastManager.info({
+                    title: 'Nuevo pedido en cocina',
+                    description: `${first.nombre} · Pedido #${first.numero ?? '—'} · ${mesaLabel(first)}${extra}`,
+                    duration: 5500,
+                });
+            }
         }
-        writeSeen(seen);
-
-        const first = nuevos[0];
-        const extra = nuevos.length > 1 ? ` (+${nuevos.length - 1} más)` : '';
-
-        playNotifyChime('ready');
-        toastManager.success({
-            title: 'Listo para servir',
-            description: `${first.nombre} · Pedido #${first.numero ?? '—'} · ${mesaLabel(first)}${extra}`,
-            duration: 6000,
-        });
     }, [feed]);
 }
