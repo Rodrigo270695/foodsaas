@@ -18,6 +18,16 @@
         "estado_abierta": "Open",
         "estado_cerrada": "Closed"
     },
+    "abrir": {
+        "title": "Open cash session",
+        "description": "Enter the opening cash and, if needed, the balance in Yape, Plin, transfer, Agora, and Sip.",
+        "moneda": "Currency",
+        "efectivo": "Opening cash",
+        "billeteras": "Wallets (optional)",
+        "billeteras_hint": "Balance already in each wallet when opening. Leave at 0 if unused.",
+        "notas": "Notes (optional)",
+        "submit": "Confirm opening"
+    },
     "stats": {
         "ventas": "Period sales",
         "apertura": "Opening balance",
@@ -63,6 +73,8 @@
         "yape": "Yape",
         "plin": "Plin",
         "transferencia": "Transfer",
+        "agora": "Agora",
+        "sip": "Sip",
         "otro": "Other"
     }
 }

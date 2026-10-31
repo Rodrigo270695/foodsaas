@@ -9,6 +9,7 @@ use App\Models\CajaSesion;
 use App\Models\Pago;
 use App\Models\Venta;
 use App\Services\Operacion\CajaService;
+use App\Support\Caja\CajaBilleteras;
 use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -98,6 +99,7 @@ class CajaController extends Controller
             'sistema_efectivo' => $sistemaEfectivo,
             'motivos_egreso' => CajaEgreso::MOTIVOS,
             'medios' => Pago::MEDIOS,
+            'billeteras' => CajaBilleteras::CODIGOS,
             'filters' => [
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
             ],
@@ -115,10 +117,13 @@ class CajaController extends Controller
         $sedeId = $this->activeSedeIdOrAbort();
 
         $data = $request->validate([
+            'moneda' => ['nullable', 'string', Rule::in(['PEN', 'USD'])],
             'monto_apertura' => ['nullable', 'numeric', 'min:0', 'max:999999'],
+            'notas' => ['nullable', 'string', 'max:500'],
+            ...CajaBilleteras::validationRules('saldos_apertura', false),
         ]);
 
-        $caja->abrirSesion($sedeId, (float) ($data['monto_apertura'] ?? 0));
+        $caja->abrirSesion($sedeId, $data);
 
         return back()->with('success', 'Caja abierta.');
     }

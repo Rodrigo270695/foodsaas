@@ -40,6 +40,8 @@ class FelDocumentsXlsxExport
         'plin' => 'Plin',
         'tarjeta' => 'Tarjeta',
         'transferencia' => 'Transferencia',
+        'agora' => 'Agora',
+        'sip' => 'Sip',
     ];
 
     /**

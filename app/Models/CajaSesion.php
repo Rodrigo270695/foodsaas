@@ -11,7 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $id
  * @property string $sede_id
  * @property string $estado
+ * @property string $moneda
  * @property string $monto_apertura
+ * @property array<string, string>|null $saldos_apertura_json
+ * @property string|null $notas_apertura
  */
 class CajaSesion extends Model
 {
@@ -26,7 +29,10 @@ class CajaSesion extends Model
     protected $fillable = [
         'sede_id',
         'estado',
+        'moneda',
         'monto_apertura',
+        'saldos_apertura_json',
+        'notas_apertura',
         'monto_cierre_sistema',
         'monto_cierre_contado',
         'notas_cierre',
@@ -40,6 +46,7 @@ class CajaSesion extends Model
     {
         return [
             'monto_apertura' => 'decimal:2',
+            'saldos_apertura_json' => 'array',
             'monto_cierre_sistema' => 'decimal:2',
             'monto_cierre_contado' => 'decimal:2',
             'opened_at' => 'datetime',

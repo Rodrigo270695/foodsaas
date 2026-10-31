@@ -26,6 +26,10 @@ class Pago extends Model
 
     public const MEDIO_TRANSFERENCIA = 'transferencia';
 
+    public const MEDIO_AGORA = 'agora';
+
+    public const MEDIO_SIP = 'sip';
+
     public const MEDIO_OTRO = 'otro';
 
     public const MEDIOS = [
@@ -34,7 +38,18 @@ class Pago extends Model
         self::MEDIO_YAPE,
         self::MEDIO_PLIN,
         self::MEDIO_TRANSFERENCIA,
+        self::MEDIO_AGORA,
+        self::MEDIO_SIP,
         self::MEDIO_OTRO,
+    ];
+
+    /** Billeteras digitales (sin efectivo ni tarjeta POS). */
+    public const BILLETERAS = [
+        self::MEDIO_YAPE,
+        self::MEDIO_PLIN,
+        self::MEDIO_TRANSFERENCIA,
+        self::MEDIO_AGORA,
+        self::MEDIO_SIP,
     ];
 
     protected $table = 'fin_pagos';

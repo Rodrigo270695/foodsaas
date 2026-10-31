@@ -11,6 +11,7 @@ use App\Models\PedidoLinea;
 use App\Models\ProductoCarta;
 use App\Models\Venta;
 use App\Services\Inventario\KardexService;
+use App\Support\Caja\CajaBilleteras;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +32,15 @@ class CajaService
             ->first();
     }
 
-    public function abrirSesion(string $sedeId, float $montoApertura = 0): CajaSesion
+    /**
+     * @param  array{
+     *     monto_apertura?: float|int|string|null,
+     *     saldos_apertura?: array<string, mixed>|null,
+     *     moneda?: string|null,
+     *     notas?: string|null
+     * }  $data
+     */
+    public function abrirSesion(string $sedeId, array $data = []): CajaSesion
     {
         if ($this->sesionAbierta($sedeId) !== null) {
             throw ValidationException::withMessages([
@@ -39,10 +48,22 @@ class CajaService
             ]);
         }
 
+        $moneda = strtoupper(trim((string) ($data['moneda'] ?? 'PEN')));
+        if (! in_array($moneda, ['PEN', 'USD'], true)) {
+            $moneda = 'PEN';
+        }
+
+        $notas = isset($data['notas']) && is_string($data['notas']) && trim($data['notas']) !== ''
+            ? trim($data['notas'])
+            : null;
+
         return CajaSesion::query()->create([
             'sede_id' => $sedeId,
             'estado' => CajaSesion::ESTADO_ABIERTA,
-            'monto_apertura' => round(max(0, $montoApertura), 2),
+            'moneda' => $moneda,
+            'monto_apertura' => round(max(0, (float) ($data['monto_apertura'] ?? 0)), 2),
+            'saldos_apertura_json' => CajaBilleteras::normalize($data['saldos_apertura'] ?? null),
+            'notas_apertura' => $notas,
             'opened_by' => Auth::id(),
             'opened_at' => now(),
         ]);

@@ -32,6 +32,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
 import { cn } from '@/lib/utils';
 import caja from './caja-routes';
+import { SesionAbrirModal } from './components/sesion-abrir-modal';
 
 type Sesion = {
     id: string;
@@ -90,7 +91,6 @@ export default function Index({
     const [abrirOpen, setAbrirOpen] = useState(false);
     const [cerrarOpen, setCerrarOpen] = useState(false);
     const [egresoOpen, setEgresoOpen] = useState(false);
-    const [montoApertura, setMontoApertura] = useState('0');
     const [montoContado, setMontoContado] = useState('0');
     const [notas, setNotas] = useState('');
     const [egresoMonto, setEgresoMonto] = useState('');
@@ -98,18 +98,6 @@ export default function Index({
     const [egresoMotivo, setEgresoMotivo] = useState('insumos');
     const [egresoNotas, setEgresoNotas] = useState('');
     const [busy, setBusy] = useState(false);
-
-    function abrirCaja() {
-        setBusy(true);
-        router.post(
-            caja.abrir().url,
-            { monto_apertura: Number(montoApertura) || 0 },
-            {
-                onFinish: () => setBusy(false),
-                onSuccess: () => setAbrirOpen(false),
-            },
-        );
-    }
 
     function cerrarCaja() {
         setBusy(true);
@@ -387,31 +375,7 @@ export default function Index({
                 </section>
             </div>
 
-            <Dialog open={abrirOpen} onOpenChange={setAbrirOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>{t('sesion.abrir')}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-2 py-2">
-                        <Label>{t('sesion.apertura')}</Label>
-                        <Input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={montoApertura}
-                            onChange={(e) => setMontoApertura(e.target.value)}
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setAbrirOpen(false)}>
-                            {t('common:actions.cancel')}
-                        </Button>
-                        <Button type="button" disabled={busy} onClick={abrirCaja}>
-                            {t('sesion.abrir')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <SesionAbrirModal open={abrirOpen} onOpenChange={setAbrirOpen} />
 
             <Dialog open={cerrarOpen} onOpenChange={setCerrarOpen}>
                 <DialogContent className="sm:max-w-md">

@@ -18,6 +18,16 @@
         "estado_abierta": "Abierta",
         "estado_cerrada": "Cerrada"
     },
+    "abrir": {
+        "title": "Abrir sesión de caja",
+        "description": "Indica el efectivo inicial y, si aplica, el saldo de Yape, Plin, transferencia, Agora y Sip.",
+        "moneda": "Moneda",
+        "efectivo": "Efectivo inicial",
+        "billeteras": "Billeteras (opcional)",
+        "billeteras_hint": "Saldo que ya hay en cada billetera al abrir. Déjalo en 0 si no usas ese medio.",
+        "notas": "Notas (opcional)",
+        "submit": "Confirmar apertura"
+    },
     "stats": {
         "ventas": "Ventas del periodo",
         "apertura": "Saldo apertura",
@@ -63,6 +73,8 @@
         "yape": "Yape",
         "plin": "Plin",
         "transferencia": "Transferencia",
+        "agora": "Agora",
+        "sip": "Sip",
         "otro": "Otro"
     }
 }
