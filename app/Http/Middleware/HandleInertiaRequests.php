@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\RestaurantSetting;
 use App\Models\User;
+use App\Support\Operacion\ServicioRealtimeFeed;
 use App\Support\Plan\PlanLimits;
 use App\Support\Restaurante\RestaurantBrandingUrls;
 use App\Support\Sedes\ActiveSedeContext;
@@ -198,6 +199,8 @@ class HandleInertiaRequests extends Middleware
                 }
             },
             'active_sede' => static fn () => ActiveSedeContext::sharedPayload(),
+            // Feed mesero ↔ cocina (polling parcial, estilo Agrovision inbox).
+            'servicioFeed' => fn () => ServicioRealtimeFeed::forUser($user),
         ];
     }
 

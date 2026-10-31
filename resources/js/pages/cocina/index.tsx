@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { Check, ChefHat, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmptyState, PageHeader } from '@/components/data-page';
 import { Can } from '@/components/can';
@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/filter-select';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
+import { playNotifyChime } from '@/lib/notification-sound';
+import { toastManager } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import cocina from './cocina-routes';
 
@@ -44,18 +46,66 @@ type Props = {
     stats: { en_cola: number; listos: number };
 };
 
+function ticketsFingerprint(tickets: Ticket[]): string {
+    return tickets
+        .flatMap((ticket) =>
+            ticket.lineas
+                .filter((l) => l.estado === 'en_cola')
+                .map((l) => l.id),
+        )
+        .sort()
+        .join(',');
+}
+
 export default function Index({ tickets, areas, filters, stats }: Props) {
     const { t } = useTranslation(['cocina', 'common']);
     const { can } = usePermission();
+    const knownFp = useRef<string | null>(null);
+    const bootstrapped = useRef(false);
 
+    // Recarga viva de la KDS + tono cuando llega un pedido nuevo
     useEffect(() => {
         const id = window.setInterval(() => {
             router.reload({
                 only: ['tickets', 'stats', 'filters'],
+                preserveState: true,
+                preserveScroll: true,
             });
-        }, 12000);
+        }, 6000);
         return () => window.clearInterval(id);
     }, []);
+
+    useEffect(() => {
+        const fp = ticketsFingerprint(tickets);
+        if (!bootstrapped.current) {
+            bootstrapped.current = true;
+            knownFp.current = fp;
+            return;
+        }
+        if (knownFp.current === fp) {
+            return;
+        }
+        const prev = new Set(
+            (knownFp.current ?? '').split(',').filter(Boolean),
+        );
+        const next = fp.split(',').filter(Boolean);
+        const arrived = next.filter((id) => !prev.has(id));
+        knownFp.current = fp;
+
+        if (arrived.length > 0) {
+            playNotifyChime('kitchen');
+            toastManager.info({
+                title: t('toast.nuevo_pedido', {
+                    defaultValue: 'Nuevo pedido en cocina',
+                }),
+                description: t('toast.nuevo_pedido_desc', {
+                    defaultValue: `${arrived.length} ítem(s) entraron a la cola.`,
+                    count: arrived.length,
+                }),
+                duration: 5000,
+            });
+        }
+    }, [tickets, t]);
 
     const areaOptions = useMemo<readonly FilterSelectOption<string>[]>(
         () => [

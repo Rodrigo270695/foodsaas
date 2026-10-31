@@ -6,7 +6,7 @@ import {
     Trash2,
     Wallet,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/components/data-page';
 import { Can } from '@/components/can';
@@ -102,6 +102,20 @@ export default function Show({ pedido, productos, categorias }: Props) {
     const cobrables = pedido.lineas.filter((l) =>
         ['en_cola', 'listo'].includes(l.estado),
     );
+    // Vista viva: la comanda se actualiza sola (el toast/sonido viene del feed del header)
+    useEffect(() => {
+        if (!activo) {
+            return;
+        }
+        const id = window.setInterval(() => {
+            router.reload({
+                only: ['pedido'],
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }, 7000);
+        return () => window.clearInterval(id);
+    }, [activo]);
 
     function addProducto(productoId: string) {
         if (!activo || !can('pedidos.update')) {
