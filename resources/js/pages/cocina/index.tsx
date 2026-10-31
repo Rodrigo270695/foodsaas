@@ -1,9 +1,10 @@
 import { Head, router } from '@inertiajs/react';
 import { Check, ChefHat, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EmptyState, PageHeader } from '@/components/data-page';
 import { Can } from '@/components/can';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { Button } from '@/components/ui/button';
 import {
     FilterSelect,
@@ -11,9 +12,8 @@ import {
 } from '@/components/ui/filter-select';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
-import { playNotifyChime } from '@/lib/notification-sound';
-import { toastManager } from '@/lib/toast';
 import { cn } from '@/lib/utils';
+import { todayIso } from '../pedidos/types';
 import cocina from './cocina-routes';
 
 type Linea = {
@@ -41,71 +41,28 @@ type Props = {
     filters: {
         area_id: string | null;
         vista: string;
+        desde: string;
+        hasta: string;
         sede_id: string | null;
     };
     stats: { en_cola: number; listos: number };
 };
 
-function ticketsFingerprint(tickets: Ticket[]): string {
-    return tickets
-        .flatMap((ticket) =>
-            ticket.lineas
-                .filter((l) => l.estado === 'en_cola')
-                .map((l) => l.id),
-        )
-        .sort()
-        .join(',');
-}
-
 export default function Index({ tickets, areas, filters, stats }: Props) {
     const { t } = useTranslation(['cocina', 'common']);
     const { can } = usePermission();
-    const knownFp = useRef<string | null>(null);
-    const bootstrapped = useRef(false);
 
-    // Recarga viva de la KDS + tono cuando llega un pedido nuevo
+    // Recarga viva de la KDS (sonido/toast vienen del feed global de la campana)
     useEffect(() => {
         const id = window.setInterval(() => {
             router.reload({
-                only: ['tickets', 'stats', 'filters'],
+                only: ['tickets', 'stats', 'filters', 'servicioFeed'],
                 preserveState: true,
                 preserveScroll: true,
             });
-        }, 6000);
+        }, 5000);
         return () => window.clearInterval(id);
     }, []);
-
-    useEffect(() => {
-        const fp = ticketsFingerprint(tickets);
-        if (!bootstrapped.current) {
-            bootstrapped.current = true;
-            knownFp.current = fp;
-            return;
-        }
-        if (knownFp.current === fp) {
-            return;
-        }
-        const prev = new Set(
-            (knownFp.current ?? '').split(',').filter(Boolean),
-        );
-        const next = fp.split(',').filter(Boolean);
-        const arrived = next.filter((id) => !prev.has(id));
-        knownFp.current = fp;
-
-        if (arrived.length > 0) {
-            playNotifyChime('kitchen');
-            toastManager.info({
-                title: t('toast.nuevo_pedido', {
-                    defaultValue: 'Nuevo pedido en cocina',
-                }),
-                description: t('toast.nuevo_pedido_desc', {
-                    defaultValue: `${arrived.length} ítem(s) entraron a la cola.`,
-                    count: arrived.length,
-                }),
-                duration: 5000,
-            });
-        }
-    }, [tickets, t]);
 
     const areaOptions = useMemo<readonly FilterSelectOption<string>[]>(
         () => [
@@ -124,19 +81,23 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
         [t],
     );
 
-    function apply(key: string, value: string) {
-        const area =
-            key === 'area_id'
-                ? value === 'todas'
-                    ? undefined
-                    : value
-                : filters.area_id || undefined;
-
+    function visit(params: {
+        area_id?: string | null;
+        vista?: string;
+        desde?: string;
+        hasta?: string;
+    }) {
+        const day = todayIso();
         router.get(
             cocina.index().url,
             {
-                area_id: area,
-                vista: key === 'vista' ? value : filters.vista,
+                area_id:
+                    params.area_id === undefined
+                        ? filters.area_id || undefined
+                        : params.area_id || undefined,
+                vista: params.vista ?? filters.vista,
+                desde: params.desde ?? filters.desde ?? day,
+                hasta: params.hasta ?? filters.hasta ?? day,
             },
             {
                 preserveState: true,
@@ -144,6 +105,16 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
                 only: ['tickets', 'filters', 'stats'],
             },
         );
+    }
+
+    function apply(key: string, value: string) {
+        if (key === 'area_id') {
+            visit({
+                area_id: value === 'todas' ? null : value,
+            });
+            return;
+        }
+        visit({ vista: value });
     }
 
     function marcarListo(lineaId: string) {
@@ -189,7 +160,7 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
                     }
                 />
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <FilterSelect
                         ariaLabel={t('filters.area')}
                         value={filters.area_id ?? 'todas'}
@@ -201,6 +172,15 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
                         value={filters.vista}
                         onChange={(v) => apply('vista', v)}
                         options={vistaOptions}
+                    />
+                    <DateRangeFilter
+                        desde={filters.desde}
+                        hasta={filters.hasta}
+                        onApply={(desde, hasta) => visit({ desde, hasta })}
+                        onClear={() => {
+                            const day = todayIso();
+                            visit({ desde: day, hasta: day });
+                        }}
                     />
                 </div>
 

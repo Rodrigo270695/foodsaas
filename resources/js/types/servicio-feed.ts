@@ -5,6 +5,7 @@ export type ServicioListoItem = {
     nombre: string;
     cantidad: number;
     listo_at: string | null;
+    enviado_por?: string | null;
     mesa: { codigo: string; nombre: string | null } | null;
     enviado_at?: string | null;
     area?: { id: string; nombre: string } | null;

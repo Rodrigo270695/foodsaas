@@ -4,7 +4,7 @@ import { playNotifyChime } from '@/lib/notification-sound';
 import { toastManager } from '@/lib/toast';
 import type { ServicioFeed, ServicioListoItem } from '@/types/servicio-feed';
 
-const POLL_MS = 8000;
+const POLL_MS = 6000;
 const SEEN_LISTOS_KEY = 'foodsaas.servicioFeed.seenListos';
 const SEEN_COLA_KEY = 'foodsaas.servicioFeed.seenCola';
 
@@ -40,7 +40,9 @@ function mesaLabel(item: ServicioListoItem): string {
 }
 
 /**
- * Polling del feed: toasts/sonidos al llegar listos (mesero) o cola (cocina).
+ * Polling del feed:
+ * - Mesero: toast/sonido solo de SUS listos (enviado_por).
+ * - Cocina: toast/sonido de cola nueva (también en /cocina).
  */
 export function useServicioFeedPoll(): void {
     const page = usePage();
@@ -123,21 +125,18 @@ export function useServicioFeedPoll(): void {
             }
             writeSeen(SEEN_COLA_KEY, seenCola);
 
-            // En /cocina ya hay chime propio; aquí avisamos si el cocinero está en otra pantalla
-            const onCocina = window.location.pathname.includes('/cocina');
-            if (!onCocina) {
-                const first = nuevosCola[0];
-                const extra =
-                    nuevosCola.length > 1
-                        ? ` (+${nuevosCola.length - 1} más)`
-                        : '';
-                playNotifyChime('kitchen');
-                toastManager.info({
-                    title: 'Nuevo pedido en cocina',
-                    description: `${first.nombre} · Pedido #${first.numero ?? '—'} · ${mesaLabel(first)}${extra}`,
-                    duration: 5500,
-                });
-            }
+            const first = nuevosCola[0];
+            const extra =
+                nuevosCola.length > 1
+                    ? ` (+${nuevosCola.length - 1} más)`
+                    : '';
+            // Siempre suena (también con /cocina abierta)
+            playNotifyChime('kitchen');
+            toastManager.info({
+                title: 'Nuevo pedido en cocina',
+                description: `${first.nombre} · Pedido #${first.numero ?? '—'} · ${mesaLabel(first)}${extra}`,
+                duration: 5500,
+            });
         }
     }, [feed]);
 }

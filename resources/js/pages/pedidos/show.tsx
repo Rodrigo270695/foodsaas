@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     Check,
@@ -47,6 +47,7 @@ type Linea = {
     estado: string;
     notas: string | null;
     entregado_at?: string | null;
+    enviado_por?: number | string | null;
     area?: { id: string; nombre: string } | null;
 };
 
@@ -92,8 +93,21 @@ function lineaTone(estado: string): string {
 export default function Show({ pedido, productos, categorias }: Props) {
     const { t } = useTranslation(['pedidos', 'caja', 'common']);
     const { can } = usePermission();
+    const page = usePage<{ auth?: { user?: { id?: number | string } } }>();
+    const userId = page.props.auth?.user?.id;
     const activo =
         pedido.estado === 'borrador' || pedido.estado === 'abierto';
+
+    function soyDueñoEnvio(linea: Linea): boolean {
+        if (userId == null) {
+            return false;
+        }
+        const dueño = linea.enviado_por;
+        if (dueño == null) {
+            return false;
+        }
+        return String(dueño) === String(userId);
+    }
     const [cobrarOpen, setCobrarOpen] = useState(false);
     const [medio, setMedio] = useState('efectivo');
     const [monto, setMonto] = useState(String(Number(pedido.total).toFixed(2)));
@@ -361,7 +375,8 @@ export default function Show({ pedido, productos, categorias }: Props) {
                                                 </span>
                                                 {activo &&
                                                 l.estado === 'listo' &&
-                                                !l.entregado_at ? (
+                                                !l.entregado_at &&
+                                                soyDueñoEnvio(l) ? (
                                                     <Can permission="pedidos.update">
                                                         <Button
                                                             type="button"

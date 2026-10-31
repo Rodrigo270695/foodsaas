@@ -28,6 +28,30 @@ class CocinaController extends Controller
             $vista = 'cola';
         }
 
+        $parseDate = static function (string $value): string {
+            $value = trim($value);
+
+            return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : '';
+        };
+
+        $desde = $parseDate((string) $request->string('desde', ''));
+        $hasta = $parseDate((string) $request->string('hasta', ''));
+
+        // Sin rango → siempre hoy (igual que Pedidos).
+        $hoy = now()->toDateString();
+        if ($desde === '' && $hasta === '') {
+            $desde = $hoy;
+            $hasta = $hoy;
+        } elseif ($desde === '') {
+            $desde = $hasta;
+        } elseif ($hasta === '') {
+            $hasta = $desde;
+        }
+
+        if ($desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
+
         $areas = $sedeId === ''
             ? collect()
             : AreaCarta::query()
@@ -41,23 +65,42 @@ class CocinaController extends Controller
             $areaId = '';
         }
 
+        $applySedeYFecha = function ($q) use ($sedeId, $desde, $hasta): void {
+            if ($sedeId === '') {
+                $q->whereRaw('1 = 0');
+
+                return;
+            }
+            $q->where('sede_id', $sedeId)
+                ->whereIn('estado', Pedido::ESTADOS_ACTIVOS);
+        };
+
+        $applyFechaLinea = function ($q) use ($desde, $hasta): void {
+            // Por fecha de envío a cocina (o creación si aún no hay enviado_at).
+            $q->where(function ($inner) use ($desde, $hasta): void {
+                $inner->where(function ($sent) use ($desde, $hasta): void {
+                    $sent->whereNotNull('enviado_at')
+                        ->whereDate('enviado_at', '>=', $desde)
+                        ->whereDate('enviado_at', '<=', $hasta);
+                })->orWhere(function ($created) use ($desde, $hasta): void {
+                    $created->whereNull('enviado_at')
+                        ->whereDate('created_at', '>=', $desde)
+                        ->whereDate('created_at', '<=', $hasta);
+                });
+            });
+        };
+
         $query = PedidoLinea::query()
             ->with([
                 'pedido:id,numero,mesa_id,canal,estado,enviado_at,created_at',
                 'pedido.mesa:id,codigo,nombre',
                 'area:id,nombre',
             ])
-            ->whereHas('pedido', function ($q) use ($sedeId): void {
-                if ($sedeId === '') {
-                    $q->whereRaw('1 = 0');
-
-                    return;
-                }
-                $q->where('sede_id', $sedeId)
-                    ->whereIn('estado', Pedido::ESTADOS_ACTIVOS);
-            })
+            ->whereHas('pedido', $applySedeYFecha)
             ->orderBy('enviado_at')
             ->orderBy('created_at');
+
+        $applyFechaLinea($query);
 
         if ($areaId !== '') {
             $query->where('area_id', $areaId);
@@ -90,25 +133,34 @@ class CocinaController extends Controller
             })
             ->values();
 
+        $statsBase = function (string $estado) use ($sedeId, $areaId, $applySedeYFecha, $applyFechaLinea) {
+            if ($sedeId === '') {
+                return 0;
+            }
+
+            $q = PedidoLinea::query()
+                ->where('estado', $estado)
+                ->whereHas('pedido', $applySedeYFecha)
+                ->when($areaId !== '', fn ($inner) => $inner->where('area_id', $areaId));
+
+            $applyFechaLinea($q);
+
+            return $q->count();
+        };
+
         return Inertia::render('cocina/index', [
             'tickets' => $tickets,
             'areas' => $areas,
             'filters' => [
                 'area_id' => $areaId !== '' ? $areaId : null,
                 'vista' => $vista,
+                'desde' => $desde,
+                'hasta' => $hasta,
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
             ],
             'stats' => [
-                'en_cola' => $sedeId === '' ? 0 : PedidoLinea::query()
-                    ->where('estado', PedidoLinea::ESTADO_EN_COLA)
-                    ->whereHas('pedido', fn ($q) => $q->where('sede_id', $sedeId)->whereIn('estado', Pedido::ESTADOS_ACTIVOS))
-                    ->when($areaId !== '', fn ($q) => $q->where('area_id', $areaId))
-                    ->count(),
-                'listos' => $sedeId === '' ? 0 : PedidoLinea::query()
-                    ->where('estado', PedidoLinea::ESTADO_LISTO)
-                    ->whereHas('pedido', fn ($q) => $q->where('sede_id', $sedeId)->whereIn('estado', Pedido::ESTADOS_ACTIVOS))
-                    ->when($areaId !== '', fn ($q) => $q->where('area_id', $areaId))
-                    ->count(),
+                'en_cola' => $statsBase(PedidoLinea::ESTADO_EN_COLA),
+                'listos' => $statsBase(PedidoLinea::ESTADO_LISTO),
             ],
         ]);
     }

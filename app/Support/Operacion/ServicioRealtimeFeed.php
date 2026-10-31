@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
- * Feed mesero ↔ cocina.
- * - Mesero: platos listos aún no llevados a mesa (entregado_at null).
- * - Cocina: ítems en cola esperando preparación.
+ * Feed mesero ↔ cocina (por dueño del envío).
+ * - Mesero: solo ítems que ÉL envió a cocina y están listos sin entregar.
+ * - Cocina: cola de la sede (todos los cocineros de esa sede).
  */
 final class ServicioRealtimeFeed
 {
@@ -59,7 +59,8 @@ final class ServicioRealtimeFeed
             ];
         }
 
-        $listos = $canPedidos ? self::listosParaMesero($user->id, $sedeId) : [];
+        // Listos solo para mesero (quien envió). Un admin-cocinero no ve listos ajenos.
+        $listos = $canPedidos ? self::listosParaMesero((string) $user->id, $sedeId) : [];
         $cola = $canCocina ? self::colaParaCocina($sedeId) : [];
 
         $cocina = null;
@@ -86,6 +87,8 @@ final class ServicioRealtimeFeed
     }
 
     /**
+     * Solo platos que este mesero envió a cocina.
+     *
      * @return list<array<string, mixed>>
      */
     private static function listosParaMesero(string $userId, string $sedeId): array
@@ -97,23 +100,32 @@ final class ServicioRealtimeFeed
             ])
             ->where('estado', PedidoLinea::ESTADO_LISTO)
             ->where('listo_at', '>=', now()->subMinutes(90))
-            ->whereHas('pedido', function ($q) use ($userId, $sedeId) {
+            ->whereHas('pedido', function ($q) use ($sedeId) {
                 $q->where('sede_id', $sedeId)
-                    ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
-                    ->where(function ($inner) use ($userId) {
-                        $inner->where('opened_by', $userId)
-                            ->orWhereNull('opened_by');
-                    });
+                    ->whereIn('estado', Pedido::ESTADOS_ACTIVOS);
             });
 
         if (Schema::hasColumn('ope_pedido_lineas', 'entregado_at')) {
             $query->whereNull('entregado_at');
         }
 
+        // Preferir enviado_por; fallback opened_by para datos viejos.
+        if (Schema::hasColumn('ope_pedido_lineas', 'enviado_por')) {
+            $query->where(function ($q) use ($userId) {
+                $q->where('enviado_por', $userId)
+                    ->orWhere(function ($legacy) use ($userId) {
+                        $legacy->whereNull('enviado_por')
+                            ->whereHas('pedido', fn ($p) => $p->where('opened_by', $userId));
+                    });
+            });
+        } else {
+            $query->whereHas('pedido', fn ($p) => $p->where('opened_by', $userId));
+        }
+
         $rows = $query
             ->orderByDesc('listo_at')
             ->limit(25)
-            ->get(['id', 'pedido_id', 'nombre', 'cantidad', 'listo_at', 'area_id']);
+            ->get(['id', 'pedido_id', 'nombre', 'cantidad', 'listo_at', 'area_id', 'enviado_por']);
 
         return $rows->map(static fn (PedidoLinea $linea): array => self::mapItem($linea))->values()->all();
     }
@@ -123,6 +135,11 @@ final class ServicioRealtimeFeed
      */
     private static function colaParaCocina(string $sedeId): array
     {
+        $cols = ['id', 'pedido_id', 'nombre', 'cantidad', 'enviado_at', 'area_id'];
+        if (Schema::hasColumn('ope_pedido_lineas', 'enviado_por')) {
+            $cols[] = 'enviado_por';
+        }
+
         $rows = PedidoLinea::query()
             ->with([
                 'pedido:id,numero,mesa_id,opened_by,sede_id,estado',
@@ -136,7 +153,7 @@ final class ServicioRealtimeFeed
             })
             ->orderBy('enviado_at')
             ->limit(40)
-            ->get(['id', 'pedido_id', 'nombre', 'cantidad', 'enviado_at', 'area_id']);
+            ->get($cols);
 
         return $rows->map(static function (PedidoLinea $linea): array {
             $item = self::mapItem($linea);
@@ -164,6 +181,7 @@ final class ServicioRealtimeFeed
             'nombre' => $linea->nombre,
             'cantidad' => (float) $linea->cantidad,
             'listo_at' => optional($linea->listo_at)?->toIso8601String(),
+            'enviado_por' => $linea->enviado_por !== null ? (string) $linea->enviado_por : null,
             'mesa' => $mesa
                 ? [
                     'codigo' => $mesa->codigo,

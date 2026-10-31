@@ -188,9 +188,12 @@ class PedidoService
         }
 
         $now = now();
+        $enviadoPor = Auth::id();
         foreach ($lineas as $linea) {
             $linea->estado = PedidoLinea::ESTADO_EN_COLA;
             $linea->enviado_at = $now;
+            // Dueño del ida-y-vuelta: solo este mesero recibe el “listo” y puede llevar a mesa.
+            $linea->enviado_por = $enviadoPor;
             $linea->save();
         }
 
@@ -222,6 +225,7 @@ class PedidoService
 
     /**
      * Mesero confirma que llevó el plato a la mesa (sale de la campana).
+     * Solo quien envió el ítem a cocina puede marcarlo.
      */
     public function marcarLineaEntregado(PedidoLinea $linea): PedidoLinea
     {
@@ -231,6 +235,14 @@ class PedidoService
         if ($linea->estado !== PedidoLinea::ESTADO_LISTO) {
             throw ValidationException::withMessages([
                 'linea' => 'Solo se pueden marcar como entregados los ítems listos.',
+            ]);
+        }
+
+        $userId = Auth::id();
+        $dueño = $linea->enviado_por ?? $pedido?->opened_by;
+        if ($dueño !== null && (string) $dueño !== (string) $userId) {
+            throw ValidationException::withMessages([
+                'linea' => 'Solo el mesero que envió este plato a cocina puede marcarlo como llevado a mesa.',
             ]);
         }
 

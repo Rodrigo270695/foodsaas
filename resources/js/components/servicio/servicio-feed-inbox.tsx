@@ -98,7 +98,7 @@ export function ServicioFeedInbox() {
                         Avisos de servicio
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                        Cocina ↔ salón · sin parpadeos, con acción clara.
+                        Solo tus envíos a cocina · cocina ve la cola de la sede.
                     </p>
                 </div>
 

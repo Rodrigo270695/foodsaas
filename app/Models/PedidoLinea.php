@@ -48,6 +48,7 @@ class PedidoLinea extends Model
         'notas',
         'orden',
         'enviado_at',
+        'enviado_por',
         'listo_at',
         'entregado_at',
     ];
