@@ -236,6 +236,27 @@ export async function unsubscribeFromPush(
     await subscription.unsubscribe();
 }
 
+/**
+ * Quita la suscripción push de ESTE navegador (p. ej. al cerrar sesión).
+ * No toca las suscripciones de otros navegadores del mismo usuario.
+ */
+export async function clearPushSubscriptionOnLogout(): Promise<void> {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        return;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+            return;
+        }
+
+        await unsubscribeFromPush(registration);
+    } catch {
+        // Nunca bloquear el logout por un fallo de push.
+    }
+}
+
 export function isPushSupported(): boolean {
     return (
         typeof window !== 'undefined' &&

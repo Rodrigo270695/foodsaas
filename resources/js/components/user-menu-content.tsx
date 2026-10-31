@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import { Check, Globe, LogOut, Settings, Smartphone } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     DropdownMenuGroup,
@@ -18,6 +19,7 @@ import {
     SUPPORTED_LOCALES,
     type SupportedLocale,
 } from '@/lib/i18n';
+import { clearPushSubscriptionOnLogout } from '@/lib/push-subscription';
 import { isStandaloneDisplay, openPwaInstallHelp } from '@/lib/pwa-install';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
@@ -45,9 +47,16 @@ export function UserMenuContent({ user }: Props) {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = (event: MouseEvent) => {
+        event.preventDefault();
         closeMobileChrome();
-        router.flushAll();
+
+        void (async () => {
+            // Solo este navegador deja de recibir push; Brave u otros siguen.
+            await clearPushSubscriptionOnLogout();
+            router.flushAll();
+            router.post(logout.url());
+        })();
     };
 
     const currentLocale = (i18n.language?.split('-')[0] ?? 'es') as SupportedLocale;
