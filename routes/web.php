@@ -3,7 +3,6 @@
 use App\Http\Controllers\Auth\BootstrapLoginController;
 use App\Http\Controllers\Auth\ChangePasswordController;
 use App\Http\Controllers\GeoController;
-use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\TenantImpersonationController;
 use Illuminate\Support\Facades\Route;
 
@@ -60,18 +59,6 @@ Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-chan
         Route::get('provincias', [GeoController::class, 'provincias'])->name('provincias');
         Route::get('distritos', [GeoController::class, 'distritos'])->name('distritos');
     });
-});
-
-// Web Push: auth suficiente (sin verified) para no romper fetch JSON si el correo no está marcado.
-Route::middleware(['auth', 'tenant.match-user', 'force-password-change'])->group(function () {
-    Route::get('push/status', [PushSubscriptionController::class, 'status'])
-        ->name('push.status');
-    Route::post('push/subscribe', [PushSubscriptionController::class, 'store'])
-        ->name('push.subscribe');
-    Route::delete('push/subscribe', [PushSubscriptionController::class, 'destroy'])
-        ->name('push.unsubscribe');
-    Route::post('push/test', [PushSubscriptionController::class, 'test'])
-        ->name('push.test');
 });
 
 Route::middleware(['tenant.required', 'throttle:60,1'])

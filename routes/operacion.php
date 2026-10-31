@@ -7,8 +7,22 @@ use App\Http\Controllers\CartaController;
 use App\Http\Controllers\CartaMenuController;
 use App\Http\Controllers\CocinaController;
 use App\Http\Controllers\PedidoController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SalonController;
 use Illuminate\Support\Facades\Route;
+
+// Push en tenant (sin middleware verified: el fetch JSON no debe caer en redirect de verificación).
+Route::middleware(['auth', 'tenant.required', 'tenant.match-user', 'force-password-change'])
+    ->group(function (): void {
+        Route::get('push/status', [PushSubscriptionController::class, 'status'])
+            ->name('push.status');
+        Route::post('push/subscribe', [PushSubscriptionController::class, 'store'])
+            ->name('push.subscribe');
+        Route::delete('push/subscribe', [PushSubscriptionController::class, 'destroy'])
+            ->name('push.unsubscribe');
+        Route::post('push/test', [PushSubscriptionController::class, 'test'])
+            ->name('push.test');
+    });
 
 Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', 'force-password-change'])
     ->group(function (): void {
