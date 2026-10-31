@@ -25,7 +25,7 @@ export default function Welcome() {
                         </p>
                     </div>
                     <nav className="flex flex-wrap items-center justify-center gap-3">
-                        {auth.user ? (
+                        {auth?.user ? (
                             <Link
                                 href={dashboard()}
                                 className="inline-flex h-10 items-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90"

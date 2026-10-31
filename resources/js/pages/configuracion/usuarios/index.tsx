@@ -141,9 +141,9 @@ export default function Index({
     // Necesario para marcar "Tú" en la propia fila y bloquear el delete.
     const page = usePage<{ auth: Auth }>();
     const currentUserId = useMemo(() => {
-        const id = page.props.auth.user?.id;
+        const id = page.props.auth?.user?.id;
         return typeof id === 'string' ? id : id != null ? String(id) : null;
-    }, [page.props.auth.user?.id]);
+    }, [page.props.auth?.user?.id]);
 
     const {
         search,

@@ -31,6 +31,9 @@ void createInertiaApp({
                 return [AppLayout, SettingsLayout];
             case name.startsWith('errors/'):
                 return AuthLayout;
+            case name.startsWith('tenant/errors/'):
+                // Sin AppLayout: en 404 de tenant no hay props auth compartidas.
+                return undefined;
             default:
                 return AppLayout;
         }

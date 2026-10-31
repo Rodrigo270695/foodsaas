@@ -1,20 +1,33 @@
 /**
  * Service Worker FoodSaaS — caché PWA + Web Push (mesero/cocina).
+ * No precachear '/' (en tenant puede ser 404/redirect y rompe install con addAll).
  */
-const STATIC_CACHE = 'foodsaas-static-v2';
+const STATIC_CACHE = 'foodsaas-static-v3';
 
 const PRECACHE_URLS = [
-    '/',
     '/manifest.json',
     '/icons/pwa/icon-192.png',
     '/icons/pwa/icon-512.png',
     '/favicon.ico',
 ];
 
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS)),
+async function precacheStatic(cache) {
+    await Promise.all(
+        PRECACHE_URLS.map(async (url) => {
+            try {
+                const response = await fetch(url, { cache: 'reload' });
+                if (response.ok) {
+                    await cache.put(url, response);
+                }
+            } catch {
+                /* asset opcional: no tumbar el SW */
+            }
+        }),
     );
+}
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(caches.open(STATIC_CACHE).then(precacheStatic));
     self.skipWaiting();
 });
 
