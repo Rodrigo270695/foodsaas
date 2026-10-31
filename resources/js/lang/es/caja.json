@@ -1,18 +1,24 @@
 {
     "title": "Sesiones de caja",
-    "description": "Las sesiones son por sede y turno. Abre, registra egresos y cierra al finalizar.",
+    "description": "Aperturas y cierres por sede y turno: una sesión abierta por sede, solo quien abrió puede cerrarla y no puedes abrir otra mientras tengas la tuya abierta.",
     "sesion": {
         "abierta": "Caja abierta",
         "cerrada": "Sin caja abierta",
         "cerrada_hint": "Abre una sesión para registrar egresos y permitir cobros en Ventas.",
         "tu_abierta": "Tu sesión abierta",
+        "abierta_en": "Tienes una sesión de caja abierta en {{sede}}.",
+        "esta_sede": "esta sede",
         "abierta_hint": "Ciérrala al finalizar el turno o antes de abrir otra en la misma sede.",
+        "ajena_titulo": "Sesión abierta por otro cajero",
+        "ajena_hint": "Abierta por {{name}}. Solo esa persona puede cerrarla o registrar egresos.",
+        "tu_otra_sede": "Ya tienes caja abierta",
+        "tu_otra_sede_hint": "Tu sesión está en {{sede}}. Ciérrala ahí antes de abrir en esta sede.",
         "apertura": "Monto de apertura",
         "contado": "Efectivo contado",
         "sistema": "Sistema",
         "notas": "Notas",
         "opened_by": "Abierta por {{name}}",
-        "abrir": "Abrir sesión",
+        "abrir": "+ Abrir sesión",
         "cerrar": "Cerrar sesión",
         "ir_cerrar": "Ir a cerrar",
         "estado_abierta": "Abierta",
@@ -46,6 +52,7 @@
     },
     "egreso": {
         "registrar": "Registrar egreso",
+        "description": "Salida de efectivo o billetera de la sesión abierta.",
         "guardar": "Guardar egreso",
         "monto": "Monto",
         "motivo": "Motivo",
@@ -71,6 +78,7 @@
     },
     "sesiones": {
         "columns": {
+            "sede": "Sede",
             "estado": "Estado",
             "moneda": "Moneda",
             "apertura": "Apertura",

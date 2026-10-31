@@ -33,16 +33,27 @@ class CajaController extends Controller
         $this->tenantIdOrAbort();
 
         $sedeId = ActiveSedeContext::id() ?? '';
-        $sesion = $sedeId === '' ? null : $caja->sesionAbierta($sedeId);
-        $authId = Auth::id();
+        $sesionSede = $sedeId === '' ? null : $caja->sesionAbierta($sedeId);
+        $authId = Auth::id() !== null ? (int) Auth::id() : null;
+        $miSesion = $caja->sesionAbiertaDelUsuario($authId);
 
-        $sesiones = $sedeId === ''
+        // "Tu sesión" solo si la abierta de la sede activa la abriste tú.
+        $sesion = ($sesionSede !== null && $authId !== null && (int) $sesionSede->opened_by === $authId)
+            ? $sesionSede
+            : null;
+
+        $sedeIds = ActiveSedeContext::accessibleIds();
+        $sesiones = $sedeIds === []
             ? collect()
             : CajaSesion::query()
-                ->with(['openedBy:id,name', 'closedBy:id,name'])
-                ->where('sede_id', $sedeId)
+                ->with([
+                    'openedBy:id,name',
+                    'closedBy:id,name',
+                    'sede:id,nombre,codigo',
+                ])
+                ->whereIn('sede_id', $sedeIds)
                 ->orderByDesc('opened_at')
-                ->limit(40)
+                ->limit(60)
                 ->get();
 
         $sedesConAbierta = CajaSesion::query()
@@ -50,14 +61,30 @@ class CajaController extends Controller
             ->pluck('sede_id')
             ->flip();
 
-        $sesiones = $sesiones->map(function (CajaSesion $s) use ($sedesConAbierta): CajaSesion {
+        $cajerosConAbierta = CajaSesion::query()
+            ->where('estado', CajaSesion::ESTADO_ABIERTA)
+            ->whereNotNull('opened_by')
+            ->pluck('opened_by')
+            ->map(fn ($id) => (int) $id)
+            ->flip();
+
+        $sesiones = $sesiones->map(function (CajaSesion $s) use ($sedesConAbierta, $cajerosConAbierta): CajaSesion {
+            $cajeroLibre = $s->opened_by === null
+                || ! $cajerosConAbierta->has((int) $s->opened_by);
+
             $s->setAttribute(
                 'puede_reabrir',
-                $s->estaDentroDeVentanaReabrir() && ! $sedesConAbierta->has($s->sede_id),
+                $s->estaDentroDeVentanaReabrir()
+                && ! $sedesConAbierta->has($s->sede_id)
+                && $cajeroLibre,
             );
 
             return $s;
         });
+
+        $puedeAbrir = $sedeId !== ''
+            && $sesionSede === null
+            && $miSesion === null;
 
         $totalesSesion = [
             'ventas' => 0.0,
@@ -70,10 +97,10 @@ class CajaController extends Controller
 
         $egresos = collect();
 
-        if ($sesion !== null) {
+        if ($sesionSede !== null) {
             $ventasSesion = Venta::query()
                 ->with('pagos')
-                ->where('caja_sesion_id', $sesion->id)
+                ->where('caja_sesion_id', $sesionSede->id)
                 ->where('estado', Venta::ESTADO_PAGADA)
                 ->get();
 
@@ -93,7 +120,7 @@ class CajaController extends Controller
 
             $egresos = CajaEgreso::query()
                 ->with(['createdBy:id,name'])
-                ->where('caja_sesion_id', $sesion->id)
+                ->where('caja_sesion_id', $sesionSede->id)
                 ->orderByDesc('created_at')
                 ->get();
 
@@ -103,9 +130,9 @@ class CajaController extends Controller
             $totalesSesion['otros'] = round($totalesSesion['otros'], 2);
         }
 
-        $sistemaEfectivo = $sesion
+        $sistemaEfectivo = $sesionSede
             ? round(
-                (float) $sesion->monto_apertura
+                (float) $sesionSede->monto_apertura
                 + $totalesSesion['efectivo']
                 - (float) $egresos->where('medio', Pago::MEDIO_EFECTIVO)->sum('monto'),
                 2,
@@ -113,7 +140,12 @@ class CajaController extends Controller
             : 0.0;
 
         return Inertia::render('caja/index', [
-            'sesion' => $sesion?->load(['openedBy:id,name']),
+            'sesion' => $sesion?->load(['openedBy:id,name', 'sede:id,nombre,codigo']),
+            'sesion_sede' => $sesionSede?->load(['openedBy:id,name', 'sede:id,nombre,codigo']),
+            'mi_sesion_otra_sede' => ($miSesion !== null && $sedeId !== '' && (string) $miSesion->sede_id !== $sedeId)
+                ? $miSesion->load(['sede:id,nombre,codigo'])
+                : null,
+            'puede_abrir' => $puedeAbrir,
             'sesiones' => $sesiones->values(),
             'egresos' => $egresos,
             'totales_sesion' => $totalesSesion,
@@ -177,6 +209,7 @@ class CajaController extends Controller
     public function reabrir(CajaSesion $cajaSesion, CajaService $caja): RedirectResponse
     {
         $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $cajaSesion->sede_id);
 
         $caja->reabrirSesion($cajaSesion);
 
@@ -186,6 +219,7 @@ class CajaController extends Controller
     public function arqueo(CajaSesion $cajaSesion, CajaSesionArqueoService $arqueoService): JsonResponse
     {
         $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $cajaSesion->sede_id);
 
         $contado = $cajaSesion->monto_cierre_contado !== null
             ? (string) $cajaSesion->monto_cierre_contado
@@ -215,6 +249,7 @@ class CajaController extends Controller
         Request $request,
     ): Response {
         $tenantId = $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $cajaSesion->sede_id);
 
         $cajaSesion->loadMissing(['openedBy:id,name', 'closedBy:id,name']);
 

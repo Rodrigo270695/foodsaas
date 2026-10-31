@@ -32,6 +32,20 @@ class CajaService
             ->first();
     }
 
+    public function sesionAbiertaDelUsuario(?int $userId = null): ?CajaSesion
+    {
+        $userId ??= Auth::id() !== null ? (int) Auth::id() : null;
+        if ($userId === null) {
+            return null;
+        }
+
+        return CajaSesion::query()
+            ->where('opened_by', $userId)
+            ->where('estado', CajaSesion::ESTADO_ABIERTA)
+            ->latest('opened_at')
+            ->first();
+    }
+
     /**
      * @param  array{
      *     monto_apertura?: float|int|string|null,
@@ -42,31 +56,57 @@ class CajaService
      */
     public function abrirSesion(string $sedeId, array $data = []): CajaSesion
     {
-        if ($this->sesionAbierta($sedeId) !== null) {
-            throw ValidationException::withMessages([
-                'caja' => 'Ya hay una sesión de caja abierta en esta sede.',
+        return DB::transaction(function () use ($sedeId, $data): CajaSesion {
+            $userId = Auth::id();
+
+            // Una abierta por sede: otro cajero no abre encima.
+            $enSede = CajaSesion::query()
+                ->where('sede_id', $sedeId)
+                ->where('estado', CajaSesion::ESTADO_ABIERTA)
+                ->lockForUpdate()
+                ->first();
+
+            if ($enSede !== null) {
+                throw ValidationException::withMessages([
+                    'caja' => 'Ya hay una sesión de caja abierta en esta sede. Solo quien la abrió puede cerrarla.',
+                ]);
+            }
+
+            // Una abierta por cajero: no abras otra sede mientras tengas la tuya.
+            if ($userId !== null) {
+                $mia = CajaSesion::query()
+                    ->where('opened_by', $userId)
+                    ->where('estado', CajaSesion::ESTADO_ABIERTA)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($mia !== null) {
+                    throw ValidationException::withMessages([
+                        'caja' => 'Ya tienes una sesión de caja abierta. Ciérrala antes de abrir otra (otra sede u otro turno).',
+                    ]);
+                }
+            }
+
+            $moneda = strtoupper(trim((string) ($data['moneda'] ?? 'PEN')));
+            if (! in_array($moneda, ['PEN', 'USD'], true)) {
+                $moneda = 'PEN';
+            }
+
+            $notas = isset($data['notas']) && is_string($data['notas']) && trim($data['notas']) !== ''
+                ? trim($data['notas'])
+                : null;
+
+            return CajaSesion::query()->create([
+                'sede_id' => $sedeId,
+                'estado' => CajaSesion::ESTADO_ABIERTA,
+                'moneda' => $moneda,
+                'monto_apertura' => round(max(0, (float) ($data['monto_apertura'] ?? 0)), 2),
+                'saldos_apertura_json' => CajaBilleteras::normalize($data['saldos_apertura'] ?? null),
+                'notas_apertura' => $notas,
+                'opened_by' => $userId,
+                'opened_at' => now(),
             ]);
-        }
-
-        $moneda = strtoupper(trim((string) ($data['moneda'] ?? 'PEN')));
-        if (! in_array($moneda, ['PEN', 'USD'], true)) {
-            $moneda = 'PEN';
-        }
-
-        $notas = isset($data['notas']) && is_string($data['notas']) && trim($data['notas']) !== ''
-            ? trim($data['notas'])
-            : null;
-
-        return CajaSesion::query()->create([
-            'sede_id' => $sedeId,
-            'estado' => CajaSesion::ESTADO_ABIERTA,
-            'moneda' => $moneda,
-            'monto_apertura' => round(max(0, (float) ($data['monto_apertura'] ?? 0)), 2),
-            'saldos_apertura_json' => CajaBilleteras::normalize($data['saldos_apertura'] ?? null),
-            'notas_apertura' => $notas,
-            'opened_by' => Auth::id(),
-            'opened_at' => now(),
-        ]);
+        });
     }
 
     /**
@@ -165,17 +205,32 @@ class CajaService
                 ]);
             }
 
-            $otraAbierta = CajaSesion::query()
+            $otraAbiertaSede = CajaSesion::query()
                 ->where('sede_id', $locked->sede_id)
                 ->where('estado', CajaSesion::ESTADO_ABIERTA)
                 ->whereKeyNot($locked->getKey())
                 ->lockForUpdate()
                 ->exists();
 
-            if ($otraAbierta) {
+            if ($otraAbiertaSede) {
                 throw ValidationException::withMessages([
                     'caja' => 'Ya hay una sesión de caja abierta en esta sede.',
                 ]);
+            }
+
+            if ($locked->opened_by !== null) {
+                $cajeroOcupado = CajaSesion::query()
+                    ->where('opened_by', $locked->opened_by)
+                    ->where('estado', CajaSesion::ESTADO_ABIERTA)
+                    ->whereKeyNot($locked->getKey())
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($cajeroOcupado) {
+                    throw ValidationException::withMessages([
+                        'caja' => 'Quien abrió esta sesión ya tiene otra caja abierta.',
+                    ]);
+                }
             }
 
             $locked->forceFill([

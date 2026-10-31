@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     ArrowDownLeft,
     Banknote,
@@ -20,23 +20,6 @@ import {
 } from '@/components/data-page';
 import type { DataTableColumn } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
@@ -45,9 +28,11 @@ import { ArqueoPrintDialog } from './components/arqueo-print-dialog';
 import { SesionAbrirModal } from './components/sesion-abrir-modal';
 import { SesionArqueoDetalleModal } from './components/sesion-arqueo-detalle-modal';
 import { SesionCerrarModal } from './components/sesion-cerrar-modal';
+import { SesionEgresoModal } from './components/sesion-egreso-modal';
 import { SesionReabrirDialog } from './components/sesion-reabrir-dialog';
 
 type Usuario = { id: number; name: string };
+type SedeInfo = { id: string; nombre: string; codigo: string };
 
 type Sesion = {
     id: string;
@@ -60,6 +45,7 @@ type Sesion = {
     closed_at?: string | null;
     opened_by?: Usuario | null;
     closed_by?: Usuario | null;
+    sede?: SedeInfo | null;
     puede_reabrir?: boolean;
 };
 
@@ -74,7 +60,12 @@ type Egreso = {
 };
 
 type Props = {
+    /** Tu sesión abierta en la sede activa (solo si la abriste tú). */
     sesion: Sesion | null;
+    /** Cualquier sesión abierta en la sede activa. */
+    sesion_sede: Sesion | null;
+    mi_sesion_otra_sede: Sesion | null;
+    puede_abrir: boolean;
     sesiones: Sesion[];
     egresos: Egreso[];
     totales_sesion: {
@@ -85,7 +76,6 @@ type Props = {
         egresos: number;
         conteo: number;
     };
-    sistema_efectivo: number;
     motivos_egreso: string[];
     medios: string[];
     auth_user_id: number | null;
@@ -97,6 +87,9 @@ function money(value: string | number): string {
 
 export default function Index({
     sesion,
+    sesion_sede,
+    mi_sesion_otra_sede,
+    puede_abrir,
     sesiones,
     egresos,
     totales_sesion,
@@ -114,46 +107,32 @@ export default function Index({
     const [imprimirSesionId, setImprimirSesionId] = useState<string | null>(
         null,
     );
-    const [egresoMonto, setEgresoMonto] = useState('');
-    const [egresoMedio, setEgresoMedio] = useState('efectivo');
-    const [egresoMotivo, setEgresoMotivo] = useState('insumos');
-    const [egresoNotas, setEgresoNotas] = useState('');
-    const [busy, setBusy] = useState(false);
 
-    const esQuienAbrio = Boolean(
-        sesion?.opened_by &&
-        auth_user_id !== null &&
-        sesion.opened_by.id === auth_user_id,
-    );
+    const esQuienAbrio = Boolean(sesion);
 
     const imprimirPdfUrl = useMemo(
         () => (imprimirSesionId ? caja.arqueoPdf(imprimirSesionId).url : ''),
         [imprimirSesionId],
     );
 
-    function registrarEgreso() {
-        setBusy(true);
-        router.post(
-            caja.egresos.store().url,
-            {
-                monto: Number(egresoMonto) || 0,
-                medio: egresoMedio,
-                motivo: egresoMotivo,
-                notas: egresoNotas || null,
-            },
-            {
-                onFinish: () => setBusy(false),
-                onSuccess: () => {
-                    setEgresoOpen(false);
-                    setEgresoMonto('');
-                    setEgresoNotas('');
-                },
-            },
-        );
-    }
-
     const columns = useMemo<DataTableColumn<Sesion>[]>(() => {
         const base: DataTableColumn<Sesion>[] = [
+            {
+                key: 'sede',
+                header: t('sesiones.columns.sede'),
+                cell: (s) => (
+                    <div className="min-w-0">
+                        <p className="truncate font-medium">
+                            {s.sede?.nombre ?? '—'}
+                        </p>
+                        {s.sede?.codigo ? (
+                            <p className="text-xs text-muted-foreground">
+                                {s.sede.codigo}
+                            </p>
+                        ) : null}
+                    </div>
+                ),
+            },
             {
                 key: 'estado',
                 header: t('sesiones.columns.estado'),
@@ -168,7 +147,7 @@ export default function Index({
                         <StatBadge
                             label={t('sesion.estado_cerrada')}
                             value=""
-                            variant="muted"
+                            variant="warning"
                         />
                     ),
             },
@@ -381,7 +360,11 @@ export default function Index({
                         },
                         {
                             label: t('stats.apertura'),
-                            value: money(sesion?.monto_apertura ?? 0),
+                            value: money(
+                                sesion_sede?.monto_apertura ??
+                                    sesion?.monto_apertura ??
+                                    0,
+                            ),
                             variant: 'info',
                             icon: Banknote,
                         },
@@ -404,33 +387,18 @@ export default function Index({
                         },
                     ]}
                     action={
-                        sesion ? (
-                            <div className="flex flex-wrap gap-2">
-                                <Can permission="caja.egreso">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="cursor-pointer gap-1.5 text-rose-700 dark:text-rose-300"
-                                        onClick={() => setEgresoOpen(true)}
-                                    >
-                                        <ArrowDownLeft className="size-4" />
-                                        {t('egreso.registrar')}
-                                    </Button>
-                                </Can>
-                                {esQuienAbrio ? (
-                                    <Can permission="caja.cerrar">
-                                        <Button
-                                            type="button"
-                                            className="cursor-pointer gap-1.5"
-                                            onClick={() => setCerrarOpen(true)}
-                                        >
-                                            <Lock className="size-4" />
-                                            {t('sesion.cerrar')}
-                                        </Button>
-                                    </Can>
-                                ) : null}
-                            </div>
-                        ) : (
+                        esQuienAbrio ? (
+                            <Can permission="caja.cerrar">
+                                <Button
+                                    type="button"
+                                    className="cursor-pointer gap-1.5"
+                                    onClick={() => setCerrarOpen(true)}
+                                >
+                                    <Lock className="size-4" />
+                                    {t('sesion.cerrar')}
+                                </Button>
+                            </Can>
+                        ) : puede_abrir ? (
                             <Can permission="caja.abrir">
                                 <Button
                                     type="button"
@@ -441,27 +409,49 @@ export default function Index({
                                     {t('sesion.abrir')}
                                 </Button>
                             </Can>
-                        )
+                        ) : null
                     }
                 />
 
                 {sesion ? (
-                    <div className="flex flex-col gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/8 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="space-y-1 text-sm text-emerald-950 dark:text-emerald-100">
-                            <p className="font-semibold">
-                                {t('sesion.tu_abierta')}
-                            </p>
-                            <p className="text-emerald-900/80 dark:text-emerald-200/90">
-                                {t('sesion.abierta_hint')}
-                                {' · '}
-                                {t('sesion.apertura')}:{' '}
-                                {money(sesion.monto_apertura)}
-                                {sesion.opened_by
-                                    ? ` · ${t('sesion.opened_by', { name: sesion.opened_by.name })}`
-                                    : null}
-                            </p>
+                    <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-3">
+                            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <Wallet className="size-4" aria-hidden />
+                            </span>
+                            <div className="space-y-1 text-sm">
+                                <p className="font-semibold">
+                                    {t('sesion.tu_abierta')}
+                                </p>
+                                <p className="text-muted-foreground">
+                                    {t('sesion.abierta_en', {
+                                        sede:
+                                            sesion.sede?.nombre ??
+                                            t('sesion.esta_sede'),
+                                    })}{' '}
+                                    {t('sesion.abierta_hint')}
+                                    {' · '}
+                                    {t('sesion.apertura')}:{' '}
+                                    {money(sesion.monto_apertura)}
+                                    {sesion.opened_by
+                                        ? ` · ${t('sesion.opened_by', { name: sesion.opened_by.name })}`
+                                        : null}
+                                </p>
+                            </div>
                         </div>
-                        {esQuienAbrio ? (
+                        <div className="flex flex-wrap gap-2 sm:shrink-0">
+                            <Can permission="caja.egreso">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="cursor-pointer gap-1.5 border-rose-500/40 text-rose-700 hover:bg-rose-500/10 dark:text-rose-300"
+                                    onClick={() => setEgresoOpen(true)}
+                                >
+                                    <ArrowDownLeft className="size-4" />
+                                    {t('egreso.registrar')}
+                                </Button>
+                            </Can>
                             <Can permission="caja.cerrar">
                                 <Button
                                     type="button"
@@ -469,10 +459,27 @@ export default function Index({
                                     className="cursor-pointer gap-1.5"
                                     onClick={() => setCerrarOpen(true)}
                                 >
+                                    <Lock className="size-4" />
                                     {t('sesion.ir_cerrar')}
                                 </Button>
                             </Can>
-                        ) : null}
+                        </div>
+                    </div>
+                ) : sesion_sede ? (
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
+                        <strong>{t('sesion.ajena_titulo')}</strong>
+                        {' — '}
+                        {t('sesion.ajena_hint', {
+                            name: sesion_sede.opened_by?.name ?? '—',
+                        })}
+                    </div>
+                ) : mi_sesion_otra_sede ? (
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
+                        <strong>{t('sesion.tu_otra_sede')}</strong>
+                        {' — '}
+                        {t('sesion.tu_otra_sede_hint', {
+                            sede: mi_sesion_otra_sede.sede?.nombre ?? '—',
+                        })}
                     </div>
                 ) : (
                     <div className="rounded-2xl border border-amber-500/30 bg-amber-500/8 px-4 py-3 text-sm text-amber-950 dark:text-amber-100">
@@ -482,11 +489,27 @@ export default function Index({
                     </div>
                 )}
 
-                {sesion ? (
+                {sesion || sesion_sede ? (
                     <section className="space-y-3">
-                        <h2 className="text-base font-semibold">
-                            {t('sections.egresos')}
-                        </h2>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h2 className="text-base font-semibold">
+                                {t('sections.egresos')}
+                            </h2>
+                            {esQuienAbrio ? (
+                                <Can permission="caja.egreso">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="cursor-pointer gap-1.5 border-rose-500/40 text-rose-700 hover:bg-rose-500/10 dark:text-rose-300"
+                                        onClick={() => setEgresoOpen(true)}
+                                    >
+                                        <ArrowDownLeft className="size-4" />
+                                        {t('egreso.registrar')}
+                                    </Button>
+                                </Can>
+                            ) : null}
+                        </div>
                         {egresos.length === 0 ? (
                             <p className="text-sm text-muted-foreground">
                                 {t('empty.egresos')}
@@ -524,7 +547,7 @@ export default function Index({
                                                 {e.notas ? ` · ${e.notas}` : ''}
                                             </p>
                                         </div>
-                                        <span className="font-semibold text-rose-700 tabular-nums dark:text-rose-300">
+                                        <span className="font-semibold tabular-nums text-rose-700 dark:text-rose-300">
                                             −{money(e.monto)}
                                         </span>
                                     </li>
@@ -561,6 +584,13 @@ export default function Index({
                 sesionId={cerrarOpen ? (sesion?.id ?? null) : null}
             />
 
+            <SesionEgresoModal
+                open={egresoOpen}
+                onOpenChange={setEgresoOpen}
+                motivos={motivos_egreso}
+                medios={medios}
+            />
+
             <SesionReabrirDialog
                 open={reabrirSesionId !== null}
                 onOpenChange={(open) => {
@@ -584,93 +614,16 @@ export default function Index({
                 }}
                 sesionId={detalleSesionId}
             />
-
-            <Dialog open={egresoOpen} onOpenChange={setEgresoOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>{t('egreso.registrar')}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-2">
-                        <div className="grid gap-2">
-                            <Label>{t('egreso.monto')}</Label>
-                            <Input
-                                type="number"
-                                min={0.01}
-                                step="0.01"
-                                value={egresoMonto}
-                                onChange={(e) => setEgresoMonto(e.target.value)}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>{t('egreso.motivo')}</Label>
-                            <Select
-                                value={egresoMotivo}
-                                onValueChange={setEgresoMotivo}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {motivos_egreso.map((m) => (
-                                        <SelectItem key={m} value={m}>
-                                            {t(`egreso.motivos.${m}`)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>{t('egreso.medio')}</Label>
-                            <Select
-                                value={egresoMedio}
-                                onValueChange={setEgresoMedio}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {medios.map((m) => (
-                                        <SelectItem key={m} value={m}>
-                                            {t(`medios.${m}`)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>{t('sesion.notas')}</Label>
-                            <Textarea
-                                value={egresoNotas}
-                                onChange={(e) => setEgresoNotas(e.target.value)}
-                                rows={2}
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setEgresoOpen(false)}
-                        >
-                            {t('common:actions.cancel')}
-                        </Button>
-                        <Button
-                            type="button"
-                            disabled={busy}
-                            onClick={registrarEgreso}
-                        >
-                            {t('egreso.guardar')}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }
 
 Index.layout = (page: React.ReactNode) => (
     <AppLayout
-        breadcrumbs={[{ title: 'Operación' }, { title: 'Caja', href: '/caja' }]}
+        breadcrumbs={[
+            { title: 'Operación' },
+            { title: 'Caja', href: '/caja' },
+        ]}
     >
         {page}
     </AppLayout>

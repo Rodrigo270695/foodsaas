@@ -1,18 +1,24 @@
 {
     "title": "Cash sessions",
-    "description": "Sessions are per branch and shift. Open, record payouts, and close when done.",
+    "description": "Openings and closings per branch and shift: one open session per branch, only the opener can close it, and you cannot open another while yours is open.",
     "sesion": {
         "abierta": "Register open",
         "cerrada": "No open register",
         "cerrada_hint": "Open a session to record payouts and allow charging in Sales.",
         "tu_abierta": "Your open session",
+        "abierta_en": "You have an open cash session at {{sede}}.",
+        "esta_sede": "this branch",
         "abierta_hint": "Close it at the end of the shift or before opening another at this branch.",
+        "ajena_titulo": "Session open by another cashier",
+        "ajena_hint": "Opened by {{name}}. Only that person can close it or record payouts.",
+        "tu_otra_sede": "You already have a register open",
+        "tu_otra_sede_hint": "Your session is at {{sede}}. Close it there before opening here.",
         "apertura": "Opening float",
         "contado": "Cash counted",
         "sistema": "System",
         "notas": "Notes",
         "opened_by": "Opened by {{name}}",
-        "abrir": "Open session",
+        "abrir": "+ Open session",
         "cerrar": "Close session",
         "ir_cerrar": "Go to close",
         "estado_abierta": "Open",
@@ -46,6 +52,7 @@
     },
     "egreso": {
         "registrar": "Record payout",
+        "description": "Cash or wallet outflow from the open session.",
         "guardar": "Save payout",
         "monto": "Amount",
         "motivo": "Reason",
@@ -71,6 +78,7 @@
     },
     "sesiones": {
         "columns": {
+            "sede": "Branch",
             "estado": "Status",
             "moneda": "Currency",
             "apertura": "Opened",

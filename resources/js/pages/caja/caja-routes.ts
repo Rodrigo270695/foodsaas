@@ -6,7 +6,7 @@ const caja = {
     cerrar: () => ({ url: `${base}/cerrar` }),
     reabrir: (id: string) => ({ url: `${base}/${id}/reabrir` }),
     arqueo: (id: string) => ({ url: `${base}/${id}/arqueo` }),
-    arqueoPdf: (id: string) => ({ url: `${base}/${id}/arqueo.pdf` }),
+    arqueoPdf: (id: string) => ({ url: `${base}/${id}/arqueo-pdf` }),
     egresos: {
         store: () => ({ url: `${base}/egresos` }),
     },

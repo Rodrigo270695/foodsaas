@@ -218,7 +218,7 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->get('{cajaSesion}/arqueo', [CajaController::class, 'arqueo'])
                     ->name('arqueo');
                 Route::middleware('permission:caja.view')
-                    ->get('{cajaSesion}/arqueo.pdf', [CajaController::class, 'arqueoPdf'])
+                    ->get('{cajaSesion}/arqueo-pdf', [CajaController::class, 'arqueoPdf'])
                     ->name('arqueo-pdf');
                 Route::middleware('permission:caja.egreso')
                     ->post('egresos', [CajaController::class, 'egreso'])
