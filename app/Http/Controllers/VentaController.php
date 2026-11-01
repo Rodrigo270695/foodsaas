@@ -9,8 +9,11 @@ use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\PedidoLinea;
 use App\Models\ProductoCarta;
+use App\Models\RestaurantSetting;
 use App\Models\Venta;
 use App\Services\Operacion\CajaService;
+use App\Services\Operacion\VentaTicketPdfService;
+use App\Support\Caja\TicketAnchoMm;
 use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VentaController extends Controller
@@ -139,6 +143,18 @@ class VentaController extends Controller
                 ->count();
         }
 
+        $ticketAncho = TicketAnchoMm::DEFAULT;
+        if (RestaurantSetting::tableReady()) {
+            $ticketAncho = TicketAnchoMm::normalize(
+                (string) (RestaurantSetting::query()->value('ticket_ancho_mm') ?? ''),
+            );
+        }
+
+        $openTicket = trim((string) $request->query('ticket', ''));
+        if ($openTicket !== '' && ! preg_match('/^[0-9a-fA-F-]{36}$/', $openTicket)) {
+            $openTicket = '';
+        }
+
         return Inertia::render('ventas/index', [
             'sesion_abierta' => $sesion !== null,
             'vista' => $vista,
@@ -146,6 +162,8 @@ class VentaController extends Controller
             'pedidos_pendientes' => $pedidosPendientes,
             'medios' => Pago::MEDIOS,
             'tipos_comprobante' => Venta::TIPOS_COMPROBANTE,
+            'ticket_ancho_mm' => $ticketAncho,
+            'open_ticket_id' => $openTicket !== '' ? $openTicket : null,
             'filters' => [
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
                 'search' => $search,
@@ -309,7 +327,7 @@ class VentaController extends Controller
         $venta = $caja->registrarVentaRapida($sedeId, $data);
 
         return redirect()
-            ->route('ventas.index')
+            ->route('ventas.index', ['ticket' => $venta->id])
             ->with('success', 'Venta '.$venta->numero.' registrada por S/ '.number_format((float) $venta->total, 2));
     }
 
@@ -357,8 +375,33 @@ class VentaController extends Controller
         );
 
         return redirect()
-            ->route('ventas.index')
+            ->route('ventas.index', ['ticket' => $venta->id])
             ->with('success', 'Venta registrada por S/ '.number_format((float) $venta->total, 2));
+    }
+
+    public function ticketPdf(Request $request, Venta $venta, VentaTicketPdfService $tickets): SymfonyResponse
+    {
+        $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $venta->sede_id);
+
+        $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
+        $formato = TicketAnchoMm::normalize(
+            (string) $request->query('formato', ''),
+            $cfg?->ticket_ancho_mm,
+        );
+
+        if (
+            $request->boolean('persist')
+            && $cfg !== null
+            && TicketAnchoMm::normalize((string) $cfg->ticket_ancho_mm) !== $formato
+        ) {
+            $cfg->forceFill(['ticket_ancho_mm' => $formato])->save();
+        }
+
+        $pdf = $tickets->render($venta, $formato);
+        $filename = 'ticket-'.($venta->numero ?: $venta->id).'-'.$formato.'mm.pdf';
+
+        return $pdf->stream($filename);
     }
 
     public function export(Request $request): StreamedResponse

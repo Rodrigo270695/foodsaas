@@ -49,7 +49,22 @@
         "volver": "Back to history",
         "registrar": "Record sale",
         "agregar": "Add",
-        "quitar": "Remove"
+        "quitar": "Remove",
+        "ver_ticket": "View ticket"
+    },
+    "ticket_dialog": {
+        "title": "Sale ticket",
+        "description": "Payment receipt preview. You can close or send it to print.",
+        "format_label": "Thermal roll width",
+        "formatos": {
+            "56": "56 mm",
+            "57": "57 mm",
+            "58": "58 mm",
+            "80": "80 mm"
+        },
+        "hint": "When printing, this width becomes the default. The next sale opens on that roll.",
+        "iframe_title": "Ticket preview",
+        "print": "Print"
     },
     "filters": {
         "search": "Search by number or customer…",
@@ -114,6 +129,7 @@
         "carrito": "Cart",
         "cobro": "Payment",
         "monto_recibido": "Amount received",
+        "exacto": "Exact",
         "subtotal": "Subtotal",
         "descuento": "Discount",
         "total": "Total",

@@ -49,7 +49,22 @@
         "volver": "Volver al historial",
         "registrar": "Registrar venta",
         "agregar": "Agregar",
-        "quitar": "Quitar"
+        "quitar": "Quitar",
+        "ver_ticket": "Ver ticket"
+    },
+    "ticket_dialog": {
+        "title": "Ticket de venta",
+        "description": "Vista previa del comprobante de cobro. Puedes cerrar o enviar a imprimir.",
+        "format_label": "Ancho del rollo térmico",
+        "formatos": {
+            "56": "56 mm",
+            "57": "57 mm",
+            "58": "58 mm",
+            "80": "80 mm"
+        },
+        "hint": "Al imprimir, este ancho queda como predeterminado. La siguiente venta abre en ese rollo.",
+        "iframe_title": "Vista previa del ticket",
+        "print": "Imprimir"
     },
     "filters": {
         "search": "Buscar por número o cliente…",
@@ -114,6 +129,7 @@
         "carrito": "Carrito",
         "cobro": "Cobro",
         "monto_recibido": "Monto recibido",
+        "exacto": "Exacto",
         "subtotal": "Subtotal",
         "descuento": "Descuento",
         "total": "Total",

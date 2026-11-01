@@ -3,6 +3,7 @@ import {
     Banknote,
     CheckCircle2,
     Download,
+    Eye,
     Plus,
     Receipt,
     RefreshCw,
@@ -11,7 +12,7 @@ import {
     Wallet,
     XCircle,
 } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import {
@@ -41,6 +42,7 @@ import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 import { todayIso } from '../pedidos/types';
 import caja from '../caja/caja-routes';
+import { VentaTicketDialog } from './components/venta-ticket-dialog';
 import ventas from './ventas-routes';
 
 type PedidoPendiente = {
@@ -85,6 +87,8 @@ type Props = {
     pedidos_pendientes: PedidoPendiente[];
     medios: string[];
     tipos_comprobante: string[];
+    ticket_ancho_mm?: string | null;
+    open_ticket_id?: string | null;
     filters: {
         sede_id: string | null;
         search: string;
@@ -119,12 +123,32 @@ export default function Index({
     pedidos_pendientes,
     medios,
     tipos_comprobante,
+    ticket_ancho_mm,
+    open_ticket_id,
     filters,
     stats,
 }: Props) {
     const { t } = useTranslation(['ventas', 'caja', 'common']);
     const vista = filters.vista ?? vistaProp ?? 'historial';
     const esPorCobrar = vista === 'por_cobrar';
+    const [ticketVentaId, setTicketVentaId] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!open_ticket_id) {
+            return;
+        }
+        setTicketVentaId(open_ticket_id);
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('ticket')) {
+            url.searchParams.delete('ticket');
+            const qs = url.searchParams.toString();
+            window.history.replaceState(
+                {},
+                '',
+                `${url.pathname}${qs ? `?${qs}` : ''}${url.hash}`,
+            );
+        }
+    }, [open_ticket_id]);
 
     const { search, setSearch, isLoading, setPerPage, applyFilter, fetch } =
         useDataTablePage<{
@@ -327,18 +351,45 @@ export default function Index({
                 key: 'comprobante',
                 header: t('columns.comprobante'),
                 cell: (row) => (
-                    <div className="min-w-0">
-                        <p className="text-sm">
+                    <div className="flex min-w-0 flex-col justify-center gap-0.5 leading-tight">
+                        <span className="text-sm font-medium">
                             {t(`tipo.${row.tipo_comprobante}`, {
                                 defaultValue: row.tipo_comprobante,
                             })}
-                        </p>
-                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                        </span>
+                        <span className="text-[11px] text-amber-700 dark:text-amber-300">
                             {t('sunat.sin_comprobante')}
-                        </p>
+                        </span>
                     </div>
                 ),
-                className: 'hidden md:table-cell',
+                className: 'hidden align-middle md:table-cell',
+            },
+            {
+                key: 'acciones',
+                header: (
+                    <span className="sr-only">{t('columns.acciones')}</span>
+                ),
+                align: 'right',
+                cell: (row) => (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                className="size-8 cursor-pointer"
+                                onClick={() => setTicketVentaId(row.id)}
+                                aria-label={t('actions.ver_ticket')}
+                            >
+                                <Eye className="size-4" aria-hidden />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="left">
+                            {t('actions.ver_ticket')}
+                        </TooltipContent>
+                    </Tooltip>
+                ),
+                className: 'w-14',
             },
         ],
         [t],
@@ -738,6 +789,17 @@ export default function Index({
                     />
                 )}
             </div>
+
+            <VentaTicketDialog
+                open={ticketVentaId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setTicketVentaId(null);
+                    }
+                }}
+                ventaId={ticketVentaId}
+                defaultAncho={ticket_ancho_mm}
+            />
         </>
     );
 }

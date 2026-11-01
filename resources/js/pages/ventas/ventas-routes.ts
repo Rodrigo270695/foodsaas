@@ -25,6 +25,9 @@ const ventas = {
     cobrar: (pedidoId: string | number) => ({
         url: `${base}/cobrar/${pedidoId}`,
     }),
+    ticketPdf: (ventaId: string | number) => ({
+        url: `${base}/${ventaId}/ticket-pdf`,
+    }),
 };
 
 export default ventas;
