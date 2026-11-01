@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $numero
  * @property string $origen
  * @property string $tipo_comprobante
+ * @property string $fel_estado
+ * @property string|null $fel_document_id
  * @property string|null $cliente_nombre
  * @property string|null $cliente_documento
  * @property string $estado
@@ -44,6 +46,14 @@ class Venta extends Model
         self::TIPO_FACTURA,
     ];
 
+    public const FEL_SIN_CPE = 'sin_cpe';
+
+    public const FEL_PENDIENTE = 'pendiente';
+
+    public const FEL_EMITIDO = 'emitido';
+
+    public const FEL_RECHAZADO = 'rechazado';
+
     protected $table = 'fin_ventas';
 
     protected $fillable = [
@@ -53,6 +63,8 @@ class Venta extends Model
         'numero',
         'origen',
         'tipo_comprobante',
+        'fel_estado',
+        'fel_document_id',
         'cliente_nombre',
         'cliente_documento',
         'estado',
@@ -109,5 +121,13 @@ class Venta extends Model
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class, 'venta_id');
+    }
+
+    /**
+     * @return BelongsTo<FelDocument, $this>
+     */
+    public function felDocument(): BelongsTo
+    {
+        return $this->belongsTo(FelDocument::class, 'fel_document_id');
     }
 }

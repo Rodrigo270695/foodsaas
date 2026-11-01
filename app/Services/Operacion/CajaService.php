@@ -12,6 +12,7 @@ use App\Models\ProductoCarta;
 use App\Models\Venta;
 use App\Services\Inventario\KardexService;
 use App\Support\Caja\CajaBilleteras;
+use App\Support\Fel\FelComprobanteAvailability;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -337,6 +338,7 @@ class CajaService
                 'numero' => $this->siguienteNumeroVenta((string) $locked->sede_id),
                 'origen' => Venta::ORIGEN_PEDIDO,
                 'tipo_comprobante' => Venta::TIPO_TICKET,
+                'fel_estado' => Venta::FEL_SIN_CPE,
                 'cliente_nombre' => 'Varios',
                 'cliente_documento' => null,
                 'estado' => Venta::ESTADO_PAGADA,
@@ -436,6 +438,8 @@ class CajaService
             : '';
         $clienteDoc = $clienteDoc !== '' ? $clienteDoc : null;
 
+        FelComprobanteAvailability::assertPuedeEmitir($sedeId, $tipo);
+
         if ($tipo === Venta::TIPO_FACTURA) {
             if ($clienteNombre === '' || strcasecmp($clienteNombre, 'Varios') === 0) {
                 throw ValidationException::withMessages([
@@ -445,6 +449,14 @@ class CajaService
             if ($clienteDoc === null || ! preg_match('/^\d{11}$/', $clienteDoc)) {
                 throw ValidationException::withMessages([
                     'cliente_documento' => 'Para factura indica un RUC de 11 dígitos.',
+                ]);
+            }
+        }
+
+        if ($tipo === Venta::TIPO_BOLETA) {
+            if ($clienteDoc === null || ! preg_match('/^\d{8}$/', $clienteDoc)) {
+                throw ValidationException::withMessages([
+                    'cliente_documento' => 'Para boleta indica un DNI de 8 dígitos.',
                 ]);
             }
         }
@@ -529,6 +541,7 @@ class CajaService
             $venta->forceFill([
                 'origen' => Venta::ORIGEN_RAPIDA,
                 'tipo_comprobante' => $tipo,
+                'fel_estado' => Venta::FEL_SIN_CPE,
                 'cliente_nombre' => $clienteNombre,
                 'cliente_documento' => $clienteDoc,
             ])->save();

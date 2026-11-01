@@ -23,6 +23,14 @@ import {
 } from './components/types';
 import ventas from './ventas-routes';
 
+type FelCaps = {
+    apisunat_configurado: boolean;
+    serie_boleta: boolean;
+    serie_factura: boolean;
+    plan_boleta: boolean;
+    plan_factura: boolean;
+};
+
 type Props = {
     sesion_abierta: boolean;
     productos: Producto[];
@@ -30,6 +38,7 @@ type Props = {
     medios: string[];
     tipos_comprobante: string[];
     emite_comprobantes_sunat?: boolean;
+    fel?: FelCaps;
     sede: { id: string; nombre: string; codigo: string } | null;
 };
 
@@ -39,6 +48,8 @@ export default function Nueva({
     pedidos_pendientes,
     medios,
     tipos_comprobante,
+    emite_comprobantes_sunat = false,
+    fel,
     sede,
 }: Props) {
     const { t } = useTranslation(['ventas', 'caja', 'common']);
@@ -166,7 +177,13 @@ export default function Nueva({
         if (!sesion_abierta || cart.length === 0 || total <= 0 || busy) {
             return false;
         }
-        if (!cobrandoPedido && tipo === 'factura') {
+        if (cobrandoPedido) {
+            return true;
+        }
+        if (tipo === 'boleta' && !/^\d{8}$/.test(clienteDoc.trim())) {
+            return false;
+        }
+        if (tipo === 'factura') {
             const nombre = clienteNombre.trim();
             if (!nombre || nombre.toLowerCase() === 'varios') {
                 return false;
@@ -316,15 +333,54 @@ export default function Nueva({
                 <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)] lg:items-start">
                     <div className="space-y-3">
                         {!cobrandoPedido ? (
-                            <ClienteComprobanteSection
-                                tipo={tipo}
-                                tiposComprobante={tipos_comprobante}
-                                clienteNombre={clienteNombre}
-                                clienteDoc={clienteDoc}
-                                onTipoChange={setTipo}
-                                onClienteNombreChange={setClienteNombre}
-                                onClienteDocChange={setClienteDoc}
-                            />
+                            <>
+                                {emite_comprobantes_sunat &&
+                                fel &&
+                                (!fel.apisunat_configurado ||
+                                    (fel.plan_boleta && !fel.serie_boleta) ||
+                                    (fel.plan_factura &&
+                                        !fel.serie_factura)) ? (
+                                    <div className="rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-[12px] leading-snug text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                                        <p className="font-medium">
+                                            {t('nueva.fel_bloqueado_title')}
+                                        </p>
+                                        <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                                            {!fel.apisunat_configurado ? (
+                                                <li>
+                                                    {t(
+                                                        'nueva.fel_falta_token',
+                                                    )}
+                                                </li>
+                                            ) : null}
+                                            {fel.plan_boleta &&
+                                            !fel.serie_boleta ? (
+                                                <li>
+                                                    {t(
+                                                        'nueva.fel_falta_serie_boleta',
+                                                    )}
+                                                </li>
+                                            ) : null}
+                                            {fel.plan_factura &&
+                                            !fel.serie_factura ? (
+                                                <li>
+                                                    {t(
+                                                        'nueva.fel_falta_serie_factura',
+                                                    )}
+                                                </li>
+                                            ) : null}
+                                        </ul>
+                                    </div>
+                                ) : null}
+                                <ClienteComprobanteSection
+                                    tipo={tipo}
+                                    tiposComprobante={tipos_comprobante}
+                                    clienteNombre={clienteNombre}
+                                    clienteDoc={clienteDoc}
+                                    onTipoChange={setTipo}
+                                    onClienteNombreChange={setClienteNombre}
+                                    onClienteDocChange={setClienteDoc}
+                                />
+                            </>
                         ) : null}
 
                         <div className="grid gap-3 xl:grid-cols-2">

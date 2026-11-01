@@ -13,13 +13,20 @@ final class PlanCapabilities
 {
     public static function facturaElectronica(?Tenant $tenant = null): bool
     {
+        return self::boletasElectronicas($tenant) || self::facturasElectronicas($tenant);
+    }
+
+    public static function boletasElectronicas(?Tenant $tenant = null): bool
+    {
         $plan = PlanLimits::activePlan($tenant);
 
-        if ($plan === null) {
-            return false;
-        }
+        return $plan !== null && (bool) $plan->resolveFeature('boletas_electronicas');
+    }
 
-        return (bool) $plan->resolveFeature('boletas_electronicas')
-            || (bool) $plan->resolveFeature('facturas_electronicas');
+    public static function facturasElectronicas(?Tenant $tenant = null): bool
+    {
+        $plan = PlanLimits::activePlan($tenant);
+
+        return $plan !== null && (bool) $plan->resolveFeature('facturas_electronicas');
     }
 }

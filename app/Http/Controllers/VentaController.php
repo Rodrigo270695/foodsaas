@@ -14,12 +14,14 @@ use App\Models\RestaurantSetting;
 use App\Models\Venta;
 use App\Services\Integrations\ApiPeruDniService;
 use App\Services\Integrations\ApiPeruRucService;
+use App\Services\Fel\FelEmisionVentaService;
 use App\Services\Operacion\CajaService;
 use App\Services\Operacion\VentaTicketPdfService;
 use App\Support\Caja\TicketAnchoMm;
-use App\Support\Plan\PlanCapabilities;
+use App\Support\Fel\FelComprobanteAvailability;
 use App\Support\Sedes\ActiveSedeContext;
 use App\Tenancy\TenantManager;
+use RuntimeException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -299,7 +301,8 @@ class VentaController extends Controller
                     'updated_at',
                 ]);
 
-        $tipos = $this->tiposComprobanteDisponibles();
+        $fel = FelComprobanteAvailability::forSede($sedeId);
+        $tipos = $fel['tipos'];
 
         return Inertia::render('ventas/nueva', [
             'sesion_abierta' => $sesion !== null,
@@ -307,7 +310,14 @@ class VentaController extends Controller
             'pedidos_pendientes' => $pedidosPendientes,
             'medios' => Pago::MEDIOS,
             'tipos_comprobante' => $tipos,
-            'emite_comprobantes_sunat' => count($tipos) > 1,
+            'emite_comprobantes_sunat' => $fel['emite_comprobantes_sunat'],
+            'fel' => [
+                'apisunat_configurado' => $fel['apisunat_configurado'],
+                'serie_boleta' => $fel['serie_boleta'],
+                'serie_factura' => $fel['serie_factura'],
+                'plan_boleta' => $fel['plan_boleta'],
+                'plan_factura' => $fel['plan_factura'],
+            ],
             'sede' => $sedePayload,
         ]);
     }
@@ -355,7 +365,7 @@ class VentaController extends Controller
                 ->with('error', 'Selecciona una sede activa.');
         }
 
-        $tiposPermitidos = $this->tiposComprobanteDisponibles();
+        $tiposPermitidos = FelComprobanteAvailability::forSede($sedeId)['tipos'];
 
         $data = $request->validate([
             'tipo_comprobante' => ['required', Rule::in($tiposPermitidos)],
@@ -371,11 +381,33 @@ class VentaController extends Controller
             'pagos.*.referencia' => ['nullable', 'string', 'max:120'],
         ]);
 
+        FelComprobanteAvailability::assertPuedeEmitir(
+            $sedeId,
+            (string) $data['tipo_comprobante'],
+        );
+
         $venta = $caja->registrarVentaRapida($sedeId, $data);
+
+        $mensaje = 'Venta '.$venta->numero.' registrada por S/ '.number_format((float) $venta->total, 2);
+        $flashKey = 'success';
+
+        if (in_array((string) $venta->tipo_comprobante, [Venta::TIPO_BOLETA, Venta::TIPO_FACTURA], true)) {
+            try {
+                $doc = app(FelEmisionVentaService::class)->emitir($venta->fresh(['pedido.lineas']));
+                $mensaje .= ' · CPE '.$doc->numero_completo.' ('.strtoupper((string) $doc->estado).')';
+            } catch (RuntimeException $e) {
+                $flashKey = 'error';
+                $mensaje .= ' · No se emitió el CPE: '.$e->getMessage();
+            } catch (\Throwable $e) {
+                report($e);
+                $flashKey = 'error';
+                $mensaje .= ' · Error al emitir el CPE. Revisa Facturación.';
+            }
+        }
 
         return redirect()
             ->route('ventas.index', ['ticket' => $venta->id])
-            ->with('success', 'Venta '.$venta->numero.' registrada por S/ '.number_format((float) $venta->total, 2));
+            ->with($flashKey, $mensaje);
     }
 
     public function cobrarForm(Pedido $pedido, CajaService $caja): Response
@@ -694,27 +726,4 @@ class VentaController extends Controller
         return $query;
     }
 
-    /**
-     * Ticket siempre; boleta/factura solo si el plan y la config general permiten CPE.
-     *
-     * @return list<string>
-     */
-    private function tiposComprobanteDisponibles(): array
-    {
-        $emite = false;
-        if (RestaurantSetting::tableReady()) {
-            $emite = (bool) RestaurantSetting::query()->value('emite_comprobantes_sunat');
-        }
-
-        $tenantModel = app(TenantManager::class)->current()?->tenant;
-        if (! PlanCapabilities::facturaElectronica($tenantModel)) {
-            $emite = false;
-        }
-
-        if (! $emite) {
-            return [Venta::TIPO_TICKET];
-        }
-
-        return Venta::TIPOS_COMPROBANTE;
-    }
 }

@@ -162,6 +162,33 @@ class RestaurantSetting extends Model
             : self::IGV_AFECTACION_GRAVADO;
     }
 
+    public function igvPorcentajeEfectivo(): float
+    {
+        if ($this->igvAfectacion() !== self::IGV_AFECTACION_GRAVADO) {
+            return 0.0;
+        }
+
+        return (float) $this->igv_porcentaje;
+    }
+
+    public static function codigoSunatDesdeIgvTipo(string $tipo): string
+    {
+        return match ($tipo) {
+            self::IGV_AFECTACION_EXONERADO => '20',
+            self::IGV_AFECTACION_INAFECTO => '30',
+            default => '10',
+        };
+    }
+
+    public static function nombreTributoDesdeIgvTipo(string $tipo): string
+    {
+        return match ($tipo) {
+            self::IGV_AFECTACION_EXONERADO => 'EXO',
+            self::IGV_AFECTACION_INAFECTO => 'INA',
+            default => 'IGV',
+        };
+    }
+
     /**
      * @return array<string, array{abierto: bool, abre: string, cierra: string}>
      */
