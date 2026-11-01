@@ -1,0 +1,167 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Fel;
+
+use App\Models\FelDocument;
+use App\Models\RestaurantSetting;
+use App\Support\Fel\ApisunatCredentialResolver;
+use App\Support\Fel\FelDocumentPdfUrls;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
+use Throwable;
+
+/**
+ * Descarga archivos CPE (PDF/XML/CDR) desde Lucode (APISUNAT) usando el payload y token del restaurante.
+ */
+final class FelDocumentApisunatFileService
+{
+    public function __construct(
+        private readonly ApisunatClient $apisunat,
+    ) {}
+
+    /**
+     * Enlaces Lucode/APISUNAT del comprobante (payload de emisión + columnas en BD).
+     *
+     * @return array{pdf: ?string, pdf_a4: ?string, xml: ?string, cdr: ?string}
+     */
+    public function enlaces(FelDocument $documento): array
+    {
+        $pdf = filled($documento->url_pdf) ? (string) $documento->url_pdf : null;
+        $xml = filled($documento->url_xml) ? (string) $documento->url_xml : null;
+        $cdr = filled($documento->url_cdr) ? (string) $documento->url_cdr : null;
+
+        $payload = $documento->apisunat_payload;
+        if (is_array($payload)) {
+            $extraidos = $this->apisunat->extraerEnlaces($payload);
+            $pdf = $extraidos['pdf'] ?? $pdf;
+            $xml = $extraidos['xml'] ?? $xml;
+            $cdr = $extraidos['cdr'] ?? $cdr;
+        }
+
+        return [
+            'pdf' => $pdf,
+            'pdf_a4' => FelDocumentPdfUrls::pdfA4FromTicket($pdf),
+            'xml' => $xml,
+            'cdr' => $cdr,
+        ];
+    }
+
+    /**
+     * Descarga bytes de un archivo Lucode/APISUNAT.
+     *
+     * @param  'pdf_ticket'|'pdf_a4'|'xml'|'cdr'  $tipo
+     */
+    public function descargar(FelDocument $documento, RestaurantSetting $cfg, string $tipo): string
+    {
+        $enlaces = $this->enlaces($documento);
+
+        $url = match ($tipo) {
+            'pdf_ticket' => $enlaces['pdf'],
+            'pdf_a4' => $enlaces['pdf_a4'],
+            'xml' => $enlaces['xml'],
+            'cdr' => $enlaces['cdr'],
+            default => null,
+        };
+
+        if (! is_string($url) || trim($url) === '') {
+            throw new RuntimeException('El archivo Lucode '.$tipo.' no está disponible para este comprobante.');
+        }
+
+        $label = match ($tipo) {
+            'pdf_ticket' => 'PDF',
+            'pdf_a4' => 'PDF A4',
+            'xml' => 'XML',
+            'cdr' => 'CDR',
+            default => $tipo,
+        };
+
+        return $this->fetchLucodeUrl(trim($url), $cfg, $label, $tipo);
+    }
+
+    /**
+     * Descarga un CDR (u otro XML) desde URL Lucode con el token del restaurante.
+     *
+     * @param  'xml'|'cdr'  $tipo
+     */
+    public function descargarUrl(string $url, RestaurantSetting $cfg, string $tipo = 'cdr'): string
+    {
+        $label = $tipo === 'xml' ? 'XML' : 'CDR';
+
+        return $this->fetchLucodeUrl(trim($url), $cfg, $label, $tipo);
+    }
+
+    private function fetchLucodeUrl(
+        string $url,
+        RestaurantSetting $cfg,
+        string $label,
+        string $tipo,
+    ): string {
+        if (! ApisunatCredentialResolver::estaConfigurado($cfg)) {
+            throw new RuntimeException('Lucode (APISUNAT) no está configurado en el restaurante.');
+        }
+
+        $credenciales = ApisunatCredentialResolver::fromRestaurantSetting($cfg);
+
+        try {
+            $response = Http::timeout(45)
+                ->withToken($credenciales['token'])
+                ->withHeaders(['Accept' => '*/*'])
+                ->get($url);
+
+            // Algunas URLs Lucode de XML/CDR responden sin exigir Bearer.
+            if (! $response->successful() && in_array($tipo, ['xml', 'cdr'], true)) {
+                $response = Http::timeout(45)
+                    ->withHeaders(['Accept' => '*/*'])
+                    ->get($url);
+            }
+        } catch (Throwable $e) {
+            throw new RuntimeException(
+                'Error al descargar '.$label.' desde Lucode: '.$e->getMessage(),
+                0,
+                $e,
+            );
+        }
+
+        if (! $response->successful()) {
+            throw new RuntimeException(
+                'Lucode devolvió HTTP '.$response->status().' al descargar '.$label.'.',
+            );
+        }
+
+        $body = (string) $response->body();
+        if ($body === '') {
+            throw new RuntimeException('El archivo '.$label.' de Lucode está vacío.');
+        }
+
+        if ($tipo === 'pdf_ticket' || $tipo === 'pdf_a4') {
+            if (! str_starts_with($body, '%PDF')) {
+                throw new RuntimeException(
+                    'Lucode no devolvió un PDF válido para '.$label.'. Revisa el token y el modo sandbox/producción.',
+                );
+            }
+        }
+
+        if ($tipo === 'xml' || $tipo === 'cdr') {
+            $looksXml = str_contains($body, '<?xml')
+                || str_contains($body, 'ApplicationResponse')
+                || str_contains($body, 'ResponseCode')
+                || str_contains($body, '<') && str_contains($body, 'Description');
+            $looksZip = str_starts_with($body, 'PK') || str_starts_with($body, "\x1f\x8b");
+            if (! $looksXml && ! $looksZip) {
+                // A veces Lucode responde JSON de error en la URL del CDR.
+                $json = json_decode($body, true);
+                if (is_array($json) && is_string($json['message'] ?? null) && $json['message'] !== '') {
+                    throw new RuntimeException((string) $json['message']);
+                }
+
+                throw new RuntimeException(
+                    'Lucode no devolvió un XML/CDR válido para '.$label.'.',
+                );
+            }
+        }
+
+        return $body;
+    }
+}

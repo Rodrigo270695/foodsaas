@@ -88,7 +88,7 @@ const ALL_SEDES = '__all__';
 function TipoBadge({ tipo, label }: { tipo: number; label: string }) {
     return (
         <span
-            className={`inline-flex max-w-44 items-center truncate rounded-md px-2 py-0.5 text-[11px] font-medium leading-tight whitespace-nowrap ring-1 sm:max-w-none ${TIPO_COLORS[tipo] ?? 'bg-muted text-muted-foreground ring-border'}`}
+            className={`inline-flex max-w-44 items-center truncate rounded-md px-2 py-0.5 text-[11px] leading-tight font-medium whitespace-nowrap ring-1 sm:max-w-none ${TIPO_COLORS[tipo] ?? 'bg-muted text-muted-foreground ring-border'}`}
         >
             {label}
         </span>
@@ -193,7 +193,9 @@ export default function Index({
         }
     }, [sedeFiltro]);
 
-    const selectedTipo = tiposResolved.find((t) => String(t.value) === formTipo);
+    const selectedTipo = tiposResolved.find(
+        (t) => String(t.value) === formTipo,
+    );
     const selectedSedeNombre = useMemo(
         () => sedesOpciones.find((s) => s.id === formSede)?.nombre ?? '',
         [formSede, sedesOpciones],
@@ -204,7 +206,9 @@ export default function Index({
             { value: ALL_SEDES, label: 'Todas las sedes' },
             ...sedesOpciones.map((sede) => ({
                 value: sede.id,
-                label: sede.codigo ? `${sede.nombre} · ${sede.codigo}` : sede.nombre,
+                label: sede.codigo
+                    ? `${sede.nombre} · ${sede.codigo}`
+                    : sede.nombre,
                 icon: <Building2 className="size-3.5" strokeWidth={2.25} />,
             })),
         ],
@@ -267,7 +271,8 @@ export default function Index({
                         setFormSede('');
                     }
                 },
-                onError: (errs) => setFormErrors(errs as Record<string, string>),
+                onError: (errs) =>
+                    setFormErrors(errs as Record<string, string>),
                 onFinish: () => setSubmitting(false),
             },
         );
@@ -443,9 +448,12 @@ export default function Index({
 
                 {mutations_locked ? (
                     <Alert>
-                        <AlertTitle>Restaurante demo de solo lectura</AlertTitle>
+                        <AlertTitle>
+                            Restaurante demo de solo lectura
+                        </AlertTitle>
                         <AlertDescription>
-                            Puedes explorar las series, pero no crear, activar ni eliminar datos.
+                            Puedes explorar las series, pero no crear, activar
+                            ni eliminar datos.
                         </AlertDescription>
                     </Alert>
                 ) : null}
@@ -456,7 +464,9 @@ export default function Index({
                             ariaLabel="Filtrar por sede"
                             value={sedeFiltro || ALL_SEDES}
                             onChange={(value) =>
-                                applySedeFilter(value === ALL_SEDES ? '' : value)
+                                applySedeFilter(
+                                    value === ALL_SEDES ? '' : value,
+                                )
                             }
                             options={sedeFilterOptions}
                             className="sm:min-w-56"
@@ -465,7 +475,9 @@ export default function Index({
                             <StatBadge
                                 label="Sede filtrada"
                                 value={
-                                    sedesOpciones.find((s) => s.id === sedeFiltro)?.nombre ?? '—'
+                                    sedesOpciones.find(
+                                        (s) => s.id === sedeFiltro,
+                                    )?.nombre ?? '—'
                                 }
                                 variant="info"
                             />
@@ -483,7 +495,9 @@ export default function Index({
                 {showForm ? (
                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold">Nueva serie de comprobante</p>
+                            <p className="text-sm font-semibold">
+                                Nueva serie de comprobante
+                            </p>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -510,12 +524,18 @@ export default function Index({
                                         onValueChange={setFormSede}
                                         disabled={Boolean(sedeFiltro)}
                                     >
-                                        <SelectTrigger id="serie-sede" className="h-9 w-full cursor-pointer">
+                                        <SelectTrigger
+                                            id="serie-sede"
+                                            className="h-9 w-full cursor-pointer"
+                                        >
                                             <SelectValue placeholder="Seleccionar sede…" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {sedesOpciones.map((sede) => (
-                                                <SelectItem key={sede.id} value={sede.id}>
+                                                <SelectItem
+                                                    key={sede.id}
+                                                    value={sede.id}
+                                                >
                                                     {sede.nombre}
                                                 </SelectItem>
                                             ))}
@@ -530,13 +550,22 @@ export default function Index({
                                     >
                                         Tipo de comprobante
                                     </label>
-                                    <Select value={formTipo} onValueChange={setFormTipo}>
-                                        <SelectTrigger id="serie-tipo" className="h-9 w-full cursor-pointer">
+                                    <Select
+                                        value={formTipo}
+                                        onValueChange={setFormTipo}
+                                    >
+                                        <SelectTrigger
+                                            id="serie-tipo"
+                                            className="h-9 w-full cursor-pointer"
+                                        >
                                             <SelectValue placeholder="Seleccionar tipo…" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {tiposResolved.map((t) => (
-                                                <SelectItem key={t.value} value={String(t.value)}>
+                                                <SelectItem
+                                                    key={t.value}
+                                                    value={String(t.value)}
+                                                >
                                                     {t.label}
                                                 </SelectItem>
                                             ))}
@@ -574,13 +603,18 @@ export default function Index({
                                         className="text-xs font-medium text-muted-foreground"
                                     >
                                         Correlativo
-                                        <span className="font-normal text-muted-foreground/60"> (opc.)</span>
+                                        <span className="font-normal text-muted-foreground/60">
+                                            {' '}
+                                            (opc.)
+                                        </span>
                                     </label>
                                     <Input
                                         id="serie-correlativo"
                                         type="number"
                                         value={formCorrelativo}
-                                        onChange={(e) => setFormCorrelativo(e.target.value)}
+                                        onChange={(e) =>
+                                            setFormCorrelativo(e.target.value)
+                                        }
                                         min={0}
                                         placeholder="0"
                                         className="h-9 font-mono tabular-nums"
@@ -603,15 +637,23 @@ export default function Index({
                                 formErrors.tipo_comprobante ||
                                 formErrors.serie) && (
                                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-destructive">
-                                    {formErrors.sede_id ? <span>{formErrors.sede_id}</span> : null}
-                                    {formErrors.tipo_comprobante ? (
-                                        <span>{formErrors.tipo_comprobante}</span>
+                                    {formErrors.sede_id ? (
+                                        <span>{formErrors.sede_id}</span>
                                     ) : null}
-                                    {formErrors.serie ? <span>{formErrors.serie}</span> : null}
+                                    {formErrors.tipo_comprobante ? (
+                                        <span>
+                                            {formErrors.tipo_comprobante}
+                                        </span>
+                                    ) : null}
+                                    {formErrors.serie ? (
+                                        <span>{formErrors.serie}</span>
+                                    ) : null}
                                 </div>
                             )}
 
-                            {(selectedTipo || formSerie || selectedSedeNombre) && (
+                            {(selectedTipo ||
+                                formSerie ||
+                                selectedSedeNombre) && (
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-primary/10 pt-3 text-xs text-muted-foreground">
                                     {selectedSedeNombre ? (
                                         <span>
@@ -634,7 +676,10 @@ export default function Index({
                                             Próximo número:{' '}
                                             <span className="font-mono font-medium text-foreground">
                                                 {formSerie}-
-                                                {String((Number(formCorrelativo) || 0) + 1).padStart(8, '0')}
+                                                {String(
+                                                    (Number(formCorrelativo) ||
+                                                        0) + 1,
+                                                ).padStart(8, '0')}
                                             </span>
                                         </span>
                                     ) : null}
@@ -653,7 +698,9 @@ export default function Index({
                             <span className="truncate text-xs font-medium text-muted-foreground">
                                 {t.label}
                             </span>
-                            <span className="text-2xl font-bold tabular-nums">{t.count}</span>
+                            <span className="text-2xl font-bold tabular-nums">
+                                {t.count}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                                 {t.count === 1 ? 'serie' : 'series'}
                             </span>
@@ -697,8 +744,9 @@ export default function Index({
                                         tipo={s.tipo_comprobante}
                                         label={s.tipo_label}
                                     />
-                                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                                        Corr. {s.ultimo_correlativo.toLocaleString()}
+                                    <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                                        Corr.{' '}
+                                        {s.ultimo_correlativo.toLocaleString()}
                                     </span>
                                 </div>
                             </div>
@@ -739,16 +787,23 @@ export default function Index({
                 />
 
                 <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-4 text-xs text-muted-foreground">
-                    <FileText className="mt-0.5 size-4 shrink-0" strokeWidth={1.5} />
+                    <FileText
+                        className="mt-0.5 size-4 shrink-0"
+                        strokeWidth={1.5}
+                    />
                     <div className="flex flex-col gap-1">
-                        <span className="font-medium text-foreground">Nomenclatura SUNAT</span>
+                        <span className="font-medium text-foreground">
+                            Nomenclatura SUNAT
+                        </span>
                         <span>
-                            Factura: <code className="font-mono">F###</code> · Boleta:{' '}
-                            <code className="font-mono">B###</code> · Nota de crédito:{' '}
-                            <code className="font-mono">FC##</code> / <code className="font-mono">BC##</code> · Nota
-                            de débito: <code className="font-mono">FD##</code> /{' '}
-                            <code className="font-mono">BD##</code> · Guía de remisión:{' '}
-                            <code className="font-mono">T###</code>
+                            Factura: <code className="font-mono">F###</code> ·
+                            Boleta: <code className="font-mono">B###</code> ·
+                            Nota de crédito:{' '}
+                            <code className="font-mono">FC##</code> /{' '}
+                            <code className="font-mono">BC##</code> · Nota de
+                            débito: <code className="font-mono">FD##</code> /{' '}
+                            <code className="font-mono">BD##</code> · Guía de
+                            remisión: <code className="font-mono">T###</code>
                         </span>
                     </div>
                 </div>

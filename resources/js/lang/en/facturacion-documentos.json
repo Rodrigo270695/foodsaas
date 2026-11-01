@@ -1,0 +1,27 @@
+{
+    "stats": {
+        "monto_total": "Total amount",
+        "total": "Total registered",
+        "emitidos": "Issued",
+        "coincidencias": "Matches"
+    },
+    "date_filter": {
+        "placeholder": "Date range (issue date)",
+        "aria": "Filter by receipt issue date",
+        "reset_month": "Current month",
+        "preset_this_week": "This week",
+        "preset_last_week": "Last week",
+        "preset_last_month": "Last month",
+        "apply_single_day": "Single day"
+    },
+    "actions": {
+        "descargar": "Download files for {{numero}}"
+    },
+    "sandbox": {
+        "pasar_produccion": "Move to production",
+        "pasar_produccion_aria": "Move {{numero}} to production",
+        "pasar_produccion_confirm": "{{numero}} will be re-sent to SUNAT production with the same series and number. Convert in order (1, then 2…). Continue?",
+        "esperar_orden": "Convert {{numero}} first",
+        "hint": "Test receipts are not valid for SUNAT. Convert them to production in correlative order."
+    }
+}

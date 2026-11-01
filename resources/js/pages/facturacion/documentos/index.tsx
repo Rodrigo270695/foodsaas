@@ -1,0 +1,730 @@
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowUpRight, Download, Eye, FileText, RefreshCw } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+    DataPagination,
+    DataTable,
+    DataToolbar,
+    EmptyState,
+    FilterChips,
+    PageHeader,
+} from '@/components/data-page';
+import type { DataTableColumn, FilterChip } from '@/components/data-page';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Can } from '@/components/can';
+import { DateRangeFilter } from '@/components/date-range-filter';
+import { useDataTablePage } from '@/hooks/use-data-table-page';
+import AppLayout from '@/layouts/app-layout';
+import type { Paginated } from '@/types';
+import {
+    DocumentoDownloadMenu,
+    type DocumentoDownloadRow,
+} from './components/documento-download-menu';
+
+type DocumentoEstadoFiltro =
+    | 'todos'
+    | 'emitido'
+    | 'anulado'
+    | 'rechazado'
+    | 'pendiente';
+type DocumentoMetodoPagoFiltro =
+    | 'todos'
+    | 'efectivo'
+    | 'yape'
+    | 'plin'
+    | 'tarjeta'
+    | 'transferencia'
+    | 'otro';
+
+type DocumentoRow = DocumentoDownloadRow & {
+    tipo_comprobante: number;
+    tipo_label: string;
+    estado: string;
+    apisunat_mode: 'sandbox' | 'produccion' | null;
+    puede_pasar_a_produccion?: boolean;
+    pasar_a_produccion_url?: string;
+    siguiente_sandbox_numero?: string | null;
+    receptor_nombre: string;
+    receptor_num_doc: string;
+    cliente_telefono: string | null;
+    total: string;
+    moneda: string;
+    emitido_at: string | null;
+    venta_numero: string | null;
+    venta_estado: string | null;
+    metodo_pago: string | null;
+    sede: string;
+    error_mensaje?: string | null;
+    sincronizar_estado_url?: string;
+};
+
+type Props = {
+    documentos: Paginated<DocumentoRow>;
+    filters: {
+        search: string;
+        per_page: number;
+        sort: string | null;
+        direction: 'asc' | 'desc' | null;
+        estado: DocumentoEstadoFiltro;
+        metodo_pago: DocumentoMetodoPagoFiltro;
+        fecha_desde: string;
+        fecha_hasta: string;
+    };
+    documento_filtro_ui: {
+        default_desde: string;
+        default_hasta: string;
+        fuera_del_mes_actual: boolean;
+    };
+    sincronizar_estados_url?: string;
+    stats: {
+        total: number;
+        emitidos: number;
+        pendientes?: number;
+        rechazados?: number;
+        coincidencias: number;
+        /** Suma de `total` de los CPE que cumplen los filtros actuales. */
+        monto_total: string;
+        moneda: string;
+    };
+};
+
+type TableExtraFilters = {
+    estado: DocumentoEstadoFiltro;
+    metodo_pago: DocumentoMetodoPagoFiltro;
+    fecha_desde: string;
+    fecha_hasta: string;
+};
+
+const ROUTE_URL = '/facturacion/documentos';
+const DEFAULT_PER_PAGE = 15;
+const DEFAULT_ESTADO: DocumentoEstadoFiltro = 'todos';
+const DEFAULT_METODO: DocumentoMetodoPagoFiltro = 'todos';
+
+const METODO_LABEL: Record<string, string> = {
+    todos: 'Todos los métodos',
+    efectivo: 'Efectivo',
+    yape: 'Yape',
+    plin: 'Plin',
+    tarjeta: 'Tarjeta',
+    transferencia: 'Transferencia',
+    otro: 'Otro',
+};
+
+const ESTADO_BADGE: Record<
+    string,
+    'default' | 'secondary' | 'destructive' | 'outline'
+> = {
+    emitido: 'default',
+    anulado: 'secondary',
+    rechazado: 'destructive',
+    pendiente: 'outline',
+};
+
+const ESTADO_LABEL: Record<string, string> = {
+    emitido: 'Aceptado SUNAT',
+    anulado: 'Anulado',
+    rechazado: 'Rechazado SUNAT',
+    pendiente: 'Pendiente SUNAT',
+};
+
+function modoBadge(mode: DocumentoRow['apisunat_mode']): {
+    label: string;
+    variant: 'default' | 'secondary' | 'outline';
+} {
+    if (mode === 'produccion') {
+        return { label: 'Producción', variant: 'default' };
+    }
+
+    if (mode === 'sandbox') {
+        return { label: 'Prueba', variant: 'secondary' };
+    }
+
+    return { label: 'Sin dato', variant: 'outline' };
+}
+
+function formatMonto(amount: string, moneda: string, locale: string): string {
+    const n = Number(amount);
+
+    if (Number.isNaN(n)) {
+        return amount;
+    }
+
+    const cur = moneda === 'USD' ? 'USD' : 'PEN';
+
+    return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: cur,
+    }).format(n);
+}
+
+export default function Index({
+    documentos: paginated,
+    filters,
+    documento_filtro_ui,
+    stats,
+    sincronizar_estados_url,
+}: Props) {
+    const { t, i18n } = useTranslation(['facturacion-documentos', 'common']);
+
+    const {
+        search,
+        setSearch,
+        isLoading,
+        sort,
+        setSort,
+        setPerPage,
+        applyFilter,
+    } = useDataTablePage<TableExtraFilters>({
+        routeUrl: ROUTE_URL,
+        initialFilters: filters,
+        only: ['documentos', 'filters', 'stats'],
+        errorMessage: 'No se pudo cargar el historial de comprobantes.',
+        storageKey: 'foodsaas.facturacion.documentos.prefs',
+        defaults: {
+            per_page: DEFAULT_PER_PAGE,
+            sort: null,
+            direction: null,
+        },
+    });
+
+    const estado = (filters.estado ?? DEFAULT_ESTADO) as DocumentoEstadoFiltro;
+    const metodoPago = (filters.metodo_pago ??
+        DEFAULT_METODO) as DocumentoMetodoPagoFiltro;
+
+    const activeFiltersCount = useMemo(() => {
+        let n = 0;
+
+        if (filters.search) {
+            n += 1;
+        }
+
+        if (estado !== DEFAULT_ESTADO) {
+            n += 1;
+        }
+
+        if (metodoPago !== DEFAULT_METODO) {
+            n += 1;
+        }
+
+        if (documento_filtro_ui.fuera_del_mes_actual) {
+            n += 1;
+        }
+
+        return n;
+    }, [
+        documento_filtro_ui.fuera_del_mes_actual,
+        estado,
+        metodoPago,
+        filters.search,
+    ]);
+
+    const exportUrl = useMemo(() => {
+        const params = new URLSearchParams();
+
+        if (filters.search) {
+            params.set('search', filters.search);
+        }
+
+        if (filters.sort) {
+            params.set('sort', filters.sort);
+        }
+
+        if (filters.direction) {
+            params.set('direction', filters.direction);
+        }
+
+        if (estado !== DEFAULT_ESTADO) {
+            params.set('estado', estado);
+        }
+
+        if (metodoPago !== DEFAULT_METODO) {
+            params.set('metodo_pago', metodoPago);
+        }
+
+        params.set('fecha_desde', filters.fecha_desde);
+        params.set('fecha_hasta', filters.fecha_hasta);
+
+        return `${ROUTE_URL}/export?${params.toString()}`;
+    }, [
+        estado,
+        filters.direction,
+        filters.fecha_desde,
+        filters.fecha_hasta,
+        filters.search,
+        filters.sort,
+        metodoPago,
+    ]);
+
+    const estadoOptions: readonly FilterChip<DocumentoEstadoFiltro>[] = useMemo(
+        () => [
+            { value: 'todos', label: 'Todos' },
+            { value: 'emitido', label: 'Emitidos' },
+            { value: 'anulado', label: 'Anulados' },
+            { value: 'rechazado', label: 'Rechazados' },
+            { value: 'pendiente', label: 'Pendientes' },
+        ],
+        [],
+    );
+
+    const metodoOptions: readonly FilterChip<DocumentoMetodoPagoFiltro>[] =
+        useMemo(
+            () => [
+                { value: 'todos', label: METODO_LABEL.todos },
+                { value: 'efectivo', label: METODO_LABEL.efectivo },
+                { value: 'yape', label: METODO_LABEL.yape },
+                { value: 'plin', label: METODO_LABEL.plin },
+                { value: 'tarjeta', label: METODO_LABEL.tarjeta },
+                { value: 'transferencia', label: METODO_LABEL.transferencia },
+                { value: 'otro', label: METODO_LABEL.otro },
+            ],
+            [],
+        );
+
+    const columns: DataTableColumn<DocumentoRow>[] = useMemo(
+        () => [
+            {
+                key: 'numero',
+                header: 'Número',
+                cell: (row) => (
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-mono text-sm font-medium text-primary tabular-nums">
+                            {row.numero_completo}
+                        </span>
+                        {row.venta_numero &&
+                        row.venta_numero !== row.numero_completo ? (
+                            <span className="font-mono text-[11px] text-muted-foreground">
+                                Venta {row.venta_numero}
+                            </span>
+                        ) : null}
+                    </div>
+                ),
+                sortable: true,
+                sortKey: 'numero_completo',
+            },
+            {
+                key: 'tipo',
+                header: 'Tipo',
+                cell: (row) => (
+                    <Badge variant="outline" className="font-normal">
+                        {row.tipo_label}
+                    </Badge>
+                ),
+            },
+            {
+                key: 'fecha',
+                header: 'Emisión',
+                cell: (row) =>
+                    row.emitido_at
+                        ? new Intl.DateTimeFormat('es-PE', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                          }).format(new Date(row.emitido_at))
+                        : '—',
+                sortable: true,
+                sortKey: 'emitido_at',
+            },
+            {
+                key: 'modo',
+                header: 'Modo',
+                cell: (row) => {
+                    const badge = modoBadge(row.apisunat_mode);
+
+                    return (
+                        <Badge variant={badge.variant} className="font-normal">
+                            {badge.label}
+                        </Badge>
+                    );
+                },
+            },
+            {
+                key: 'cliente',
+                header: 'Cliente',
+                cell: (row) => (
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-medium">
+                            {row.receptor_nombre}
+                        </span>
+                        {row.receptor_num_doc ? (
+                            <span className="font-mono text-xs text-muted-foreground">
+                                {row.receptor_num_doc}
+                            </span>
+                        ) : null}
+                    </div>
+                ),
+            },
+            {
+                key: 'sede',
+                header: 'Sede',
+                cell: (row) => row.sede,
+            },
+            {
+                key: 'metodo',
+                header: 'Método',
+                cell: (row) =>
+                    METODO_LABEL[row.metodo_pago ?? 'otro'] ??
+                    row.metodo_pago ??
+                    '—',
+            },
+            {
+                key: 'total',
+                header: 'Total',
+                cell: (row) => formatMonto(row.total, row.moneda, 'es-PE'),
+                sortable: true,
+                sortKey: 'total',
+            },
+            {
+                key: 'estado',
+                header: 'Estado',
+                cell: (row) => (
+                    <div className="flex max-w-72 flex-col gap-0.5">
+                        <Badge variant={ESTADO_BADGE[row.estado] ?? 'outline'}>
+                            {ESTADO_LABEL[row.estado] ?? row.estado}
+                        </Badge>
+                        {row.estado === 'rechazado' && row.error_mensaje ? (
+                            <span
+                                className="line-clamp-4 text-[11px] leading-snug text-destructive"
+                                title={row.error_mensaje}
+                            >
+                                <span className="font-medium">Motivo: </span>
+                                {row.error_mensaje}
+                            </span>
+                        ) : null}
+                    </div>
+                ),
+                sortable: true,
+                sortKey: 'estado',
+            },
+            {
+                key: 'acciones',
+                header: 'Acciones',
+                align: 'right',
+                cell: (row) => (
+                    <div className="flex items-center justify-end gap-0.5">
+                        {row.sincronizar_estado_url &&
+                        (row.estado === 'pendiente' ||
+                            row.estado === 'emitido' ||
+                            row.estado === 'rechazado') ? (
+                            <Can permission="documentos.view">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 shrink-0 border-0 bg-transparent text-sky-600 shadow-none hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+                                    aria-label={`Sincronizar estado SUNAT de ${row.numero_completo}`}
+                                    title="Consultar estado en Lucode/SUNAT"
+                                    onClick={() => {
+                                        router.post(
+                                            row.sincronizar_estado_url!,
+                                            {},
+                                            { preserveScroll: true },
+                                        );
+                                    }}
+                                >
+                                    <RefreshCw
+                                        className="size-4"
+                                        strokeWidth={2.25}
+                                        aria-hidden
+                                    />
+                                </Button>
+                            </Can>
+                        ) : null}
+                        {row.apisunat_mode === 'sandbox' &&
+                        row.estado === 'emitido' ? (
+                            <Can permission="documentos.create">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled={!row.puede_pasar_a_produccion}
+                                    className="size-8 shrink-0 border-0 bg-transparent text-amber-700 shadow-none hover:bg-amber-500/10 hover:text-amber-800 disabled:opacity-40 dark:text-amber-300"
+                                    aria-label={
+                                        row.puede_pasar_a_produccion
+                                            ? t(
+                                                  'sandbox.pasar_produccion_aria',
+                                                  {
+                                                      numero: row.numero_completo,
+                                                  },
+                                              )
+                                            : t('sandbox.esperar_orden', {
+                                                  numero:
+                                                      row.siguiente_sandbox_numero ??
+                                                      row.numero_completo,
+                                              })
+                                    }
+                                    title={
+                                        row.puede_pasar_a_produccion
+                                            ? t('sandbox.pasar_produccion')
+                                            : t('sandbox.esperar_orden', {
+                                                  numero:
+                                                      row.siguiente_sandbox_numero ??
+                                                      row.numero_completo,
+                                              })
+                                    }
+                                    onClick={() => {
+                                        if (
+                                            !row.puede_pasar_a_produccion ||
+                                            !row.pasar_a_produccion_url
+                                        ) {
+                                            return;
+                                        }
+                                        if (
+                                            !window.confirm(
+                                                t(
+                                                    'sandbox.pasar_produccion_confirm',
+                                                    {
+                                                        numero: row.numero_completo,
+                                                    },
+                                                ),
+                                            )
+                                        ) {
+                                            return;
+                                        }
+                                        router.post(
+                                            row.pasar_a_produccion_url,
+                                            {},
+                                            { preserveScroll: true },
+                                        );
+                                    }}
+                                >
+                                    <ArrowUpRight
+                                        className="size-4"
+                                        strokeWidth={2.25}
+                                        aria-hidden
+                                    />
+                                </Button>
+                            </Can>
+                        ) : null}
+                        <DocumentoDownloadMenu documento={row} />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 shrink-0 border-0 bg-transparent text-violet-600 shadow-none hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+                            asChild
+                        >
+                            <Link
+                                href={`/ventas?ticket=${row.venta_id}`}
+                                aria-label={`Ver venta ${row.venta_numero ?? row.numero_completo}`}
+                            >
+                                <Eye
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                />
+                            </Link>
+                        </Button>
+                    </div>
+                ),
+            },
+        ],
+        [t],
+    );
+
+    return (
+        <>
+            <Head title="Comprobantes emitidos" />
+
+            <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
+                <PageHeader
+                    title="Comprobantes emitidos"
+                    description="Historial de boletas y facturas electrónicas enviadas a SUNAT vía APISUNAT. El estado local se alinea con Lucode (solo ACEPTADO = emitido). Usa «Sincronizar estados» si hay desfase. Los de prueba no son válidos: conviértelos a producción en orden de correlativo."
+                    stats={[
+                        {
+                            label: t('stats.monto_total'),
+                            value: formatMonto(
+                                stats.monto_total ?? '0',
+                                stats.moneda ?? 'PEN',
+                                i18n.language,
+                            ),
+                            variant: 'success',
+                        },
+                        {
+                            label: t('stats.total'),
+                            value: stats.total,
+                            variant: 'muted',
+                        },
+                        {
+                            label: t('stats.emitidos'),
+                            value: stats.emitidos,
+                            variant: 'primary',
+                        },
+                        ...(stats.pendientes != null
+                            ? [
+                                  {
+                                      label: 'Pendientes SUNAT',
+                                      value: stats.pendientes,
+                                      variant: 'default' as const,
+                                  },
+                              ]
+                            : []),
+                        ...(stats.rechazados != null && stats.rechazados > 0
+                            ? [
+                                  {
+                                      label: 'Rechazados',
+                                      value: stats.rechazados,
+                                      variant: 'default' as const,
+                                  },
+                              ]
+                            : []),
+                        {
+                            label: t('stats.coincidencias'),
+                            value: stats.coincidencias,
+                            variant: 'default',
+                        },
+                    ]}
+                    action={
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            {sincronizar_estados_url ? (
+                                <Can permission="documentos.view">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="h-10 shrink-0 cursor-pointer gap-2 px-3 font-normal"
+                                        onClick={() => {
+                                            router.post(
+                                                sincronizar_estados_url,
+                                                {},
+                                                { preserveScroll: true },
+                                            );
+                                        }}
+                                    >
+                                        <RefreshCw
+                                            className="size-4 shrink-0 opacity-70"
+                                            strokeWidth={2.5}
+                                            aria-hidden
+                                        />
+                                        <span className="hidden sm:inline">
+                                            Sincronizar estados
+                                        </span>
+                                    </Button>
+                                </Can>
+                            ) : null}
+                            <Button
+                                asChild
+                                variant="outline"
+                                className="h-10 shrink-0 cursor-pointer gap-2 px-3 font-normal"
+                            >
+                                <a href={exportUrl} download>
+                                    <Download
+                                        className="size-4 shrink-0 opacity-70"
+                                        strokeWidth={2.5}
+                                        aria-hidden
+                                    />
+                                    <span className="hidden sm:inline">
+                                        {t('common:actions.export_xlsx')}
+                                    </span>
+                                </a>
+                            </Button>
+                        </div>
+                    }
+                />
+
+                <DataTable
+                    columns={columns}
+                    data={paginated.data}
+                    rowKey={(row) => row.id}
+                    sort={sort}
+                    onSortChange={setSort}
+                    isLoading={isLoading}
+                    ariaLiveMessage={`${stats.coincidencias} comprobantes`}
+                    toolbar={
+                        <DataToolbar
+                            search={search}
+                            onSearchChange={setSearch}
+                            isSearching={isLoading}
+                            placeholder="Buscar por número CPE, cliente o venta…"
+                        >
+                            <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
+                                <FilterChips
+                                    ariaLabel="Filtrar por estado"
+                                    value={estado}
+                                    onChange={(v) => applyFilter({ estado: v })}
+                                    options={estadoOptions}
+                                />
+                                <FilterChips
+                                    ariaLabel="Filtrar por método de pago"
+                                    value={metodoPago}
+                                    onChange={(v) =>
+                                        applyFilter({ metodo_pago: v })
+                                    }
+                                    options={metodoOptions}
+                                />
+                                <DateRangeFilter
+                                    desde={filters.fecha_desde}
+                                    hasta={filters.fecha_hasta}
+                                    disabled={isLoading}
+                                    triggerClassName="h-10 min-w-[12rem]"
+                                    onApply={(desde, hasta) =>
+                                        applyFilter({
+                                            fecha_desde: desde,
+                                            fecha_hasta: hasta,
+                                        })
+                                    }
+                                    onClear={() =>
+                                        applyFilter({
+                                            fecha_desde:
+                                                documento_filtro_ui.default_desde,
+                                            fecha_hasta:
+                                                documento_filtro_ui.default_hasta,
+                                        })
+                                    }
+                                />
+                            </div>
+                        </DataToolbar>
+                    }
+                    footer={
+                        <DataPagination
+                            meta={paginated}
+                            onPerPageChange={setPerPage}
+                            preservedQuery={{
+                                search: filters.search || undefined,
+                                per_page: filters.per_page,
+                                sort: filters.sort ?? undefined,
+                                direction: filters.direction ?? undefined,
+                                estado:
+                                    filters.estado !== DEFAULT_ESTADO
+                                        ? filters.estado
+                                        : undefined,
+                                metodo_pago:
+                                    filters.metodo_pago &&
+                                    filters.metodo_pago !== DEFAULT_METODO
+                                        ? filters.metodo_pago
+                                        : undefined,
+                                fecha_desde: filters.fecha_desde,
+                                fecha_hasta: filters.fecha_hasta,
+                            }}
+                        />
+                    }
+                    emptyState={
+                        <EmptyState
+                            icon={FileText}
+                            title={
+                                activeFiltersCount > 0
+                                    ? 'Sin resultados'
+                                    : 'Aún no hay comprobantes'
+                            }
+                            description={
+                                activeFiltersCount > 0
+                                    ? 'Prueba con otros filtros o términos de búsqueda.'
+                                    : 'Los comprobantes emitidos desde caja aparecerán aquí.'
+                            }
+                        />
+                    }
+                />
+            </div>
+        </>
+    );
+}
+
+Index.layout = (page: ReactNode) => (
+    <AppLayout
+        breadcrumbs={[
+            { title: 'Facturación' },
+            { title: 'Comprobantes emitidos', href: ROUTE_URL },
+        ]}
+    >
+        {page}
+    </AppLayout>
+);

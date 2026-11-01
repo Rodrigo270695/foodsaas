@@ -30,6 +30,8 @@ import cajaEn from '@/lang/en/caja.json';
 import cajaEs from '@/lang/es/caja.json';
 import ventasEn from '@/lang/en/ventas.json';
 import ventasEs from '@/lang/es/ventas.json';
+import facturacionDocumentosEn from '@/lang/en/facturacion-documentos.json';
+import facturacionDocumentosEs from '@/lang/es/facturacion-documentos.json';
 import demoEn from '@/lang/en/demo.json';
 import demoEs from '@/lang/es/demo.json';
 import rolesEn from '@/lang/en/roles.json';
@@ -75,6 +77,7 @@ const resources = {
         cocina: cocinaEs,
         caja: cajaEs,
         ventas: ventasEs,
+        'facturacion-documentos': facturacionDocumentosEs,
         usuarios: usuariosEs,
         forms: formsEs,
         planes: planesEs,
@@ -100,6 +103,7 @@ const resources = {
         cocina: cocinaEn,
         caja: cajaEn,
         ventas: ventasEn,
+        'facturacion-documentos': facturacionDocumentosEn,
         usuarios: usuariosEn,
         forms: formsEn,
         planes: planesEn,
@@ -118,7 +122,7 @@ void i18n
         fallbackLng: DEFAULT_LOCALE,
         supportedLngs: SUPPORTED_LOCALES as unknown as string[],
         defaultNS: 'common',
-        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
+        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'facturacion-documentos', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
         interpolation: {
             escapeValue: false,
         },

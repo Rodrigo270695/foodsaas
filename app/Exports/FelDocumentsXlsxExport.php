@@ -123,13 +123,20 @@ class FelDocumentsXlsxExport
             [
                 'label' => 'Método pago',
                 'value' => function (FelDocument $d): string {
-                    $metodo = trim((string) ($d->venta?->metodo_pago ?? ''));
-
-                    if ($metodo === '') {
+                    $pagos = $d->venta?->pagos;
+                    if ($pagos === null || $pagos->isEmpty()) {
                         return '';
                     }
 
-                    return self::METODO_PAGO_LABELS[$metodo] ?? ucfirst($metodo);
+                    return $pagos
+                        ->map(function ($pago): string {
+                            $medio = trim((string) ($pago->medio ?? ''));
+
+                            return $medio === '' ? '' : (self::METODO_PAGO_LABELS[$medio] ?? ucfirst($medio));
+                        })
+                        ->filter()
+                        ->unique()
+                        ->implode(' + ');
                 },
             ],
             [
@@ -158,7 +165,7 @@ class FelDocumentsXlsxExport
     {
         $spreadsheet = new Spreadsheet;
         $spreadsheet->getProperties()
-            ->setCreator('VetSaaS')
+            ->setCreator('FoodSaaS')
             ->setTitle('Comprobantes emitidos')
             ->setSubject('Comprobantes electrónicos por rango de fechas');
 
