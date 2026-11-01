@@ -51,13 +51,34 @@ final class CajaSesionArqueoPdfService
         ?array $arqueo = null,
         string $formato = 'a4',
     ): Response {
-        $baseData = $this->baseViewData($sesion, $tenantId, $arqueo);
         $safeId = substr((string) $sesion->getKey(), 0, 8);
+        $label = $formato === 'a4' ? 'a4' : $formato.'mm';
+        $binary = $this->output($sesion, $tenantId, $arqueo, $formato);
 
+        return response($binary, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="arqueo-caja-'.$safeId.'-'.$label.'.pdf"',
+            'Cache-Control' => 'private, max-age=120',
+        ]);
+    }
+
+    /**
+     * Binario PDF (para caché en el controlador).
+     *
+     * @param  array<string, mixed>|null  $arqueo
+     */
+    public function output(
+        CajaSesion $sesion,
+        string $tenantId,
+        ?array $arqueo = null,
+        string $formato = 'a4',
+    ): string {
         if ($formato === 'a4') {
+            $baseData = $this->baseViewData($sesion, $tenantId, $arqueo);
             $pdf = Pdf::loadView('pdf.caja-sesion-arqueo', $baseData)->setPaper('a4');
+            $this->applyDomPdfOptions($pdf);
 
-            return $pdf->stream('arqueo-caja-'.$safeId.'-a4.pdf');
+            return $pdf->output();
         }
 
         $ticketData = $this->ticketViewData($sesion, $tenantId, $formato, $arqueo);
@@ -70,10 +91,18 @@ final class CajaSesionArqueoPdfService
 
         $pdf = Pdf::loadView('pdf.caja-sesion-arqueo-ticket', $ticketData);
         $pdf->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
+        $this->applyDomPdfOptions($pdf);
+
+        return $pdf->output();
+    }
+
+    private function applyDomPdfOptions(\Barryvdh\DomPDF\PDF $pdf): void
+    {
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', false);
-
-        return $pdf->stream('arqueo-caja-'.$safeId.'-'.$ancho.'mm.pdf');
+        $pdf->setOption('defaultFont', 'DejaVu Sans');
+        $pdf->setOption('dpi', 96);
+        $pdf->setOption('isFontSubsettingEnabled', true);
     }
 
     /**
@@ -189,31 +218,97 @@ final class CajaSesionArqueoPdfService
 
     private function resolveLogoDataUri(?RestaurantSetting $cfg): string
     {
+        $binary = null;
+        $mime = 'image/png';
+
         if ($cfg !== null) {
             $path = $cfg->logo_path;
             if (is_string($path) && $path !== '') {
                 $path = ltrim($path, '/');
                 if (Storage::disk('public')->exists($path)) {
                     $binary = Storage::disk('public')->get($path);
-                    $mime = Storage::disk('public')->mimeType($path);
-                    if (! is_string($mime) || $mime === '') {
-                        $mime = 'image/png';
-                    }
-                    if (str_starts_with($mime, 'image/')) {
-                        return 'data:'.$mime.';base64,'.base64_encode((string) $binary);
+                    $detected = Storage::disk('public')->mimeType($path);
+                    if (is_string($detected) && $detected !== '') {
+                        $mime = $detected;
                     }
                 }
             }
         }
 
-        $fallback = public_path('logo.png');
-        if (is_file($fallback)) {
+        if ($binary === null) {
+            $fallback = public_path('logo.png');
+            if (! is_file($fallback)) {
+                return '';
+            }
             $binary = (string) file_get_contents($fallback);
-
-            return 'data:image/png;base64,'.base64_encode($binary);
+            $mime = 'image/png';
         }
 
-        return '';
+        if (! str_starts_with($mime, 'image/') || str_contains($mime, 'svg')) {
+            return '';
+        }
+
+        // DomPDF con PNG/JPEG grandes es muy lento: reducir a ~160px JPEG.
+        $resized = $this->shrinkImageForPdf((string) $binary);
+        if ($resized !== null) {
+            return $resized;
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) $binary);
+    }
+
+    private function shrinkImageForPdf(string $binary): ?string
+    {
+        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+            return null;
+        }
+
+        $src = @imagecreatefromstring($binary);
+        if ($src === false) {
+            return null;
+        }
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+        if ($w < 1 || $h < 1) {
+            imagedestroy($src);
+
+            return null;
+        }
+
+        $maxW = 160;
+        if ($w <= $maxW && strlen($binary) < 40_000) {
+            imagedestroy($src);
+
+            return null;
+        }
+
+        $nw = min($maxW, $w);
+        $nh = (int) max(1, round($h * ($nw / $w)));
+        $dst = imagecreatetruecolor($nw, $nh);
+        if ($dst === false) {
+            imagedestroy($src);
+
+            return null;
+        }
+
+        $white = imagecolorallocate($dst, 255, 255, 255);
+        if ($white !== false) {
+            imagefilledrectangle($dst, 0, 0, $nw, $nh, $white);
+        }
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+        ob_start();
+        imagejpeg($dst, null, 82);
+        $out = ob_get_clean();
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        if (! is_string($out) || $out === '') {
+            return null;
+        }
+
+        return 'data:image/jpeg;base64,'.base64_encode($out);
     }
 
     /**

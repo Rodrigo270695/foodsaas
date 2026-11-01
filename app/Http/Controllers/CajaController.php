@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Inertia\Inertia;
@@ -285,7 +286,35 @@ class CajaController extends Controller
             );
         }
 
-        return $pdfService->stream($cajaSesion, $tenantId, null, $formato);
+        $safeId = substr((string) $cajaSesion->getKey(), 0, 8);
+        $label = $formato === 'a4' ? 'a4' : $formato.'mm';
+        $cacheKey = 'caja_arqueo_pdf:'.$cajaSesion->getKey().':'.$formato.':'
+            .($cajaSesion->updated_at?->timestamp ?? 0);
+
+        try {
+            $binary = Cache::remember(
+                $cacheKey,
+                now()->addMinutes(10),
+                static function () use ($pdfService, $cajaSesion, $tenantId, $formato): string {
+                    return $pdfService->output($cajaSesion, $tenantId, null, $formato);
+                },
+            );
+
+            return response($binary, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="arqueo-caja-'.$safeId.'-'.$label.'.pdf"',
+                'Cache-Control' => 'private, max-age=120',
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            Cache::forget($cacheKey);
+
+            return response(
+                'No se pudo generar el PDF del arqueo: '.$e->getMessage(),
+                500,
+                ['Content-Type' => 'text/plain; charset=UTF-8'],
+            );
+        }
     }
 
     /**
