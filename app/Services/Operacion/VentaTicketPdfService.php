@@ -82,7 +82,15 @@ class VentaTicketPdfService
         $tf = $this->ticketTypography($ancho);
         $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
 
-        $heightPt = max(520.0, 380.0 + (count($lineas) * 28.0) + (count($pagos) * 22.0));
+        $logoDataUri = $this->resolveLogoDataUri($cfg);
+        // Una sola página térmica: alto holgado para que no salte a página 2.
+        $heightPt = max(
+            980.0,
+            620.0
+            + ($logoDataUri !== '' ? 90.0 : 0.0)
+            + (count($lineas) * 42.0)
+            + (count($pagos) * 28.0),
+        );
 
         $pdf = Pdf::loadView('pdf.venta-ticket', [
             'venta' => $venta,
@@ -92,7 +100,7 @@ class VentaTicketPdfService
             'clinic_ruc' => $cfg?->ruc,
             'clinic_direccion' => $cfg?->direccion,
             'clinic_telefono' => $cfg?->telefono,
-            'logoDataUri' => $this->resolveLogoDataUri($cfg),
+            'logoDataUri' => $logoDataUri,
             'moneda' => (string) ($cfg?->moneda ?? 'PEN'),
             'igv_porcentaje' => $igvPct,
             'subtotal_sin_igv' => number_format($subtotalSinIgv, 2, '.', ''),
@@ -109,41 +117,109 @@ class VentaTicketPdfService
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', false);
         $pdf->setOption('defaultFont', 'DejaVu Sans');
+        $pdf->setOption('dpi', 96);
+        $pdf->setOption('isFontSubsettingEnabled', true);
 
         return $pdf;
     }
 
     private function resolveLogoDataUri(?RestaurantSetting $cfg): string
     {
+        $binary = null;
+        $mime = 'image/png';
+
         if ($cfg !== null) {
             $path = $cfg->logo_path;
             if (is_string($path) && $path !== '') {
                 $path = ltrim($path, '/');
                 if (Storage::disk('public')->exists($path)) {
                     $binary = Storage::disk('public')->get($path);
-                    $mime = Storage::disk('public')->mimeType($path);
-                    if (! is_string($mime) || $mime === '') {
-                        $mime = 'image/png';
-                    }
-                    // DomPDF no renderiza SVG de forma fiable en térmica.
-                    if (
-                        str_starts_with($mime, 'image/')
-                        && ! str_contains($mime, 'svg')
-                    ) {
-                        return 'data:'.$mime.';base64,'.base64_encode((string) $binary);
+                    $detected = Storage::disk('public')->mimeType($path);
+                    if (is_string($detected) && $detected !== '') {
+                        $mime = $detected;
                     }
                 }
             }
         }
 
-        $fallback = public_path('logo.png');
-        if (is_file($fallback)) {
+        if ($binary === null) {
+            $fallback = public_path('logo.png');
+            if (! is_file($fallback)) {
+                return '';
+            }
             $binary = (string) file_get_contents($fallback);
-
-            return 'data:image/png;base64,'.base64_encode($binary);
+            $mime = 'image/png';
         }
 
-        return '';
+        // DomPDF no renderiza SVG de forma fiable en térmica.
+        if (! str_starts_with($mime, 'image/') || str_contains($mime, 'svg')) {
+            return '';
+        }
+
+        // Reducir logo: DomPDF con PNG grandes tarda mucho.
+        $resized = $this->shrinkImageForTicket((string) $binary, $mime);
+        if ($resized !== null) {
+            return $resized;
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode((string) $binary);
+    }
+
+    /**
+     * Escala el logo a ~160px de ancho (JPEG) para acelerar DomPDF.
+     */
+    private function shrinkImageForTicket(string $binary, string $mime): ?string
+    {
+        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+            return null;
+        }
+
+        $src = @imagecreatefromstring($binary);
+        if ($src === false) {
+            return null;
+        }
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+        if ($w < 1 || $h < 1) {
+            imagedestroy($src);
+
+            return null;
+        }
+
+        $maxW = 160;
+        if ($w <= $maxW && strlen($binary) < 40_000) {
+            imagedestroy($src);
+
+            return null;
+        }
+
+        $nw = min($maxW, $w);
+        $nh = (int) max(1, round($h * ($nw / $w)));
+        $dst = imagecreatetruecolor($nw, $nh);
+        if ($dst === false) {
+            imagedestroy($src);
+
+            return null;
+        }
+
+        $white = imagecolorallocate($dst, 255, 255, 255);
+        if ($white !== false) {
+            imagefilledrectangle($dst, 0, 0, $nw, $nh, $white);
+        }
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+        ob_start();
+        imagejpeg($dst, null, 82);
+        $out = ob_get_clean();
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        if (! is_string($out) || $out === '') {
+            return null;
+        }
+
+        return 'data:image/jpeg;base64,'.base64_encode($out);
     }
 
     /**

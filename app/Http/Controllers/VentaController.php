@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -519,13 +520,26 @@ class VentaController extends Controller
             $cfg->forceFill(['ticket_ancho_mm' => $formato])->save();
         }
 
-        try {
-            $pdf = $tickets->render($venta, $formato);
-            $filename = 'ticket-'.($venta->numero ?: $venta->id).'-'.$formato.'mm.pdf';
+        $filename = 'ticket-'.($venta->numero ?: $venta->id).'-'.$formato.'mm.pdf';
+        $cacheKey = 'venta_ticket_pdf:'.$venta->id.':'.$formato.':'.($venta->updated_at?->timestamp ?? 0);
 
-            return $pdf->stream($filename);
+        try {
+            $binary = Cache::remember(
+                $cacheKey,
+                now()->addMinutes(5),
+                static function () use ($tickets, $venta, $formato): string {
+                    return $tickets->render($venta, $formato)->output();
+                },
+            );
+
+            return response($binary, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="'.$filename.'"',
+                'Cache-Control' => 'private, max-age=120',
+            ]);
         } catch (\Throwable $e) {
             report($e);
+            Cache::forget($cacheKey);
 
             return response(
                 'No se pudo generar el ticket: '.$e->getMessage(),
