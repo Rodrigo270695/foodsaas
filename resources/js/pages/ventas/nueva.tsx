@@ -9,7 +9,10 @@ import AppLayout from '@/layouts/app-layout';
 import caja from '../caja/caja-routes';
 import { CarritoPanel } from './components/carrito-panel';
 import { ClienteComprobanteSection } from './components/cliente-comprobante-section';
-import { CobroPanel } from './components/cobro-panel';
+import {
+    CobroPanel,
+    type PagoPayload,
+} from './components/cobro-panel';
 import { PedidosPickerModal } from './components/pedidos-picker-modal';
 import { ProductosSearch } from './components/productos-search';
 import {
@@ -45,9 +48,7 @@ export default function Nueva({
     const [tipo, setTipo] = useState<string>(tipos_comprobante[0] ?? 'ticket');
     const [clienteNombre, setClienteNombre] = useState('');
     const [clienteDoc, setClienteDoc] = useState('');
-    const [medio, setMedio] = useState(medios[0] ?? 'efectivo');
     const [descuento, setDescuento] = useState('0');
-    const [montoRecibido, setMontoRecibido] = useState('');
     const [busy, setBusy] = useState(false);
     const [pedidosOpen, setPedidosOpen] = useState(false);
     const [pedidoActivo, setPedidoActivo] = useState<PedidoPendiente | null>(
@@ -98,12 +99,6 @@ export default function Nueva({
         Math.max(0, Number(descuento) || 0),
     );
     const total = round2(Math.max(0, subtotal - descuentoNum));
-    const montoPago =
-        montoRecibido === '' ? total : Math.max(0, Number(montoRecibido) || 0);
-    const vuelto =
-        medio === 'efectivo' && montoPago > total
-            ? round2(montoPago - total)
-            : 0;
 
     function addProduct(p: Producto) {
         if (cobrandoPedido) {
@@ -158,7 +153,6 @@ export default function Nueva({
         setPedidoActivo(pedido);
         setCart(lineas);
         setDescuento(String(Number(pedido.descuento) || 0));
-        setMontoRecibido('');
         setPedidosOpen(false);
     }
 
@@ -166,10 +160,9 @@ export default function Nueva({
         setPedidoActivo(null);
         setCart([]);
         setDescuento('0');
-        setMontoRecibido('');
     }
 
-    function canSubmit(): boolean {
+    function extrasOk(): boolean {
         if (!sesion_abierta || cart.length === 0 || total <= 0 || busy) {
             return false;
         }
@@ -182,18 +175,16 @@ export default function Nueva({
                 return false;
             }
         }
-        if (montoPago < total && medio !== 'efectivo') {
-            return false;
-        }
+
         return true;
     }
 
-    function registrar() {
+    function registrar(pagos: PagoPayload[]) {
         if (!sesion_abierta) {
             router.visit(caja.index().url);
             return;
         }
-        if (!canSubmit()) {
+        if (!extrasOk() || pagos.length === 0) {
             return;
         }
 
@@ -204,7 +195,7 @@ export default function Nueva({
                 ventas.cobrar(pedidoActivo.id).url,
                 {
                     descuento: descuentoNum,
-                    pagos: [{ medio, monto: montoPago }],
+                    pagos,
                 },
                 { onFinish: () => setBusy(false) },
             );
@@ -224,7 +215,7 @@ export default function Nueva({
                         producto_id: l.producto_id as string,
                         cantidad: l.cantidad,
                     })),
-                pagos: [{ medio, monto: montoPago }],
+                pagos,
             },
             { onFinish: () => setBusy(false) },
         );
@@ -361,17 +352,12 @@ export default function Nueva({
 
                     <CobroPanel
                         medios={medios}
-                        medio={medio}
-                        onMedioChange={setMedio}
                         descuento={descuento}
                         onDescuentoChange={setDescuento}
-                        montoRecibido={montoRecibido}
-                        onMontoRecibidoChange={setMontoRecibido}
                         subtotal={subtotal}
                         descuentoNum={descuentoNum}
                         total={total}
-                        vuelto={vuelto}
-                        canSubmit={canSubmit()}
+                        extrasOk={extrasOk()}
                         busy={busy}
                         cobrandoPedido={cobrandoPedido}
                         onSubmit={registrar}
