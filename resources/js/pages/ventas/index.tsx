@@ -5,6 +5,7 @@ import {
     Download,
     Eye,
     Plus,
+    Printer,
     Receipt,
     RefreshCw,
     ShoppingCart,
@@ -371,25 +372,40 @@ export default function Index({
                 ),
                 align: 'right',
                 cell: (row) => (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                type="button"
-                                size="icon"
-                                variant="outline"
-                                className="size-8 cursor-pointer"
-                                onClick={() => setTicketVentaId(row.id)}
-                                aria-label={t('actions.ver_ticket')}
-                            >
-                                <Eye className="size-4" aria-hidden />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                            {t('actions.ver_ticket')}
-                        </TooltipContent>
-                    </Tooltip>
+                    <div className="flex items-center justify-end gap-0.5">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-violet-600 shadow-none hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+                            onClick={() => setTicketVentaId(row.id)}
+                            aria-label={t('actions.ver_ticket')}
+                            title={t('actions.ver_ticket')}
+                        >
+                            <Eye
+                                className="size-4"
+                                strokeWidth={2.25}
+                                aria-hidden
+                            />
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-sky-600 shadow-none hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+                            onClick={() => setTicketVentaId(row.id)}
+                            aria-label={t('actions.imprimir_ticket')}
+                            title={t('actions.imprimir_ticket')}
+                        >
+                            <Printer
+                                className="size-4"
+                                strokeWidth={2.25}
+                                aria-hidden
+                            />
+                        </Button>
+                    </div>
                 ),
-                className: 'w-14',
+                className: 'w-20',
             },
         ],
         [t],

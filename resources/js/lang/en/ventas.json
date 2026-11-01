@@ -50,7 +50,8 @@
         "registrar": "Record sale",
         "agregar": "Add",
         "quitar": "Remove",
-        "ver_ticket": "View ticket"
+        "ver_ticket": "View ticket",
+        "imprimir_ticket": "Print ticket"
     },
     "ticket_dialog": {
         "title": "Sale ticket",

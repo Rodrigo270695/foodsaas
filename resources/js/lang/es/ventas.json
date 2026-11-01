@@ -50,7 +50,8 @@
         "registrar": "Registrar venta",
         "agregar": "Agregar",
         "quitar": "Quitar",
-        "ver_ticket": "Ver ticket"
+        "ver_ticket": "Ver ticket",
+        "imprimir_ticket": "Imprimir ticket"
     },
     "ticket_dialog": {
         "title": "Ticket de venta",
