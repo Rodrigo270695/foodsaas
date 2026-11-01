@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     ArrowDownLeft,
     Banknote,
@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import {
+    DataPagination,
     DataTable,
     EmptyState,
     PageHeader,
@@ -23,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
+import type { Paginated } from '@/types';
 import caja from './caja-routes';
 import { ArqueoPrintDialog } from './components/arqueo-print-dialog';
 import { SesionAbrirModal } from './components/sesion-abrir-modal';
@@ -66,7 +68,7 @@ type Props = {
     sesion_sede: Sesion | null;
     mi_sesion_otra_sede: Sesion | null;
     puede_abrir: boolean;
-    sesiones: Sesion[];
+    sesiones: Paginated<Sesion>;
     egresos: Egreso[];
     totales_sesion: {
         ventas: number;
@@ -78,6 +80,7 @@ type Props = {
     };
     motivos_egreso: string[];
     medios: string[];
+    filters: { sede_id: string | null; per_page: number };
     auth_user_id: number | null;
 };
 
@@ -95,6 +98,7 @@ export default function Index({
     totales_sesion,
     motivos_egreso,
     medios,
+    filters,
     auth_user_id,
 }: Props) {
     const { t, i18n } = useTranslation(['caja', 'common']);
@@ -489,82 +493,33 @@ export default function Index({
                     </div>
                 )}
 
-                {sesion || sesion_sede ? (
-                    <section className="space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                            <h2 className="text-base font-semibold">
-                                {t('sections.egresos')}
-                            </h2>
-                            {esQuienAbrio ? (
-                                <Can permission="caja.egreso">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="cursor-pointer gap-1.5 border-rose-500/40 text-rose-700 hover:bg-rose-500/10 dark:text-rose-300"
-                                        onClick={() => setEgresoOpen(true)}
-                                    >
-                                        <ArrowDownLeft className="size-4" />
-                                        {t('egreso.registrar')}
-                                    </Button>
-                                </Can>
-                            ) : null}
-                        </div>
-                        {egresos.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">
-                                {t('empty.egresos')}
-                            </p>
-                        ) : (
-                            <ul className="divide-y rounded-xl border bg-card/60">
-                                {egresos.map((e) => (
-                                    <li
-                                        key={e.id}
-                                        className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
-                                    >
-                                        <div>
-                                            <p className="font-medium">
-                                                {t(
-                                                    `egreso.motivos.${e.motivo}`,
-                                                )}
-                                                <span className="ml-2 text-xs text-muted-foreground">
-                                                    {t(`medios.${e.medio}`)}
-                                                </span>
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {
-                                                    formatPeruDateTime(
-                                                        e.created_at,
-                                                    ).fecha
-                                                }{' '}
-                                                {
-                                                    formatPeruDateTime(
-                                                        e.created_at,
-                                                    ).hora
-                                                }
-                                                {e.created_by
-                                                    ? ` · ${e.created_by.name}`
-                                                    : ''}
-                                                {e.notas ? ` · ${e.notas}` : ''}
-                                            </p>
-                                        </div>
-                                        <span className="font-semibold tabular-nums text-rose-700 dark:text-rose-300">
-                                            −{money(e.monto)}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                    </section>
-                ) : null}
-
                 <section className="space-y-3">
                     <h2 className="text-base font-semibold">
                         {t('sections.sesiones')}
                     </h2>
                     <DataTable
                         columns={columns}
-                        data={sesiones}
+                        data={sesiones.data}
                         rowKey={(s) => s.id}
+                        footer={
+                            <DataPagination
+                                meta={sesiones}
+                                onPerPageChange={(perPage) => {
+                                    router.get(
+                                        caja.index().url,
+                                        { per_page: perPage, page: 1 },
+                                        {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                            replace: true,
+                                        },
+                                    );
+                                }}
+                                preservedQuery={{
+                                    per_page: filters.per_page,
+                                }}
+                            />
+                        }
                         emptyState={
                             <EmptyState
                                 icon={Wallet}

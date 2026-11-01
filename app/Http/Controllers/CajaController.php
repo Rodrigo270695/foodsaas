@@ -28,7 +28,7 @@ class CajaController extends Controller
     use ResolvesActiveSede;
     use ResolvesTenantId;
 
-    public function index(CajaService $caja): InertiaResponse
+    public function index(Request $request, CajaService $caja): InertiaResponse
     {
         $this->tenantIdOrAbort();
 
@@ -43,18 +43,10 @@ class CajaController extends Controller
             : null;
 
         $sedeIds = ActiveSedeContext::accessibleIds();
-        $sesiones = $sedeIds === []
-            ? collect()
-            : CajaSesion::query()
-                ->with([
-                    'openedBy:id,name',
-                    'closedBy:id,name',
-                    'sede:id,nombre,codigo',
-                ])
-                ->whereIn('sede_id', $sedeIds)
-                ->orderByDesc('opened_at')
-                ->limit(60)
-                ->get();
+        $perPage = (int) $request->integer('per_page', 10);
+        if (! in_array($perPage, [10, 15, 20, 25, 50], true)) {
+            $perPage = 10;
+        }
 
         $sedesConAbierta = CajaSesion::query()
             ->where('estado', CajaSesion::ESTADO_ABIERTA)
@@ -68,19 +60,41 @@ class CajaController extends Controller
             ->map(fn ($id) => (int) $id)
             ->flip();
 
-        $sesiones = $sesiones->map(function (CajaSesion $s) use ($sedesConAbierta, $cajerosConAbierta): CajaSesion {
-            $cajeroLibre = $s->opened_by === null
-                || ! $cajerosConAbierta->has((int) $s->opened_by);
+        $baseQuery = CajaSesion::query()
+            ->with([
+                'openedBy:id,name',
+                'closedBy:id,name',
+                'sede:id,nombre,codigo',
+            ])
+            ->when(
+                $sedeIds === [],
+                fn ($q) => $q->whereRaw('1 = 0'),
+                fn ($q) => $q->whereIn('sede_id', $sedeIds),
+            )
+            ->orderByDesc('opened_at');
 
-            $s->setAttribute(
-                'puede_reabrir',
-                $s->estaDentroDeVentanaReabrir()
-                && ! $sedesConAbierta->has($s->sede_id)
-                && $cajeroLibre,
-            );
+        $statsTotal = (clone $baseQuery)->count();
+        $statsAbiertas = (clone $baseQuery)
+            ->where('estado', CajaSesion::ESTADO_ABIERTA)
+            ->count();
+        $statsCerradas = max(0, $statsTotal - $statsAbiertas);
 
-            return $s;
-        });
+        $sesiones = $baseQuery
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(function (CajaSesion $s) use ($sedesConAbierta, $cajerosConAbierta): CajaSesion {
+                $cajeroLibre = $s->opened_by === null
+                    || ! $cajerosConAbierta->has((int) $s->opened_by);
+
+                $s->setAttribute(
+                    'puede_reabrir',
+                    $s->estaDentroDeVentanaReabrir()
+                    && ! $sedesConAbierta->has($s->sede_id)
+                    && $cajeroLibre,
+                );
+
+                return $s;
+            });
 
         $puedeAbrir = $sedeId !== ''
             && $sesionSede === null
@@ -146,7 +160,7 @@ class CajaController extends Controller
                 ? $miSesion->load(['sede:id,nombre,codigo'])
                 : null,
             'puede_abrir' => $puedeAbrir,
-            'sesiones' => $sesiones->values(),
+            'sesiones' => $sesiones,
             'egresos' => $egresos,
             'totales_sesion' => $totalesSesion,
             'sistema_efectivo' => $sistemaEfectivo,
@@ -155,11 +169,12 @@ class CajaController extends Controller
             'billeteras' => CajaBilleteras::CODIGOS,
             'filters' => [
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
+                'per_page' => $perPage,
             ],
             'stats' => [
-                'sesiones' => $sesiones->count(),
-                'abiertas' => $sesiones->where('estado', CajaSesion::ESTADO_ABIERTA)->count(),
-                'cerradas' => $sesiones->where('estado', CajaSesion::ESTADO_CERRADA)->count(),
+                'sesiones' => $statsTotal,
+                'abiertas' => $statsAbiertas,
+                'cerradas' => $statsCerradas,
             ],
             'auth_user_id' => $authId,
         ]);
