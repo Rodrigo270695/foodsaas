@@ -74,6 +74,7 @@ class TenantRolesSeeder extends Seeder
                 'caja.cobrar',
                 'ventas.view',
                 'ventas.create',
+                'ventas.export',
                 'config-general.view',
                 'config-general.update',
                 'series.view',
@@ -103,6 +104,7 @@ class TenantRolesSeeder extends Seeder
                 'caja.cobrar',
                 'ventas.view',
                 'ventas.create',
+                'ventas.export',
             ],
         ],
         'mesero' => [

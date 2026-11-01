@@ -231,6 +231,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:ventas.view|caja.view')
                     ->get('/', [VentaController::class, 'index'])
                     ->name('index');
+                Route::middleware('permission:ventas.export|ventas.view|caja.view')
+                    ->get('export', [VentaController::class, 'export'])
+                    ->name('export');
                 Route::middleware('permission:ventas.view|caja.view')
                     ->get('pendientes', [VentaController::class, 'pendientes'])
                     ->name('pendientes');

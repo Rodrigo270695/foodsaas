@@ -44,6 +44,7 @@
     "actions": {
         "cobrar": "Cobrar",
         "nueva": "Nueva venta",
+        "export": "Exportar ventas",
         "pendientes": "Cobrar pedidos",
         "volver": "Volver al historial",
         "registrar": "Registrar venta",

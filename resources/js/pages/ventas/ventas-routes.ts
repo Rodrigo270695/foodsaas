@@ -16,6 +16,7 @@ const ventas = {
         return { url: qs ? `${base}?${qs}` : base };
     },
     pendientes: () => ({ url: `${base}/pendientes` }),
+    export: () => ({ url: `${base}/export` }),
     create: () => ({ url: `${base}/nueva` }),
     store: () => ({ url: base }),
     desdePedido: (pedidoId: string | number) => ({

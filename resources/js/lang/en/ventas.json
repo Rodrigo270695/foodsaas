@@ -44,6 +44,7 @@
     "actions": {
         "cobrar": "Charge",
         "nueva": "New sale",
+        "export": "Export sales",
         "pendientes": "Charge orders",
         "volver": "Back to history",
         "registrar": "Record sale",

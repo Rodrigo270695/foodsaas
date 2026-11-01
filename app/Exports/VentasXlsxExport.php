@@ -15,7 +15,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
- * Export XLSX del listado de ventas de caja (misma familia visual que {@see ComprasInventarioXlsxExport}).
+ * Export XLSX del historial de ventas (misma familia visual que Almacén / Carta).
  */
 class VentasXlsxExport
 {
@@ -28,31 +28,43 @@ class VentasXlsxExport
     {
         $this->columns = [
             [
-                'label' => 'Número interno',
-                'value' => fn (Venta $v) => (string) $v->numero,
+                'label' => 'Número',
+                'value' => fn (Venta $v) => (string) ($v->numero ?? ''),
             ],
             [
-                'label' => 'Número CPE',
-                'value' => fn (Venta $v) => (string) ($v->felDocument?->numero_completo ?? ''),
-            ],
-            [
-                'label' => 'Fecha venta',
-                'value' => fn (Venta $v) => optional($v->fecha_pago ?? $v->created_at)->format('Y-m-d H:i') ?? '',
+                'label' => 'Fecha',
+                'value' => fn (Venta $v) => optional($v->created_at)->format('Y-m-d H:i') ?? '',
             ],
             [
                 'label' => 'Cliente',
+                'value' => fn (Venta $v) => (string) ($v->cliente_nombre ?: 'Varios'),
+            ],
+            [
+                'label' => 'Documento',
+                'value' => fn (Venta $v) => (string) ($v->cliente_documento ?? ''),
+            ],
+            [
+                'label' => 'Origen',
+                'value' => fn (Venta $v) => (string) ($v->origen ?? ''),
+            ],
+            [
+                'label' => 'Comprobante',
+                'value' => fn (Venta $v) => (string) ($v->tipo_comprobante ?? ''),
+            ],
+            [
+                'label' => 'Pedido',
+                'value' => fn (Venta $v) => $v->pedido !== null ? '#'.$v->pedido->numero : '',
+            ],
+            [
+                'label' => 'Mesa',
                 'value' => function (Venta $v): string {
-                    $p = $v->propietario;
-                    if ($p === null) {
+                    $mesa = $v->pedido?->mesa;
+                    if ($mesa === null) {
                         return '';
                     }
 
-                    return (string) ($p->razon_social ?: trim(implode(' ', array_filter([$p->nombres, $p->apellidos]))));
+                    return (string) ($mesa->nombre ?: $mesa->codigo);
                 },
-            ],
-            [
-                'label' => 'Paciente',
-                'value' => fn (Venta $v) => (string) ($v->paciente?->nombre ?? ''),
             ],
             [
                 'label' => 'Sede',
@@ -67,40 +79,28 @@ class VentasXlsxExport
                 'value' => fn (Venta $v) => (string) $v->subtotal,
             ],
             [
-                'label' => 'IGV',
-                'value' => fn (Venta $v) => (string) $v->igv_monto,
-            ],
-            [
                 'label' => 'Descuento',
-                'value' => fn (Venta $v) => (string) $v->descuento_monto,
+                'value' => fn (Venta $v) => (string) $v->descuento,
             ],
             [
                 'label' => 'Total',
                 'value' => fn (Venta $v) => (string) $v->total,
             ],
             [
-                'label' => 'Moneda',
-                'value' => fn (Venta $v) => (string) ($v->moneda ?? ''),
+                'label' => 'Métodos pago',
+                'value' => function (Venta $v): string {
+                    return $v->pagos
+                        ->map(fn ($p) => $p->medio.': '.$p->monto)
+                        ->implode(' | ');
+                },
             ],
             [
-                'label' => 'Estado pago',
+                'label' => 'Estado',
                 'value' => fn (Venta $v) => (string) ($v->estado ?? ''),
             ],
             [
-                'label' => 'Método pago',
-                'value' => fn (Venta $v) => (string) ($v->metodo_pago ?? ''),
-            ],
-            [
-                'label' => 'Estado SUNAT',
-                'value' => fn (Venta $v) => (string) ($v->fel_estado ?? ''),
-            ],
-            [
-                'label' => 'Registrado',
-                'value' => fn (Venta $v) => optional($v->created_at)->format('Y-m-d H:i') ?? '',
-            ],
-            [
                 'label' => 'Cajero',
-                'value' => fn (Venta $v) => (string) ($v->creadoPor?->name ?? ''),
+                'value' => fn (Venta $v) => (string) ($v->createdBy?->name ?? ''),
             ],
         ];
     }
@@ -110,11 +110,11 @@ class VentasXlsxExport
      */
     public function streamTo(Builder $query, string $output = 'php://output'): void
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $spreadsheet->getProperties()
-            ->setCreator('VetSaaS')
-            ->setTitle('Ventas de caja')
-            ->setSubject('Ventas por rango de fechas');
+            ->setCreator('FoodSaaS')
+            ->setTitle('Ventas')
+            ->setSubject('Ventas por filtros');
 
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Ventas');
@@ -122,13 +122,13 @@ class VentasXlsxExport
         $columnCount = count($this->columns);
         $lastColumnLetter = Coordinate::stringFromColumnIndex($columnCount);
 
-        $sheet->setCellValue('A1', 'Ventas de caja');
+        $sheet->setCellValue('A1', 'Ventas');
         $sheet->mergeCells("A1:{$lastColumnLetter}1");
         $sheet->getStyle('A1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 16,
-                'color' => ['rgb' => '0E5236'],
+                'color' => ['rgb' => '660033'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_LEFT,
@@ -213,7 +213,7 @@ class VentasXlsxExport
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '1F6E4A'],
+                'startColor' => ['rgb' => '660033'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
@@ -222,7 +222,7 @@ class VentasXlsxExport
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '0E5236'],
+                    'color' => ['rgb' => '4A0024'],
                 ],
             ],
         ]);
@@ -245,7 +245,7 @@ class VentasXlsxExport
         }
 
         $tableRange = "A{$headerRow}:{$lastColumn}".max($headerRow + 1, $lastDataRow);
-        $table = new Table($tableRange, 'TablaVentasCaja');
+        $table = new Table($tableRange, 'TablaVentas');
         $table->setStyle(new TableStyle(TableStyle::TABLE_STYLE_MEDIUM2));
         $sheet->addTable($table);
     }

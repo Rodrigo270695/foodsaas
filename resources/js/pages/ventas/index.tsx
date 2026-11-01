@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     Banknote,
     CheckCircle2,
+    Download,
     Plus,
     Receipt,
     RefreshCw,
@@ -10,7 +11,7 @@ import {
     Wallet,
     XCircle,
 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
 import {
@@ -152,6 +153,36 @@ export default function Index({
             storageKey: 'foodsaas.ventas.prefs',
             defaults: { per_page: 15 },
         });
+
+    const exportVentas = useCallback(() => {
+        const params = new URLSearchParams();
+        if (filters.search) {
+            params.set('search', filters.search);
+        }
+        if (filters.estado && filters.estado !== 'todos') {
+            params.set('estado', filters.estado);
+        }
+        if (filters.medio && filters.medio !== 'todos') {
+            params.set('medio', filters.medio);
+        }
+        if (filters.tipo && filters.tipo !== 'todos') {
+            params.set('tipo', filters.tipo);
+        }
+        if (filters.desde) {
+            params.set('desde', filters.desde);
+        }
+        if (filters.hasta) {
+            params.set('hasta', filters.hasta);
+        }
+        if (filters.sort) {
+            params.set('sort', filters.sort);
+        }
+        if (filters.direction) {
+            params.set('direction', filters.direction);
+        }
+        const qs = params.toString();
+        window.location.href = `${ventas.export().url}${qs ? `?${qs}` : ''}`;
+    }, [filters]);
 
     const estadoOptions = useMemo<readonly FilterSelectOption<string>[]>(
         () => [
@@ -498,6 +529,37 @@ export default function Index({
 
                             <Can
                                 permission={[
+                                    'ventas.export',
+                                    'ventas.view',
+                                    'caja.view',
+                                ]}
+                            >
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="export"
+                                            className="cursor-pointer gap-2"
+                                            onClick={exportVentas}
+                                            disabled={esPorCobrar}
+                                        >
+                                            <Download
+                                                className="size-4"
+                                                aria-hidden
+                                            />
+                                            <span className="hidden sm:inline">
+                                                {t('actions.export')}
+                                            </span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom">
+                                        {t('actions.export')}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </Can>
+
+                            <Can
+                                permission={[
                                     'ventas.create',
                                     'caja.cobrar',
                                     'pedidos.cobrar',
@@ -505,7 +567,6 @@ export default function Index({
                             >
                                 <Button
                                     type="button"
-                                    variant="export"
                                     className="cursor-pointer gap-2"
                                     asChild
                                 >

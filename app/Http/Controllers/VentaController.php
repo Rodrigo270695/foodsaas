@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\VentasXlsxExport;
 use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Models\Pago;
@@ -11,11 +12,13 @@ use App\Models\ProductoCarta;
 use App\Models\Venta;
 use App\Services\Operacion\CajaService;
 use App\Support\Sedes\ActiveSedeContext;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VentaController extends Controller
 {
@@ -92,42 +95,15 @@ class VentaController extends Controller
                 ->orderByDesc('updated_at')
                 ->get(['id', 'numero', 'mesa_id', 'canal', 'estado', 'total', 'subtotal', 'descuento', 'opened_by', 'updated_at']);
 
-            $ventasQuery = Venta::query()
-                ->with([
-                    'pedido:id,numero,canal,mesa_id',
-                    'pedido.mesa:id,codigo,nombre',
-                    'sede:id,nombre,codigo',
-                    'pagos',
-                    'createdBy:id,name',
-                ])
-                ->where('sede_id', $sedeId)
-                ->whereDate('created_at', '>=', $desde)
-                ->whereDate('created_at', '<=', $hasta);
-
-            if ($estado === 'pagada' || $estado === 'anulada') {
-                $ventasQuery->where('estado', $estado);
-            }
-
-            if ($tipo !== 'todos' && in_array($tipo, Venta::TIPOS_COMPROBANTE, true)) {
-                $ventasQuery->where('tipo_comprobante', $tipo);
-            }
-
-            if ($medio !== 'todos' && in_array($medio, Pago::MEDIOS, true)) {
-                $ventasQuery->whereHas('pagos', fn ($q) => $q->where('medio', $medio));
-            }
-
-            if ($search !== '') {
-                $ventasQuery->where(function ($q) use ($search): void {
-                    $q->where('numero', 'ilike', '%'.$search.'%')
-                        ->orWhere('cliente_nombre', 'ilike', '%'.$search.'%')
-                        ->orWhere('cliente_documento', 'ilike', '%'.$search.'%');
-
-                    if (ctype_digit(ltrim($search, '#'))) {
-                        $num = (int) ltrim($search, '#');
-                        $q->orWhereHas('pedido', fn ($pq) => $pq->where('numero', $num));
-                    }
-                });
-            }
+            $ventasQuery = $this->filteredVentasQuery(
+                $sedeId,
+                $search,
+                $estado,
+                $medio,
+                $tipo,
+                $desde,
+                $hasta,
+            );
         }
 
         $statsBase = (clone $ventasQuery);
@@ -333,5 +309,112 @@ class VentaController extends Controller
         return redirect()
             ->route('ventas.index')
             ->with('success', 'Venta registrada por S/ '.number_format((float) $venta->total, 2));
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $sedeId = ActiveSedeContext::id() ?? '';
+        $search = trim((string) $request->query('search', ''));
+        $estado = (string) $request->query('estado', 'todos');
+        $medio = (string) $request->query('medio', 'todos');
+        $tipo = (string) $request->query('tipo', 'todos');
+        $hoy = now()->toDateString();
+        $desde = trim((string) $request->query('desde', ''));
+        $hasta = trim((string) $request->query('hasta', ''));
+        $sort = (string) $request->query('sort', 'created_at');
+        $direction = strtolower((string) $request->query('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $allowedSort = ['created_at', 'total', 'numero', 'estado'];
+        if (! in_array($sort, $allowedSort, true)) {
+            $sort = 'created_at';
+        }
+
+        if ($desde === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
+            $desde = $hoy;
+        }
+        if ($hasta === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
+            $hasta = $hoy;
+        }
+        if ($desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
+        }
+
+        $query = $sedeId === ''
+            ? Venta::query()->whereRaw('1 = 0')
+            : $this->filteredVentasQuery(
+                $sedeId,
+                $search,
+                $estado,
+                $medio,
+                $tipo,
+                $desde,
+                $hasta,
+            );
+
+        $query->orderBy($sort, $direction);
+
+        $export = new VentasXlsxExport;
+
+        return response()->streamDownload(
+            fn () => $export->streamTo($query),
+            'ventas-'.$desde.'_'.$hasta.'-'.now()->format('His').'.xlsx',
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ],
+        );
+    }
+
+    /**
+     * @return Builder<Venta>
+     */
+    private function filteredVentasQuery(
+        string $sedeId,
+        string $search,
+        string $estado,
+        string $medio,
+        string $tipo,
+        string $desde,
+        string $hasta,
+    ): Builder {
+        $query = Venta::query()
+            ->with([
+                'pedido:id,numero,canal,mesa_id',
+                'pedido.mesa:id,codigo,nombre',
+                'sede:id,nombre,codigo',
+                'pagos',
+                'createdBy:id,name',
+            ])
+            ->where('sede_id', $sedeId)
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta);
+
+        if ($estado === 'pagada' || $estado === 'anulada') {
+            $query->where('estado', $estado);
+        }
+
+        if ($tipo !== 'todos' && in_array($tipo, Venta::TIPOS_COMPROBANTE, true)) {
+            $query->where('tipo_comprobante', $tipo);
+        }
+
+        if ($medio !== 'todos' && in_array($medio, Pago::MEDIOS, true)) {
+            $query->whereHas('pagos', fn ($q) => $q->where('medio', $medio));
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search): void {
+                $q->where('numero', 'ilike', '%'.$search.'%')
+                    ->orWhere('cliente_nombre', 'ilike', '%'.$search.'%')
+                    ->orWhere('cliente_documento', 'ilike', '%'.$search.'%');
+
+                if (ctype_digit(ltrim($search, '#'))) {
+                    $num = (int) ltrim($search, '#');
+                    $q->orWhereHas('pedido', fn ($pq) => $pq->where('numero', $num));
+                }
+            });
+        }
+
+        return $query;
     }
 }
