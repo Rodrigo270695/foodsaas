@@ -15,6 +15,11 @@ export default defineConfig({
             fonts: [
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
+                    // Solo precargar 400: 500/600 se cargan al usarse y evitan el
+                    // warning de Chrome "preloaded but not used within a few seconds".
+                    preload: [{ weight: 400 }],
+                    // Sin fontaine instalado; evita el warning del build.
+                    optimizedFallbacks: false,
                 }),
             ],
         }),
