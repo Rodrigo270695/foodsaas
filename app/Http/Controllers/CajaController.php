@@ -263,7 +263,7 @@ class CajaController extends Controller
         CajaSesion $cajaSesion,
         CajaSesionArqueoPdfService $pdfService,
         Request $request,
-    ): Response {
+    ): Response|View {
         $tenantId = $this->tenantIdOrAbort();
         ActiveSedeContext::assertAccessible((string) $cajaSesion->sede_id);
 
@@ -274,11 +274,22 @@ class CajaController extends Controller
             TicketAnchoMm::DEFAULT,
         );
 
+        // Preview térmico limpio (HTML), sin visor PDF. A4 sigue en PDF.
+        if ($request->boolean('html') && $formato !== 'a4') {
+            return $pdfService->ticketHtml(
+                $cajaSesion,
+                $tenantId,
+                $formato,
+                null,
+                $request->boolean('print'),
+            );
+        }
+
         return $pdfService->stream($cajaSesion, $tenantId, null, $formato);
     }
 
     /**
-     * Preview HTML del arqueo térmico (sin visor PDF del navegador).
+     * Alias HTML del arqueo térmico (misma lógica que arqueo-pdf?html=1).
      */
     public function arqueoTicket(
         CajaSesion $cajaSesion,

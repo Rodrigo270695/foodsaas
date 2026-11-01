@@ -34,12 +34,15 @@ function buildTicketPreviewUrl(
     baseUrl: string,
     formato: TicketAnchoMm,
     bust: number,
-    options?: { persist?: boolean; autoPrint?: boolean },
+    options?: { persist?: boolean; autoPrint?: boolean; html?: boolean },
 ): string {
     const params = new URLSearchParams({
         formato,
         _pv: String(bust),
     });
+    if (options?.html) {
+        params.set('html', '1');
+    }
     if (options?.persist) {
         params.set('persist', '1');
     }
@@ -78,8 +81,9 @@ export function VentaTicketDialog({
         }
     }, [open, defaultAncho, ventaId]);
 
+    // Usa ticket-pdf?html=1 (ruta ya existente) para el preview HTML térmico.
     const ticketBaseUrl = useMemo(
-        () => (ventaId ? ventas.ticket(ventaId).url : ''),
+        () => (ventaId ? ventas.ticketPdf(ventaId).url : ''),
         [ventaId],
     );
 
@@ -87,6 +91,7 @@ export function VentaTicketDialog({
         () =>
             ticketBaseUrl
                 ? buildTicketPreviewUrl(ticketBaseUrl, formato, iframeBust, {
+                      html: true,
                       autoPrint,
                   })
                 : '',
@@ -104,6 +109,7 @@ export function VentaTicketDialog({
         if (ticketBaseUrl) {
             void fetch(
                 buildTicketPreviewUrl(ticketBaseUrl, formato, Date.now(), {
+                    html: true,
                     persist: true,
                 }),
                 { credentials: 'same-origin' },

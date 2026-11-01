@@ -504,32 +504,21 @@ class VentaController extends Controller
 
     /**
      * Vista HTML para impresora térmica (mismo patrón que VetSaaS).
-     * El modal de ventas usa esto; el PDF queda para adjuntos/descarga.
      */
     public function ticket(Request $request, Venta $venta, VentaTicketPdfService $tickets): View
     {
-        $this->tenantIdOrAbort();
-        ActiveSedeContext::assertAccessible((string) $venta->sede_id);
-
-        $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
-        $formato = TicketAnchoMm::fromRequest($request, $cfg?->ticket_ancho_mm);
-
-        if (
-            $request->boolean('persist')
-            && $cfg !== null
-            && TicketAnchoMm::normalize((string) $cfg->ticket_ancho_mm) !== $formato
-        ) {
-            $cfg->forceFill(['ticket_ancho_mm' => $formato])->save();
-        }
-
-        $data = $tickets->viewData($venta, $formato, false);
-        $data['auto_print'] = $request->boolean('print');
-
-        return view('operacion.venta-ticket', $data);
+        return $this->ticketHtmlResponse($request, $venta, $tickets);
     }
 
-    public function ticketPdf(Request $request, Venta $venta, VentaTicketPdfService $tickets): SymfonyResponse
+    /**
+     * PDF inline, o HTML de preview si ?html=1 (el modal usa HTML para evitar el visor PDF).
+     */
+    public function ticketPdf(Request $request, Venta $venta, VentaTicketPdfService $tickets): SymfonyResponse|View
     {
+        if ($request->boolean('html')) {
+            return $this->ticketHtmlResponse($request, $venta, $tickets);
+        }
+
         $this->tenantIdOrAbort();
         ActiveSedeContext::assertAccessible((string) $venta->sede_id);
 
@@ -571,6 +560,31 @@ class VentaController extends Controller
                 ['Content-Type' => 'text/plain; charset=UTF-8'],
             );
         }
+    }
+
+    private function ticketHtmlResponse(
+        Request $request,
+        Venta $venta,
+        VentaTicketPdfService $tickets,
+    ): View {
+        $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $venta->sede_id);
+
+        $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
+        $formato = TicketAnchoMm::fromRequest($request, $cfg?->ticket_ancho_mm);
+
+        if (
+            $request->boolean('persist')
+            && $cfg !== null
+            && TicketAnchoMm::normalize((string) $cfg->ticket_ancho_mm) !== $formato
+        ) {
+            $cfg->forceFill(['ticket_ancho_mm' => $formato])->save();
+        }
+
+        $data = $tickets->viewData($venta, $formato, false);
+        $data['auto_print'] = $request->boolean('print');
+
+        return view('operacion.venta-ticket', $data);
     }
 
     public function export(Request $request): StreamedResponse

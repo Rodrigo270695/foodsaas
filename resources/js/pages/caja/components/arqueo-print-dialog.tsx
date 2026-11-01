@@ -27,21 +27,23 @@ const DEFAULT_TICKET_ANCHO: TicketAnchoMm = '58';
 export type ArqueoPrintDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    /** URL base del PDF de arqueo (A4 / descarga). */
+    /** URL base del PDF de arqueo (A4; térmico con ?html=1). */
     pdfBaseUrl: string;
-    /** URL base del HTML térmico (preview limpio, estilo VetSaaS). */
-    ticketHtmlBaseUrl: string;
 };
 
 function buildPreviewUrl(
     baseUrl: string,
     formato: ArqueoPrintFormato,
     bust: number,
+    html = false,
 ): string {
     const params = new URLSearchParams({
         formato,
         _pv: String(bust),
     });
+    if (html) {
+        params.set('html', '1');
+    }
     const sep = baseUrl.includes('?') ? '&' : '?';
 
     return `${baseUrl}${sep}${params.toString()}`;
@@ -56,7 +58,6 @@ export function ArqueoPrintDialog({
     open,
     onOpenChange,
     pdfBaseUrl,
-    ticketHtmlBaseUrl,
 }: ArqueoPrintDialogProps) {
     const { t } = useTranslation(['caja', 'common']);
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -75,13 +76,12 @@ export function ArqueoPrintDialog({
     const utiles = isThermal ? printableMm(formato) : null;
 
     const iframeSrc = useMemo(() => {
-        const base = isThermal ? ticketHtmlBaseUrl : pdfBaseUrl;
-        if (!base) {
+        if (!pdfBaseUrl) {
             return '';
         }
 
-        return buildPreviewUrl(base, formato, iframeBust);
-    }, [pdfBaseUrl, ticketHtmlBaseUrl, formato, iframeBust, isThermal]);
+        return buildPreviewUrl(pdfBaseUrl, formato, iframeBust, isThermal);
+    }, [pdfBaseUrl, formato, iframeBust, isThermal]);
 
     const handleFormatoChange = (next: ArqueoPrintFormato) => {
         setFormato(next);
