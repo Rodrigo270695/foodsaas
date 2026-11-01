@@ -1,9 +1,13 @@
 {
     "title": "Sales",
-    "description": "Sales history from the register: totals, customer and voucher type.",
+    "description": "Register sales history and orders ready to charge.",
+    "subtitle": "Register sales history and orders ready to charge.",
     "caja_cerrada": "Register closed",
     "caja_cerrada_hint": "Open a cash session before charging or recording a quick sale.",
     "ir_caja": "Go to register",
+    "toast": {
+        "load_error": "Could not load sales."
+    },
     "stats": {
         "pendientes": "To charge",
         "ventas_hoy": "Sales today",
@@ -48,16 +52,25 @@
     },
     "filters": {
         "search": "Search by number or customer…",
+        "search_pedidos": "Search order, table or waiter…",
+        "vista_label": "View",
+        "vista_historial": "History",
+        "vista_por_cobrar": "To charge",
+        "estado_label": "Status",
         "estado_todos": "All statuses",
+        "medio_label": "Method",
         "medio_todos": "All methods",
+        "tipo_label": "Voucher",
         "tipo_todos": "All voucher types",
         "fecha": "Date"
     },
     "empty": {
         "pendientes": "No orders to charge",
-        "pendientes_hint": "Orders with kitchen or ready items will show up here.",
+        "pendientes_hint": "Orders with kitchen or ready items will show up here to charge.",
         "ventas": "No sales in this period",
         "ventas_hint": "Charges and quick sales for the day are listed here.",
+        "no_results_title": "No matches",
+        "no_results_description": "Try another filter or clear the search.",
         "carrito": "Cart is empty",
         "carrito_hint": "Search menu products and add them to charge."
     },

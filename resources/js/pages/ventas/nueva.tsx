@@ -5,6 +5,7 @@ import {
     Plus,
     Search,
     ShoppingBag,
+    ShoppingCart,
     Trash2,
     Wallet,
 } from 'lucide-react';
@@ -195,18 +196,39 @@ export default function Nueva({
                             : t('nueva.description')
                     }
                     action={
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="cursor-pointer gap-1.5"
-                            asChild
-                        >
-                            <Link href={ventas.index().url}>
-                                <ArrowLeft className="size-4" aria-hidden />
-                                {t('actions.volver')}
-                            </Link>
-                        </Button>
+                        <div className="flex flex-wrap justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="cursor-pointer gap-1.5"
+                                asChild
+                            >
+                                <Link href={ventas.index().url}>
+                                    <ArrowLeft className="size-4" aria-hidden />
+                                    {t('actions.volver')}
+                                </Link>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="export"
+                                size="sm"
+                                className="cursor-pointer gap-1.5"
+                                asChild
+                            >
+                                <Link
+                                    href={ventas.index({
+                                        vista: 'por_cobrar',
+                                    }).url}
+                                >
+                                    <ShoppingCart
+                                        className="size-4"
+                                        aria-hidden
+                                    />
+                                    {t('actions.pendientes')}
+                                </Link>
+                            </Button>
+                        </div>
                     }
                 />
 

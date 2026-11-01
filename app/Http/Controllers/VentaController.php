@@ -30,11 +30,15 @@ class VentaController extends Controller
         $sesion = $sedeId === '' ? null : $caja->sesionAbierta($sedeId);
 
         $search = trim((string) $request->query('search', ''));
+        $vista = (string) $request->query('vista', 'historial');
+        if (! in_array($vista, ['historial', 'por_cobrar'], true)) {
+            $vista = 'historial';
+        }
         $estado = (string) $request->query('estado', 'todos');
         $medio = (string) $request->query('medio', 'todos');
         $tipo = (string) $request->query('tipo', 'todos');
         $fecha = trim((string) $request->query('fecha', ''));
-        $perPage = min(100, max(10, (int) $request->query('per_page', 25)));
+        $perPage = min(100, max(10, (int) $request->query('per_page', 15)));
         $sort = (string) $request->query('sort', 'created_at');
         $direction = strtolower((string) $request->query('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
 
@@ -47,19 +51,38 @@ class VentaController extends Controller
             $fecha = now()->toDateString();
         }
 
-        $pendientesCount = 0;
+        $pedidosPendientes = collect();
         $ventasQuery = Venta::query()->whereRaw('1 = 0');
 
         if ($sedeId !== '') {
-            $pendientesCount = Pedido::query()
+            $pedidosQuery = Pedido::query()
+                ->with(['mesa:id,codigo,nombre', 'openedBy:id,name'])
                 ->where('sede_id', $sedeId)
                 ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
                 ->where('total', '>', 0)
                 ->whereHas('lineas', fn ($q) => $q->whereIn('estado', [
                     PedidoLinea::ESTADO_EN_COLA,
                     PedidoLinea::ESTADO_LISTO,
-                ]))
-                ->count();
+                ]));
+
+            if ($vista === 'por_cobrar' && $search !== '') {
+                $pedidosQuery->where(function ($q) use ($search): void {
+                    $q->whereHas('mesa', function ($mq) use ($search): void {
+                        $mq->where('codigo', 'ilike', '%'.$search.'%')
+                            ->orWhere('nombre', 'ilike', '%'.$search.'%');
+                    })->orWhereHas('openedBy', function ($uq) use ($search): void {
+                        $uq->where('name', 'ilike', '%'.$search.'%');
+                    });
+
+                    if (ctype_digit(ltrim($search, '#'))) {
+                        $q->orWhere('numero', (int) ltrim($search, '#'));
+                    }
+                });
+            }
+
+            $pedidosPendientes = $pedidosQuery
+                ->orderByDesc('updated_at')
+                ->get(['id', 'numero', 'mesa_id', 'canal', 'estado', 'total', 'subtotal', 'descuento', 'opened_by', 'updated_at']);
 
             $ventasQuery = Venta::query()
                 ->with([
@@ -100,7 +123,7 @@ class VentaController extends Controller
 
         $statsBase = (clone $ventasQuery);
         $stats = [
-            'pendientes' => $pendientesCount,
+            'pendientes' => $pedidosPendientes->count(),
             'monto_total' => round((float) (clone $statsBase)->where('estado', Venta::ESTADO_PAGADA)->sum('total'), 2),
             'ventas' => (clone $statsBase)->count(),
             'pagadas' => (clone $statsBase)->where('estado', Venta::ESTADO_PAGADA)->count(),
@@ -113,16 +136,35 @@ class VentaController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $stats['coincidencias'] = $ventas->total();
+        $stats['coincidencias'] = $vista === 'por_cobrar'
+            ? $pedidosPendientes->count()
+            : $ventas->total();
+
+        // Si hay búsqueda en por_cobrar, el count de pendientes del badge
+        // debe reflejar el total real sin filtro de texto.
+        if ($vista === 'por_cobrar' && $search !== '' && $sedeId !== '') {
+            $stats['pendientes'] = Pedido::query()
+                ->where('sede_id', $sedeId)
+                ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+                ->where('total', '>', 0)
+                ->whereHas('lineas', fn ($q) => $q->whereIn('estado', [
+                    PedidoLinea::ESTADO_EN_COLA,
+                    PedidoLinea::ESTADO_LISTO,
+                ]))
+                ->count();
+        }
 
         return Inertia::render('ventas/index', [
             'sesion_abierta' => $sesion !== null,
+            'vista' => $vista,
             'ventas' => $ventas,
+            'pedidos_pendientes' => $pedidosPendientes,
             'medios' => Pago::MEDIOS,
             'tipos_comprobante' => Venta::TIPOS_COMPROBANTE,
             'filters' => [
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
                 'search' => $search,
+                'vista' => $vista,
                 'estado' => $estado,
                 'medio' => $medio,
                 'tipo' => $tipo,

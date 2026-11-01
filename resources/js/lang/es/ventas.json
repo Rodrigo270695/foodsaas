@@ -1,9 +1,13 @@
 {
     "title": "Ventas",
-    "description": "Historial de ventas registradas en caja: totales, cliente y tipo de comprobante.",
+    "description": "Historial de ventas en caja y pedidos listos para cobrar.",
+    "subtitle": "Historial de ventas en caja y pedidos listos para cobrar.",
     "caja_cerrada": "Caja cerrada",
     "caja_cerrada_hint": "Debes abrir una sesión de caja antes de cobrar o registrar una venta rápida.",
     "ir_caja": "Ir a caja",
+    "toast": {
+        "load_error": "No se pudo cargar ventas."
+    },
     "stats": {
         "pendientes": "Por cobrar",
         "ventas_hoy": "Ventas hoy",
@@ -48,16 +52,25 @@
     },
     "filters": {
         "search": "Buscar por número o cliente…",
+        "search_pedidos": "Buscar pedido, mesa o mesero…",
+        "vista_label": "Vista",
+        "vista_historial": "Historial",
+        "vista_por_cobrar": "Por cobrar",
+        "estado_label": "Estado",
         "estado_todos": "Todos los estados",
+        "medio_label": "Método",
         "medio_todos": "Todos los métodos",
+        "tipo_label": "Comprobante",
         "tipo_todos": "Todos los comprobantes",
         "fecha": "Fecha"
     },
     "empty": {
         "pendientes": "No hay pedidos por cobrar",
-        "pendientes_hint": "Cuando haya ítems en cocina o listos, aparecerán aquí.",
+        "pendientes_hint": "Cuando haya ítems en cocina o listos, aparecerán aquí para cobrarlos.",
         "ventas": "Sin ventas en este periodo",
         "ventas_hint": "Los cobros y ventas rápidas del día se listan aquí.",
+        "no_results_title": "Sin coincidencias",
+        "no_results_description": "Prueba otro filtro o limpia la búsqueda.",
         "carrito": "El carrito está vacío",
         "carrito_hint": "Busca productos de la carta y agrégalos para cobrar."
     },

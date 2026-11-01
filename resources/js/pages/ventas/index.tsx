@@ -1,10 +1,15 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Banknote,
+    CalendarDays,
+    CheckCircle2,
     Plus,
     Receipt,
+    RefreshCw,
     ShoppingCart,
+    Tag,
     Wallet,
+    XCircle,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,21 +17,23 @@ import { Can } from '@/components/can';
 import {
     DataPagination,
     DataTable,
-    DataToolbar,
     EmptyState,
     PageHeader,
+    SearchField,
+    type DataTableColumn,
 } from '@/components/data-page';
-import type { DataTableColumn } from '@/components/data-page';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    FilterSelect,
+    type FilterSelectOption,
+} from '@/components/ui/filter-select';
 import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
@@ -34,6 +41,18 @@ import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 import caja from '../caja/caja-routes';
 import ventas from './ventas-routes';
+
+type PedidoPendiente = {
+    id: string;
+    numero: number;
+    canal: string;
+    estado: string;
+    total: string | number;
+    mesa?: { id: string; codigo: string; nombre: string | null } | null;
+    openedBy?: { id: number; name: string } | null;
+    opened_by?: { id: number; name: string } | null;
+    updated_at: string;
+};
 
 type VentaRow = {
     id: string;
@@ -51,20 +70,24 @@ type VentaRow = {
         canal: string;
         mesa?: { id: string; codigo: string; nombre: string | null } | null;
     } | null;
-    sede?: { id: string; nombre: string; codigo: string } | null;
     pagos: { id: string; medio: string; monto: string | number }[];
     createdBy?: { id: number; name: string } | null;
     created_by?: { id: number; name: string } | null;
 };
 
+type Vista = 'historial' | 'por_cobrar';
+
 type Props = {
     sesion_abierta: boolean;
+    vista: Vista;
     ventas: Paginated<VentaRow>;
+    pedidos_pendientes: PedidoPendiente[];
     medios: string[];
     tipos_comprobante: string[];
     filters: {
         sede_id: string | null;
         search: string;
+        vista: Vista;
         estado: string;
         medio: string;
         tipo: string;
@@ -89,16 +112,21 @@ function money(value: string | number): string {
 
 export default function Index({
     sesion_abierta,
+    vista: vistaProp,
     ventas: paginated,
+    pedidos_pendientes,
     medios,
     tipos_comprobante,
     filters,
     stats,
 }: Props) {
     const { t } = useTranslation(['ventas', 'caja', 'common']);
+    const vista = filters.vista ?? vistaProp ?? 'historial';
+    const esPorCobrar = vista === 'por_cobrar';
 
-    const { isLoading, search, setSearch, setPerPage, applyFilter, setSort, sort } =
+    const { search, setSearch, isLoading, setPerPage, applyFilter, fetch } =
         useDataTablePage<{
+            vista: Vista;
             estado: string;
             medio: string;
             tipo: string;
@@ -110,41 +138,112 @@ export default function Index({
                 sort: filters.sort,
                 direction: filters.direction,
             },
-            only: ['ventas', 'filters', 'stats'],
-            errorMessage: t('common:toast.load_error', {
-                defaultValue: 'No se pudo cargar el historial.',
-            }),
+            only: [
+                'ventas',
+                'pedidos_pendientes',
+                'filters',
+                'stats',
+                'vista',
+                'sesion_abierta',
+            ],
+            errorMessage: t('toast.load_error'),
             storageKey: 'foodsaas.ventas.prefs',
-            defaults: { per_page: 25 },
+            defaults: { per_page: 15 },
         });
 
-    const columns = useMemo<DataTableColumn<VentaRow>[]>(
+    const vistaOptions = useMemo<readonly FilterSelectOption<Vista>[]>(
+        () => [
+            {
+                value: 'historial',
+                label: t('filters.vista_historial'),
+                tone: 'info',
+                icon: <Receipt className="size-3.5" aria-hidden />,
+            },
+            {
+                value: 'por_cobrar',
+                label: t('filters.vista_por_cobrar'),
+                count: stats.pendientes,
+                tone: stats.pendientes > 0 ? 'warning' : 'muted',
+                icon: <ShoppingCart className="size-3.5" aria-hidden />,
+            },
+        ],
+        [stats.pendientes, t],
+    );
+
+    const estadoOptions = useMemo<readonly FilterSelectOption<string>[]>(
+        () => [
+            { value: 'todos', label: t('filters.estado_todos') },
+            {
+                value: 'pagada',
+                label: t('estado.pagada'),
+                tone: 'success',
+                icon: <CheckCircle2 className="size-3.5" aria-hidden />,
+            },
+            {
+                value: 'anulada',
+                label: t('estado.anulada'),
+                tone: 'danger',
+                icon: <XCircle className="size-3.5" aria-hidden />,
+            },
+        ],
+        [t],
+    );
+
+    const medioOptions = useMemo<readonly FilterSelectOption<string>[]>(
+        () => [
+            { value: 'todos', label: t('filters.medio_todos') },
+            ...medios.map((m) => ({
+                value: m,
+                label: t(`caja:medios.${m}`),
+                tone: 'default' as const,
+            })),
+        ],
+        [medios, t],
+    );
+
+    const tipoOptions = useMemo<readonly FilterSelectOption<string>[]>(
+        () => [
+            { value: 'todos', label: t('filters.tipo_todos') },
+            ...tipos_comprobante.map((tipo) => ({
+                value: tipo,
+                label: t(`tipo.${tipo}`),
+                tone: 'info' as const,
+            })),
+        ],
+        [t, tipos_comprobante],
+    );
+
+    const ventaColumns = useMemo<DataTableColumn<VentaRow>[]>(
         () => [
             {
                 key: 'numero',
                 header: t('columns.numero'),
-                sortable: true,
-                sortKey: 'numero',
                 cell: (row) => (
-                    <span className="font-medium text-brand-600 tabular-nums">
-                        {row.numero ??
-                            (row.pedido ? `#${row.pedido.numero}` : '—')}
-                    </span>
+                    <div className="min-w-0">
+                        <p className="truncate font-medium text-brand-700 tabular-nums">
+                            {row.numero ??
+                                (row.pedido ? `#${row.pedido.numero}` : '—')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {row.origen === 'rapida'
+                                ? t('origen.rapida')
+                                : t('origen.pedido')}
+                        </p>
+                    </div>
                 ),
             },
             {
                 key: 'fecha',
                 header: t('columns.fecha'),
-                sortable: true,
-                sortKey: 'created_at',
                 cell: (row) => {
                     const dt = formatPeruDateTime(row.created_at);
                     return (
-                        <span className="tabular-nums text-muted-foreground">
+                        <span className="tabular-nums text-sm text-muted-foreground">
                             {dt.fecha}, {dt.hora}
                         </span>
                     );
                 },
+                className: 'hidden md:table-cell',
             },
             {
                 key: 'cliente',
@@ -158,13 +257,8 @@ export default function Index({
                             <p className="truncate text-xs text-muted-foreground">
                                 {row.cliente_documento}
                             </p>
-                        ) : null}
-                        {row.origen === 'rapida' ? (
-                            <p className="text-xs text-muted-foreground">
-                                {t('origen.rapida')}
-                            </p>
                         ) : row.pedido?.mesa ? (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="truncate text-xs text-muted-foreground">
                                 {row.pedido.mesa.nombre?.trim() ||
                                     row.pedido.mesa.codigo}
                             </p>
@@ -175,8 +269,6 @@ export default function Index({
             {
                 key: 'total',
                 header: t('columns.total'),
-                sortable: true,
-                sortKey: 'total',
                 align: 'right',
                 cell: (row) => (
                     <span className="font-semibold tabular-nums">
@@ -188,7 +280,7 @@ export default function Index({
                 key: 'metodo',
                 header: t('columns.metodo'),
                 cell: (row) => (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                         {row.pagos.length === 0
                             ? '—'
                             : row.pagos
@@ -196,12 +288,11 @@ export default function Index({
                                   .join(' · ')}
                     </span>
                 ),
+                className: 'hidden lg:table-cell',
             },
             {
                 key: 'estado',
                 header: t('columns.estado'),
-                sortable: true,
-                sortKey: 'estado',
                 cell: (row) => (
                     <Badge
                         variant={
@@ -209,7 +300,7 @@ export default function Index({
                         }
                         className={cn(
                             row.estado === 'pagada' &&
-                                'border-transparent bg-emerald-600 text-white',
+                                'border-transparent bg-emerald-600/90 text-white',
                         )}
                     >
                         {t(`estado.${row.estado}`, {
@@ -222,7 +313,7 @@ export default function Index({
                 key: 'comprobante',
                 header: t('columns.comprobante'),
                 cell: (row) => (
-                    <div className="space-y-0.5">
+                    <div className="min-w-0">
                         <p className="text-sm">
                             {t(`tipo.${row.tipo_comprobante}`, {
                                 defaultValue: row.tipo_comprobante,
@@ -233,14 +324,103 @@ export default function Index({
                         </p>
                     </div>
                 ),
+                className: 'hidden md:table-cell',
             },
         ],
         [t],
     );
 
+    const pedidoColumns = useMemo<DataTableColumn<PedidoPendiente>[]>(
+        () => [
+            {
+                key: 'pedido',
+                header: t('columns.pedido'),
+                cell: (p) => (
+                    <span className="font-medium text-brand-700 tabular-nums">
+                        #{p.numero}
+                    </span>
+                ),
+            },
+            {
+                key: 'mesa',
+                header: t('columns.mesa'),
+                cell: (p) => (
+                    <span className="text-sm">
+                        {p.mesa?.nombre?.trim() || p.mesa?.codigo || '—'}
+                    </span>
+                ),
+            },
+            {
+                key: 'mesero',
+                header: t('columns.mesero'),
+                cell: (p) => (
+                    <span className="text-sm text-muted-foreground">
+                        {p.openedBy?.name ?? p.opened_by?.name ?? '—'}
+                    </span>
+                ),
+                className: 'hidden md:table-cell',
+            },
+            {
+                key: 'total',
+                header: t('columns.total'),
+                align: 'right',
+                cell: (p) => (
+                    <span className="font-semibold tabular-nums">
+                        {money(p.total)}
+                    </span>
+                ),
+            },
+            {
+                key: 'acciones',
+                header: (
+                    <span className="sr-only">{t('columns.acciones')}</span>
+                ),
+                align: 'right',
+                cell: (p) => (
+                    <Can
+                        permission={[
+                            'ventas.create',
+                            'caja.cobrar',
+                            'pedidos.cobrar',
+                        ]}
+                    >
+                        {sesion_abierta ? (
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="cursor-pointer gap-1.5"
+                                asChild
+                            >
+                                <Link href={ventas.desdePedido(p.id).url}>
+                                    <Wallet className="size-4" aria-hidden />
+                                    {t('actions.cobrar')}
+                                </Link>
+                            </Button>
+                        ) : (
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="cursor-pointer gap-1.5"
+                                onClick={() =>
+                                    router.visit(caja.index().url)
+                                }
+                            >
+                                <Wallet className="size-4" aria-hidden />
+                                {t('actions.cobrar')}
+                            </Button>
+                        )}
+                    </Can>
+                ),
+                className: 'w-36',
+            },
+        ],
+        [sesion_abierta, t],
+    );
+
     return (
         <>
             <Head title={t('title')} />
+
             <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('title')}
@@ -257,36 +437,82 @@ export default function Index({
                             value: stats.ventas,
                             variant: 'info',
                             icon: Receipt,
+                            onClick: () =>
+                                applyFilter({
+                                    vista: 'historial',
+                                    estado: 'todos',
+                                }),
                         },
                         {
                             label: t('stats.pagadas'),
                             value: stats.pagadas,
                             variant: 'success',
-                            icon: Wallet,
+                            icon: CheckCircle2,
+                            onClick: () =>
+                                applyFilter({
+                                    vista: 'historial',
+                                    estado: 'pagada',
+                                }),
+                            hideOnMobile: true,
                         },
                         {
                             label: t('stats.anuladas'),
                             value: stats.anuladas,
-                            variant: 'danger',
-                            icon: Receipt,
+                            variant: stats.anuladas > 0 ? 'danger' : 'muted',
+                            icon: XCircle,
+                            onClick: () =>
+                                applyFilter({
+                                    vista: 'historial',
+                                    estado: 'anulada',
+                                }),
                             hideOnMobile: true,
                         },
                         {
                             label: t('stats.pendientes'),
                             value: stats.pendientes,
-                            variant: 'warning',
+                            variant:
+                                stats.pendientes > 0 ? 'warning' : 'success',
                             icon: ShoppingCart,
+                            onClick: () =>
+                                applyFilter({ vista: 'por_cobrar' }),
                         },
                         {
                             label: t('stats.coincidencias'),
                             value: stats.coincidencias,
-                            variant: 'muted',
-                            icon: Receipt,
-                            hideOnMobile: true,
+                            variant: 'primary',
+                            icon: Tag,
                         },
                     ]}
                     action={
-                        <>
+                        <div className="flex flex-wrap justify-end gap-2">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => fetch()}
+                                        disabled={isLoading}
+                                        className="cursor-pointer"
+                                        aria-label={t('common:actions.reload', {
+                                            defaultValue: 'Actualizar',
+                                        })}
+                                    >
+                                        <RefreshCw
+                                            className={cn(
+                                                'size-4',
+                                                isLoading && 'animate-spin',
+                                            )}
+                                        />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    {t('common:actions.reload', {
+                                        defaultValue: 'Actualizar',
+                                    })}
+                                </TooltipContent>
+                            </Tooltip>
+
                             <Can
                                 permission={[
                                     'ventas.view',
@@ -298,21 +524,26 @@ export default function Index({
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    size="sm"
-                                    className="cursor-pointer gap-1.5"
-                                    asChild
+                                    className="cursor-pointer gap-2"
+                                    onClick={() =>
+                                        applyFilter({ vista: 'por_cobrar' })
+                                    }
                                 >
-                                    <Link href={ventas.pendientes().url}>
-                                        <ShoppingCart className="size-4" aria-hidden />
+                                    <ShoppingCart
+                                        className="size-4"
+                                        aria-hidden
+                                    />
+                                    <span className="hidden sm:inline">
                                         {t('actions.pendientes')}
-                                        {stats.pendientes > 0 ? (
-                                            <Badge className="ml-0.5">
-                                                {stats.pendientes}
-                                            </Badge>
-                                        ) : null}
-                                    </Link>
+                                    </span>
+                                    {stats.pendientes > 0 ? (
+                                        <Badge className="bg-brand-600 text-white">
+                                            {stats.pendientes}
+                                        </Badge>
+                                    ) : null}
                                 </Button>
                             </Can>
+
                             <Can
                                 permission={[
                                     'ventas.create',
@@ -322,8 +553,8 @@ export default function Index({
                             >
                                 <Button
                                     type="button"
-                                    size="sm"
-                                    className="cursor-pointer gap-1.5"
+                                    variant="export"
+                                    className="cursor-pointer gap-2"
                                     asChild
                                 >
                                     <Link
@@ -334,11 +565,13 @@ export default function Index({
                                         }
                                     >
                                         <Plus className="size-4" aria-hidden />
-                                        {t('actions.nueva')}
+                                        <span className="hidden sm:inline">
+                                            {t('actions.nueva')}
+                                        </span>
                                     </Link>
                                 </Button>
                             </Can>
-                        </>
+                        </div>
                     }
                 />
 
@@ -357,103 +590,147 @@ export default function Index({
                     </div>
                 ) : null}
 
-                <DataToolbar
-                    search={search}
-                    onSearchChange={setSearch}
-                    placeholder={t('filters.search')}
-                    isSearching={isLoading}
-                    searchWrapperClassName="sm:max-w-md"
-                >
-                    <Select
-                        value={filters.estado}
-                        onValueChange={(value) =>
-                            applyFilter({ estado: value ?? 'todos' })
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <FilterSelect
+                            ariaLabel={t('filters.vista_label')}
+                            value={vista}
+                            onChange={(next) => applyFilter({ vista: next })}
+                            options={vistaOptions}
+                            disabled={isLoading}
+                        />
+                        {!esPorCobrar ? (
+                            <>
+                                <FilterSelect
+                                    ariaLabel={t('filters.estado_label')}
+                                    value={filters.estado}
+                                    onChange={(estado) =>
+                                        applyFilter({ estado })
+                                    }
+                                    options={estadoOptions}
+                                    disabled={isLoading}
+                                />
+                                <FilterSelect
+                                    ariaLabel={t('filters.medio_label')}
+                                    value={filters.medio}
+                                    onChange={(medio) =>
+                                        applyFilter({ medio })
+                                    }
+                                    options={medioOptions}
+                                    disabled={isLoading}
+                                />
+                                <FilterSelect
+                                    ariaLabel={t('filters.tipo_label')}
+                                    value={filters.tipo}
+                                    onChange={(tipo) => applyFilter({ tipo })}
+                                    options={tipoOptions}
+                                    disabled={isLoading}
+                                />
+                                <div className="relative">
+                                    <CalendarDays
+                                        className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-brand-700"
+                                        aria-hidden
+                                    />
+                                    <Input
+                                        type="date"
+                                        value={filters.fecha}
+                                        aria-label={t('filters.fecha')}
+                                        className="h-9 w-[10.5rem] cursor-pointer pl-8"
+                                        disabled={isLoading}
+                                        onChange={(e) =>
+                                            applyFilter({
+                                                fecha:
+                                                    e.target.value ||
+                                                    filters.fecha,
+                                            })
+                                        }
+                                    />
+                                </div>
+                            </>
+                        ) : null}
+                    </div>
+                    <SearchField
+                        value={search}
+                        onValueChange={setSearch}
+                        placeholder={
+                            esPorCobrar
+                                ? t('filters.search_pedidos')
+                                : t('filters.search')
                         }
-                    >
-                        <SelectTrigger className="h-10 w-full cursor-pointer sm:w-[11rem]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="todos">
-                                {t('filters.estado_todos')}
-                            </SelectItem>
-                            <SelectItem value="pagada">{t('estado.pagada')}</SelectItem>
-                            <SelectItem value="anulada">
-                                {t('estado.anulada')}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-
-                    <Select
-                        value={filters.medio}
-                        onValueChange={(value) =>
-                            applyFilter({ medio: value ?? 'todos' })
-                        }
-                    >
-                        <SelectTrigger className="h-10 w-full cursor-pointer sm:w-[12rem]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="todos">
-                                {t('filters.medio_todos')}
-                            </SelectItem>
-                            {medios.map((m) => (
-                                <SelectItem key={m} value={m}>
-                                    {t(`caja:medios.${m}`)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Select
-                        value={filters.tipo}
-                        onValueChange={(value) =>
-                            applyFilter({ tipo: value ?? 'todos' })
-                        }
-                    >
-                        <SelectTrigger className="h-10 w-full cursor-pointer sm:w-[12rem]">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="todos">
-                                {t('filters.tipo_todos')}
-                            </SelectItem>
-                            {tipos_comprobante.map((tipo) => (
-                                <SelectItem key={tipo} value={tipo}>
-                                    {t(`tipo.${tipo}`)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
-                    <Input
-                        type="date"
-                        value={filters.fecha}
-                        aria-label={t('filters.fecha')}
-                        className="h-10 w-full cursor-pointer sm:w-[11rem]"
-                        onChange={(e) =>
-                            applyFilter({ fecha: e.target.value || filters.fecha })
-                        }
+                        isSearching={isLoading}
+                        className="w-full sm:w-72"
                     />
-                </DataToolbar>
+                </div>
 
-                {paginated.data.length === 0 ? (
-                    <EmptyState
-                        icon={Receipt}
-                        title={t('empty.ventas')}
-                        description={t('empty.ventas_hint')}
+                {esPorCobrar ? (
+                    <DataTable
+                        columns={pedidoColumns}
+                        data={pedidos_pendientes}
+                        rowKey={(row) => row.id}
+                        isLoading={isLoading}
+                        emptyState={
+                            <EmptyState
+                                icon={ShoppingCart}
+                                title={
+                                    filters.search
+                                        ? t('empty.no_results_title')
+                                        : t('empty.pendientes')
+                                }
+                                description={
+                                    filters.search
+                                        ? t('empty.no_results_description')
+                                        : t('empty.pendientes_hint')
+                                }
+                            />
+                        }
                     />
                 ) : (
                     <DataTable
-                        columns={columns}
+                        columns={ventaColumns}
                         data={paginated.data}
                         rowKey={(row) => row.id}
-                        sort={sort}
-                        onSortChange={setSort}
+                        isLoading={isLoading}
                         footer={
                             <DataPagination
                                 meta={paginated}
                                 onPerPageChange={setPerPage}
+                                preservedQuery={{
+                                    search: filters.search || undefined,
+                                    per_page: filters.per_page,
+                                    vista: filters.vista,
+                                    estado:
+                                        filters.estado !== 'todos'
+                                            ? filters.estado
+                                            : undefined,
+                                    medio:
+                                        filters.medio !== 'todos'
+                                            ? filters.medio
+                                            : undefined,
+                                    tipo:
+                                        filters.tipo !== 'todos'
+                                            ? filters.tipo
+                                            : undefined,
+                                    fecha: filters.fecha || undefined,
+                                }}
+                            />
+                        }
+                        emptyState={
+                            <EmptyState
+                                icon={Receipt}
+                                title={
+                                    filters.search ||
+                                    filters.estado !== 'todos' ||
+                                    filters.medio !== 'todos'
+                                        ? t('empty.no_results_title')
+                                        : t('empty.ventas')
+                                }
+                                description={
+                                    filters.search ||
+                                    filters.estado !== 'todos' ||
+                                    filters.medio !== 'todos'
+                                        ? t('empty.no_results_description')
+                                        : t('empty.ventas_hint')
+                                }
                             />
                         }
                     />
