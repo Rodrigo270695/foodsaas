@@ -241,6 +241,12 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->get('nueva', [VentaController::class, 'create'])
                     ->name('create');
                 Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
+                    ->get('consulta-dni', [VentaController::class, 'consultaDni'])
+                    ->name('consulta-dni');
+                Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
+                    ->get('consulta-ruc', [VentaController::class, 'consultaRuc'])
+                    ->name('consulta-ruc');
+                Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
                     ->post('/', [VentaController::class, 'store'])
                     ->name('store');
                 Route::middleware('permission:ventas.view|caja.view')

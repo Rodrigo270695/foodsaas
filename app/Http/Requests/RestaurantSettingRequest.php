@@ -36,7 +36,8 @@ class RestaurantSettingRequest extends FormRequest
             'igv_alimentos_porcentaje' => ['required', 'numeric', 'min:0', 'max:100'],
             'igv_afectacion' => ['required', Rule::in(RestaurantSetting::IGV_AFECTACIONES)],
             'precio_incluye_igv' => ['required', 'boolean'],
-            'ticket_ancho_mm' => ['required', Rule::in(TicketAnchoMm::ALLOWED)],
+            // El ancho se elige/persiste en el modal de impresión del ticket.
+            'ticket_ancho_mm' => ['sometimes', 'nullable', Rule::in(TicketAnchoMm::ALLOWED)],
             'emite_comprobantes_sunat' => ['required', 'boolean'],
             'apisunat_token' => ['nullable', 'string', 'max:8192'],
             'apisunat_mode' => ['nullable', Rule::in(['sandbox', 'produccion'])],

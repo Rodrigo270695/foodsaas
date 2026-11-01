@@ -5,17 +5,23 @@ namespace App\Http\Controllers;
 use App\Exports\VentasXlsxExport;
 use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Http\Controllers\Concerns\RespondsToApiPeruConsulta;
 use App\Models\Pago;
 use App\Models\Pedido;
 use App\Models\PedidoLinea;
 use App\Models\ProductoCarta;
 use App\Models\RestaurantSetting;
 use App\Models\Venta;
+use App\Services\Integrations\ApiPeruDniService;
+use App\Services\Integrations\ApiPeruRucService;
 use App\Services\Operacion\CajaService;
 use App\Services\Operacion\VentaTicketPdfService;
 use App\Support\Caja\TicketAnchoMm;
+use App\Support\Plan\PlanCapabilities;
 use App\Support\Sedes\ActiveSedeContext;
+use App\Tenancy\TenantManager;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -28,6 +34,7 @@ class VentaController extends Controller
 {
     use ResolvesActiveSede;
     use ResolvesTenantId;
+    use RespondsToApiPeruConsulta;
 
     public function index(Request $request, CajaService $caja): Response
     {
@@ -290,14 +297,49 @@ class VentaController extends Controller
                     'updated_at',
                 ]);
 
+        $tipos = $this->tiposComprobanteDisponibles();
+
         return Inertia::render('ventas/nueva', [
             'sesion_abierta' => $sesion !== null,
             'productos' => $productos,
             'pedidos_pendientes' => $pedidosPendientes,
             'medios' => Pago::MEDIOS,
-            'tipos_comprobante' => Venta::TIPOS_COMPROBANTE,
+            'tipos_comprobante' => $tipos,
+            'emite_comprobantes_sunat' => count($tipos) > 1,
             'sede' => $sedePayload,
         ]);
+    }
+
+    public function consultaDni(Request $request, ApiPeruDniService $apiPeru): JsonResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $dni = preg_replace('/\D+/', '', (string) $request->query('dni', '')) ?? '';
+        $request->merge(['dni' => $dni]);
+
+        $validated = $request->validate([
+            'dni' => ['required', 'string', 'regex:/^[0-9]{8}$/'],
+        ]);
+
+        return $this->consultaApiPeruResponse(
+            fn () => $apiPeru->consultar($validated['dni']),
+        );
+    }
+
+    public function consultaRuc(Request $request, ApiPeruRucService $apiPeru): JsonResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $ruc = preg_replace('/\D+/', '', (string) $request->query('ruc', '')) ?? '';
+        $request->merge(['ruc' => $ruc]);
+
+        $validated = $request->validate([
+            'ruc' => ['required', 'string', 'regex:/^[0-9]{11}$/'],
+        ]);
+
+        return $this->consultaApiPeruResponse(
+            fn () => $apiPeru->consultar($validated['ruc']),
+        );
     }
 
     public function store(Request $request, CajaService $caja): RedirectResponse
@@ -311,8 +353,10 @@ class VentaController extends Controller
                 ->with('error', 'Selecciona una sede activa.');
         }
 
+        $tiposPermitidos = $this->tiposComprobanteDisponibles();
+
         $data = $request->validate([
-            'tipo_comprobante' => ['required', Rule::in(Venta::TIPOS_COMPROBANTE)],
+            'tipo_comprobante' => ['required', Rule::in($tiposPermitidos)],
             'cliente_nombre' => ['nullable', 'string', 'max:180'],
             'cliente_documento' => ['nullable', 'string', 'max:20'],
             'descuento' => ['nullable', 'numeric', 'min:0'],
@@ -510,5 +554,29 @@ class VentaController extends Controller
         }
 
         return $query;
+    }
+
+    /**
+     * Ticket siempre; boleta/factura solo si el plan y la config general permiten CPE.
+     *
+     * @return list<string>
+     */
+    private function tiposComprobanteDisponibles(): array
+    {
+        $emite = false;
+        if (RestaurantSetting::tableReady()) {
+            $emite = (bool) RestaurantSetting::query()->value('emite_comprobantes_sunat');
+        }
+
+        $tenantModel = app(TenantManager::class)->current()?->tenant;
+        if (! PlanCapabilities::facturaElectronica($tenantModel)) {
+            $emite = false;
+        }
+
+        if (! $emite) {
+            return [Venta::TIPO_TICKET];
+        }
+
+        return Venta::TIPOS_COMPROBANTE;
     }
 }

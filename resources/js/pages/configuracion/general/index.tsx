@@ -59,10 +59,7 @@ import type {
     GeneralTab,
     IgvAfectacion,
     RestaurantSetting,
-    TicketAnchoMm,
 } from './types';
-
-const TICKET_ANCHOS: readonly TicketAnchoMm[] = ['56', '57', '58', '80'];
 
 type FormState = {
     ruc: string;
@@ -78,16 +75,10 @@ type FormState = {
     igv_alimentos_porcentaje: string;
     igv_afectacion: IgvAfectacion;
     precio_incluye_igv: boolean;
-    ticket_ancho_mm: TicketAnchoMm;
     emite_comprobantes_sunat: boolean;
     apisunat_token: string;
     apisunat_mode: 'sandbox' | 'produccion';
 };
-
-const normalizeTicketAncho = (value: string | null | undefined): TicketAnchoMm =>
-    TICKET_ANCHOS.includes(value as TicketAnchoMm)
-        ? (value as TicketAnchoMm)
-        : '80';
 
 const buildInitialState = (setting: RestaurantSetting): FormState => ({
     ruc: setting.ruc ?? '',
@@ -107,7 +98,6 @@ const buildInitialState = (setting: RestaurantSetting): FormState => ({
             ? setting.igv_afectacion
             : 'gravado',
     precio_incluye_igv: setting.precio_incluye_igv,
-    ticket_ancho_mm: normalizeTicketAncho(setting.ticket_ancho_mm),
     emite_comprobantes_sunat: setting.emite_comprobantes_sunat,
     apisunat_token: '',
     apisunat_mode: setting.apisunat_mode === 'produccion' ? 'produccion' : 'sandbox',
@@ -140,7 +130,6 @@ const resolveErrorTab = (errors: Record<string, string>): GeneralTab => {
                 'igv_alimentos_porcentaje',
                 'igv_afectacion',
                 'precio_incluye_igv',
-                'ticket_ancho_mm',
                 'emite_comprobantes_sunat',
                 'apisunat_token',
                 'apisunat_mode',
@@ -232,7 +221,6 @@ export default function Index({
             igv_alimentos_porcentaje: data.igv_alimentos_porcentaje,
             igv_afectacion: data.igv_afectacion,
             precio_incluye_igv: data.precio_incluye_igv ? 1 : 0,
-            ticket_ancho_mm: data.ticket_ancho_mm,
             emite_comprobantes_sunat: data.emite_comprobantes_sunat ? 1 : 0,
             clear_logo: clearLogo ? 1 : 0,
         };
@@ -786,41 +774,6 @@ export default function Index({
                                         disabled={!canUpdate}
                                     />
                                 </div>
-
-                                <FormField
-                                    id="general-ticket-ancho-mm"
-                                    label={t('fields.ticket_ancho_mm')}
-                                    error={errors.ticket_ancho_mm}
-                                    hint={t('fields.ticket_ancho_mm_hint')}
-                                    className="sm:col-span-2"
-                                >
-                                    <Select
-                                        value={data.ticket_ancho_mm}
-                                        onValueChange={(v) =>
-                                            setData(
-                                                'ticket_ancho_mm',
-                                                v as TicketAnchoMm,
-                                            )
-                                        }
-                                        disabled={!canUpdate}
-                                    >
-                                        <SelectTrigger id="general-ticket-ancho-mm">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {TICKET_ANCHOS.map((ancho) => (
-                                                <SelectItem
-                                                    key={ancho}
-                                                    value={ancho}
-                                                >
-                                                    {t(
-                                                        `fields.ticket_ancho_mm_${ancho}`,
-                                                    )}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormField>
 
                                 <div className="flex flex-col gap-3 sm:col-span-2">
                                     {!plan_permite_factura_electronica ? (

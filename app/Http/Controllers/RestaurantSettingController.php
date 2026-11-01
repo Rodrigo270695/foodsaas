@@ -93,10 +93,15 @@ class RestaurantSettingController extends Controller
             'igv_alimentos_porcentaje' => $igvAlimentos,
             'igv_afectacion' => $afectacion,
             'precio_incluye_igv' => $data['precio_incluye_igv'],
-            'ticket_ancho_mm' => TicketAnchoMm::normalize((string) $data['ticket_ancho_mm']),
             'emite_comprobantes_sunat' => $data['emite_comprobantes_sunat'],
             'updated_by_id' => Auth::id(),
         ]);
+
+        if (array_key_exists('ticket_ancho_mm', $data) && $data['ticket_ancho_mm'] !== null) {
+            $setting->ticket_ancho_mm = TicketAnchoMm::normalize(
+                (string) $data['ticket_ancho_mm'],
+            );
+        }
 
         $this->applyLogo($setting, $request, $tenants);
 

@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, ShoppingCart, X } from 'lucide-react';
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/components/data-page';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,7 @@ type Props = {
     pedidos_pendientes: PedidoPendiente[];
     medios: string[];
     tipos_comprobante: string[];
+    emite_comprobantes_sunat?: boolean;
     sede: { id: string; nombre: string; codigo: string } | null;
 };
 
@@ -54,6 +55,17 @@ export default function Nueva({
     );
 
     const cobrandoPedido = pedidoActivo !== null;
+
+    useEffect(() => {
+        if (!tipos_comprobante.includes(tipo)) {
+            setTipo(tipos_comprobante[0] ?? 'ticket');
+            setClienteDoc('');
+        }
+    }, [tipos_comprobante, tipo]);
+
+    useEffect(() => {
+        setClienteDoc('');
+    }, [tipo]);
 
     const filtered = useMemo(() => {
         const q = deferredQuery.trim().toLowerCase();

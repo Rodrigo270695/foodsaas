@@ -19,6 +19,12 @@ const ventas = {
     export: () => ({ url: `${base}/export` }),
     create: () => ({ url: `${base}/nueva` }),
     store: () => ({ url: base }),
+    consultaDni: (dni: string) => ({
+        url: `${base}/consulta-dni?dni=${encodeURIComponent(dni)}`,
+    }),
+    consultaRuc: (ruc: string) => ({
+        url: `${base}/consulta-ruc?ruc=${encodeURIComponent(ruc)}`,
+    }),
     desdePedido: (pedidoId: string | number) => ({
         url: `${base}/desde-pedido/${pedidoId}`,
     }),
