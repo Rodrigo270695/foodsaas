@@ -31,6 +31,9 @@ const ventas = {
     cobrar: (pedidoId: string | number) => ({
         url: `${base}/cobrar/${pedidoId}`,
     }),
+    detalle: (ventaId: string | number) => ({
+        url: `${base}/${ventaId}/detalle`,
+    }),
     ticketPdf: (ventaId: string | number) => ({
         url: `${base}/${ventaId}/ticket-pdf`,
     }),

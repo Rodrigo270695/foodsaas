@@ -51,7 +51,19 @@
         "agregar": "Add",
         "quitar": "Remove",
         "ver_ticket": "View ticket",
+        "ver_detalle": "View details",
         "imprimir_ticket": "Print ticket"
+    },
+    "detalle": {
+        "title": "Sale details",
+        "description": "Payment summary, items and payments.",
+        "description_numero": "Sale {{numero}}",
+        "loading": "Loading details…",
+        "error": "Could not load the sale details.",
+        "producto": "Product",
+        "cant": "Qty",
+        "importe": "Amount",
+        "pagos": "Payments"
     },
     "ticket_dialog": {
         "title": "Sale ticket",

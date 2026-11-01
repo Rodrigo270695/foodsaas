@@ -51,7 +51,19 @@
         "agregar": "Agregar",
         "quitar": "Quitar",
         "ver_ticket": "Ver ticket",
+        "ver_detalle": "Ver detalle",
         "imprimir_ticket": "Imprimir ticket"
+    },
+    "detalle": {
+        "title": "Detalle de venta",
+        "description": "Resumen del cobro, ítems y pagos.",
+        "description_numero": "Venta {{numero}}",
+        "loading": "Cargando detalle…",
+        "error": "No se pudo cargar el detalle de la venta.",
+        "producto": "Producto",
+        "cant": "Cant.",
+        "importe": "Importe",
+        "pagos": "Pagos"
     },
     "ticket_dialog": {
         "title": "Ticket de venta",

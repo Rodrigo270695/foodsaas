@@ -250,6 +250,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->post('/', [VentaController::class, 'store'])
                     ->name('store');
                 Route::middleware('permission:ventas.view|caja.view')
+                    ->get('{venta}/detalle', [VentaController::class, 'detalle'])
+                    ->name('detalle');
+                Route::middleware('permission:ventas.view|caja.view')
                     ->get('{venta}/ticket-pdf', [VentaController::class, 'ticketPdf'])
                     ->name('ticket-pdf');
                 Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')

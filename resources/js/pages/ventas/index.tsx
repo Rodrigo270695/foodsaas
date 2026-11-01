@@ -43,6 +43,7 @@ import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 import { todayIso } from '../pedidos/types';
 import caja from '../caja/caja-routes';
+import { VentaDetalleModal } from './components/venta-detalle-modal';
 import { VentaTicketDialog } from './components/venta-ticket-dialog';
 import ventas from './ventas-routes';
 
@@ -133,6 +134,7 @@ export default function Index({
     const vista = filters.vista ?? vistaProp ?? 'historial';
     const esPorCobrar = vista === 'por_cobrar';
     const [ticketVentaId, setTicketVentaId] = useState<string | null>(null);
+    const [detalleVentaId, setDetalleVentaId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!open_ticket_id) {
@@ -378,9 +380,9 @@ export default function Index({
                             variant="ghost"
                             size="icon"
                             className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-violet-600 shadow-none hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
-                            onClick={() => setTicketVentaId(row.id)}
-                            aria-label={t('actions.ver_ticket')}
-                            title={t('actions.ver_ticket')}
+                            onClick={() => setDetalleVentaId(row.id)}
+                            aria-label={t('actions.ver_detalle')}
+                            title={t('actions.ver_detalle')}
                         >
                             <Eye
                                 className="size-4"
@@ -805,6 +807,20 @@ export default function Index({
                     />
                 )}
             </div>
+
+            <VentaDetalleModal
+                open={detalleVentaId !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDetalleVentaId(null);
+                    }
+                }}
+                ventaId={detalleVentaId}
+                onImprimir={(id) => {
+                    setDetalleVentaId(null);
+                    setTicketVentaId(id);
+                }}
+            />
 
             <VentaTicketDialog
                 open={ticketVentaId !== null}

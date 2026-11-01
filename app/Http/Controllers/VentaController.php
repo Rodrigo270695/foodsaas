@@ -424,6 +424,82 @@ class VentaController extends Controller
             ->with('success', 'Venta registrada por S/ '.number_format((float) $venta->total, 2));
     }
 
+    public function detalle(Venta $venta): JsonResponse
+    {
+        $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $venta->sede_id);
+
+        $venta->loadMissing([
+            'pedido.lineas',
+            'pedido.mesa:id,codigo,nombre',
+            'sede:id,nombre,codigo',
+            'pagos',
+            'createdBy:id,name',
+        ]);
+
+        $lineas = [];
+        if ($venta->pedido !== null) {
+            foreach ($venta->pedido->lineas as $linea) {
+                if ($linea->estado === 'anulado') {
+                    continue;
+                }
+                $lineas[] = [
+                    'id' => $linea->id,
+                    'nombre' => (string) $linea->nombre,
+                    'cantidad' => (string) $linea->cantidad,
+                    'precio_unitario' => (string) $linea->precio_unitario,
+                    'importe' => (string) $linea->importe,
+                ];
+            }
+        }
+
+        return response()->json([
+            'venta' => [
+                'id' => $venta->id,
+                'numero' => $venta->numero,
+                'origen' => $venta->origen,
+                'tipo_comprobante' => $venta->tipo_comprobante,
+                'cliente_nombre' => $venta->cliente_nombre,
+                'cliente_documento' => $venta->cliente_documento,
+                'estado' => $venta->estado,
+                'subtotal' => (string) $venta->subtotal,
+                'descuento' => (string) $venta->descuento,
+                'total' => (string) $venta->total,
+                'created_at' => $venta->created_at?->toIso8601String(),
+                'sede' => $venta->sede
+                    ? [
+                        'id' => $venta->sede->id,
+                        'nombre' => $venta->sede->nombre,
+                        'codigo' => $venta->sede->codigo,
+                    ]
+                    : null,
+                'pedido' => $venta->pedido
+                    ? [
+                        'id' => $venta->pedido->id,
+                        'numero' => $venta->pedido->numero,
+                        'canal' => $venta->pedido->canal,
+                        'mesa' => $venta->pedido->mesa
+                            ? [
+                                'codigo' => $venta->pedido->mesa->codigo,
+                                'nombre' => $venta->pedido->mesa->nombre,
+                            ]
+                            : null,
+                    ]
+                    : null,
+                'pagos' => $venta->pagos->map(static fn ($p): array => [
+                    'id' => $p->id,
+                    'medio' => $p->medio,
+                    'monto' => (string) $p->monto,
+                    'referencia' => $p->referencia,
+                ])->values()->all(),
+                'created_by' => $venta->createdBy
+                    ? ['id' => $venta->createdBy->id, 'name' => $venta->createdBy->name]
+                    : null,
+                'lineas' => $lineas,
+            ],
+        ]);
+    }
+
     public function ticketPdf(Request $request, Venta $venta, VentaTicketPdfService $tickets): SymfonyResponse
     {
         $this->tenantIdOrAbort();
