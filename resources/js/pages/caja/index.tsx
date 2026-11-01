@@ -18,8 +18,8 @@ import {
     EmptyState,
     PageHeader,
     StatBadge,
+    type DataTableColumn,
 } from '@/components/data-page';
-import type { DataTableColumn } from '@/components/data-page';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
@@ -493,42 +493,37 @@ export default function Index({
                     </div>
                 )}
 
-                <section className="space-y-3">
-                    <h2 className="text-base font-semibold">
-                        {t('sections.sesiones')}
-                    </h2>
-                    <DataTable
-                        columns={columns}
-                        data={sesiones.data}
-                        rowKey={(s) => s.id}
-                        footer={
-                            <DataPagination
-                                meta={sesiones}
-                                onPerPageChange={(perPage) => {
-                                    router.get(
-                                        caja.index().url,
-                                        { per_page: perPage, page: 1 },
-                                        {
-                                            preserveState: true,
-                                            preserveScroll: true,
-                                            replace: true,
-                                        },
-                                    );
-                                }}
-                                preservedQuery={{
-                                    per_page: filters.per_page,
-                                }}
-                            />
-                        }
-                        emptyState={
-                            <EmptyState
-                                icon={Wallet}
-                                title={t('empty.sesiones')}
-                                description={t('empty.sesiones_hint')}
-                            />
-                        }
-                    />
-                </section>
+                <DataTable
+                    columns={columns}
+                    data={sesiones.data}
+                    rowKey={(s) => s.id}
+                    footer={
+                        <DataPagination
+                            meta={sesiones}
+                            onPerPageChange={(perPage) => {
+                                router.get(
+                                    caja.index().url,
+                                    { per_page: perPage, page: 1 },
+                                    {
+                                        preserveState: true,
+                                        preserveScroll: true,
+                                        replace: true,
+                                    },
+                                );
+                            }}
+                            preservedQuery={{
+                                per_page: filters.per_page,
+                            }}
+                        />
+                    }
+                    emptyState={
+                        <EmptyState
+                            icon={Wallet}
+                            title={t('empty.sesiones')}
+                            description={t('empty.sesiones_hint')}
+                        />
+                    }
+                />
             </div>
 
             <SesionAbrirModal open={abrirOpen} onOpenChange={setAbrirOpen} />
