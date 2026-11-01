@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
-    previewWidthPercent,
     printableMm,
     type TicketAnchoMm,
 } from '@/lib/ticket-ancho';
@@ -28,11 +27,13 @@ const DEFAULT_TICKET_ANCHO: TicketAnchoMm = '58';
 export type ArqueoPrintDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    /** URL base del PDF de arqueo (sin query formato). */
+    /** URL base del PDF de arqueo (A4 / descarga). */
     pdfBaseUrl: string;
+    /** URL base del HTML térmico (preview limpio, estilo VetSaaS). */
+    ticketHtmlBaseUrl: string;
 };
 
-function buildArqueoPreviewUrl(
+function buildPreviewUrl(
     baseUrl: string,
     formato: ArqueoPrintFormato,
     bust: number,
@@ -47,12 +48,15 @@ function buildArqueoPreviewUrl(
 }
 
 /**
- * Vista previa e impresión del arqueo: A4 (reporte) o ticket 56/57/58/80 mm (resumen).
+ * Vista previa e impresión del arqueo:
+ * - A4 → visor PDF del navegador
+ * - Térmico → HTML en iframe (sin chrome del PDF), como VetSaaS
  */
 export function ArqueoPrintDialog({
     open,
     onOpenChange,
     pdfBaseUrl,
+    ticketHtmlBaseUrl,
 }: ArqueoPrintDialogProps) {
     const { t } = useTranslation(['caja', 'common']);
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -67,10 +71,17 @@ export function ArqueoPrintDialog({
         }
     }, [open]);
 
-    const iframeSrc = useMemo(
-        () => buildArqueoPreviewUrl(pdfBaseUrl, formato, iframeBust),
-        [pdfBaseUrl, formato, iframeBust],
-    );
+    const isThermal = formato !== 'a4';
+    const utiles = isThermal ? printableMm(formato) : null;
+
+    const iframeSrc = useMemo(() => {
+        const base = isThermal ? ticketHtmlBaseUrl : pdfBaseUrl;
+        if (!base) {
+            return '';
+        }
+
+        return buildPreviewUrl(base, formato, iframeBust);
+    }, [pdfBaseUrl, ticketHtmlBaseUrl, formato, iframeBust, isThermal]);
 
     const handleFormatoChange = (next: ArqueoPrintFormato) => {
         setFormato(next);
@@ -89,10 +100,6 @@ export function ArqueoPrintDialog({
         formato === 'a4'
             ? 'sesiones.dialog_imprimir.hint_a4'
             : 'sesiones.dialog_imprimir.hint_ticket';
-
-    const isThermal = formato !== 'a4';
-    const utiles = isThermal ? printableMm(formato) : null;
-    const paperPct = isThermal ? previewWidthPercent(formato) : 100;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,29 +166,33 @@ export function ArqueoPrintDialog({
                 </div>
 
                 {open && iframeSrc ? (
-                    <PdfPreviewFrame
-                        src={iframeSrc}
-                        title={t('sesiones.dialog_imprimir.iframe_title')}
-                        iframeRef={iframeRef}
-                        loadingLabel={t('sesiones.dialog_imprimir.loading', {
-                            defaultValue: 'Cargando vista previa…',
-                        })}
-                        errorLabel={t('sesiones.dialog_imprimir.error', {
-                            defaultValue: 'No se pudo generar el PDF del arqueo.',
-                        })}
-                        openLabel={t('sesiones.dialog_imprimir.open_pdf', {
-                            defaultValue: 'Abrir PDF',
-                        })}
-                        paperWidthPercent={isThermal ? paperPct : undefined}
-                        paperCaption={
-                            isThermal && utiles !== null
-                                ? t('sesiones.dialog_imprimir.preview_caption', {
-                                      roll: formato,
-                                      utiles,
-                                  })
-                                : undefined
-                        }
-                    />
+                    isThermal ? (
+                        <iframe
+                            ref={iframeRef}
+                            title={t('sesiones.dialog_imprimir.iframe_title')}
+                            src={iframeSrc}
+                            className="min-h-[50vh] w-full flex-1 rounded-md border border-border bg-white"
+                        />
+                    ) : (
+                        <PdfPreviewFrame
+                            src={iframeSrc}
+                            title={t('sesiones.dialog_imprimir.iframe_title')}
+                            iframeRef={iframeRef}
+                            loadingLabel={t(
+                                'sesiones.dialog_imprimir.loading',
+                                {
+                                    defaultValue: 'Cargando vista previa…',
+                                },
+                            )}
+                            errorLabel={t('sesiones.dialog_imprimir.error', {
+                                defaultValue:
+                                    'No se pudo generar el PDF del arqueo.',
+                            })}
+                            openLabel={t('sesiones.dialog_imprimir.open_pdf', {
+                                defaultValue: 'Abrir PDF',
+                            })}
+                        />
+                    )
                 ) : null}
 
                 <DialogFooter className="shrink-0 gap-2 sm:justify-between">

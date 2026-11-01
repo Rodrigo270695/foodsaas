@@ -12,6 +12,7 @@ use App\Support\Caja\TicketAnchoMm;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 /**
  * PDF imprimible del arqueo de una sesión de caja (A4 o ticket térmico).
@@ -23,6 +24,24 @@ final class CajaSesionArqueoPdfService
     ) {}
 
     /**
+     * Vista HTML del arqueo térmico (preview limpio en modal; sin visor PDF).
+     *
+     * @param  array<string, mixed>|null  $arqueo
+     */
+    public function ticketHtml(
+        CajaSesion $sesion,
+        string $tenantId,
+        string $formato,
+        ?array $arqueo = null,
+        bool $autoPrint = false,
+    ): View {
+        $data = $this->ticketViewData($sesion, $tenantId, $formato, $arqueo);
+        $data['auto_print'] = $autoPrint;
+
+        return view('operacion.caja-sesion-arqueo-ticket', $data);
+    }
+
+    /**
      * @param  array<string, mixed>|null  $arqueo
      * @param  string  $formato  'a4' o ancho de ticket ('56'|'57'|'58'|'80')
      */
@@ -32,6 +51,37 @@ final class CajaSesionArqueoPdfService
         ?array $arqueo = null,
         string $formato = 'a4',
     ): Response {
+        $baseData = $this->baseViewData($sesion, $tenantId, $arqueo);
+        $safeId = substr((string) $sesion->getKey(), 0, 8);
+
+        if ($formato === 'a4') {
+            $pdf = Pdf::loadView('pdf.caja-sesion-arqueo', $baseData)->setPaper('a4');
+
+            return $pdf->stream('arqueo-caja-'.$safeId.'-a4.pdf');
+        }
+
+        $ticketData = $this->ticketViewData($sesion, $tenantId, $formato, $arqueo);
+        $ancho = (string) $ticketData['ancho_mm'];
+        $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
+        $arqueoResolved = is_array($ticketData['arqueo'] ?? null) ? $ticketData['arqueo'] : [];
+        $metodosCount = is_array($arqueoResolved['metodos'] ?? null) ? count($arqueoResolved['metodos']) : 0;
+        $billeterasCount = is_array($arqueoResolved['billeteras'] ?? null) ? count($arqueoResolved['billeteras']) : 0;
+        $heightPt = max(460.0, 300.0 + ($metodosCount * 24.0) + ($billeterasCount * 52.0) + 180.0);
+
+        $pdf = Pdf::loadView('pdf.caja-sesion-arqueo-ticket', $ticketData);
+        $pdf->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
+
+        return $pdf->stream('arqueo-caja-'.$safeId.'-'.$ancho.'mm.pdf');
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $arqueo
+     * @return array<string, mixed>
+     */
+    private function baseViewData(CajaSesion $sesion, string $tenantId, ?array $arqueo = null): array
+    {
         $arqueo = $this->resolveArqueo($sesion, $arqueo);
         $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
         $tenant = Tenant::query()->find($tenantId);
@@ -45,7 +95,7 @@ final class CajaSesionArqueoPdfService
         $colorPrimario = $this->sanitizeHex($cfg?->color_primario, '#660033');
         $branding = $this->resolveContrastColors($colorPrimario);
 
-        $baseData = [
+        return [
             'arqueo' => $arqueo,
             'sesion' => $sesion,
             'clinic_nombre' => $nombre,
@@ -62,32 +112,28 @@ final class CajaSesionArqueoPdfService
             'cerrada_por' => $sesion->closedBy?->name,
             'notas_cierre' => $sesion->notas_cierre,
         ];
+    }
 
-        $safeId = substr((string) $sesion->getKey(), 0, 8);
-
-        if ($formato === 'a4') {
-            $pdf = Pdf::loadView('pdf.caja-sesion-arqueo', $baseData)->setPaper('a4');
-
-            return $pdf->stream('arqueo-caja-'.$safeId.'-a4.pdf');
-        }
-
+    /**
+     * @param  array<string, mixed>|null  $arqueo
+     * @return array<string, mixed>
+     */
+    private function ticketViewData(
+        CajaSesion $sesion,
+        string $tenantId,
+        string $formato,
+        ?array $arqueo = null,
+    ): array {
+        $baseData = $this->baseViewData($sesion, $tenantId, $arqueo);
+        $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
         $anchoFallback = $cfg !== null ? $cfg->ticket_ancho_mm : TicketAnchoMm::DEFAULT;
         $ancho = TicketAnchoMm::normalize($formato, $anchoFallback);
-        $tf = TicketAnchoMm::typography($ancho);
-        $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
-        $metodosCount = is_array($arqueo['metodos'] ?? null) ? count($arqueo['metodos']) : 0;
-        $billeterasCount = is_array($arqueo['billeteras'] ?? null) ? count($arqueo['billeteras']) : 0;
-        $heightPt = max(460.0, 300.0 + ($metodosCount * 24.0) + ($billeterasCount * 52.0) + 180.0);
 
-        $pdf = Pdf::loadView('pdf.caja-sesion-arqueo-ticket', array_merge($baseData, [
+        return array_merge($baseData, [
             'ancho_mm' => $ancho,
-            'tf' => $tf,
-        ]));
-        $pdf->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
-        $pdf->setOption('isHtml5ParserEnabled', true);
-        $pdf->setOption('isRemoteEnabled', false);
-
-        return $pdf->stream('arqueo-caja-'.$safeId.'-'.$ancho.'mm.pdf');
+            'printable_mm' => TicketAnchoMm::printableMm($ancho),
+            'tf' => TicketAnchoMm::typography($ancho),
+        ]);
     }
 
     /**

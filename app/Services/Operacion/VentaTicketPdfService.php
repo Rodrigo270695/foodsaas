@@ -10,14 +10,16 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Ticket térmico de venta (estilo VetSaaS: tipografía bold legible en impresión).
+ * Ticket térmico de venta (HTML de impresión + PDF adjunto; estilo VetSaaS).
  */
 class VentaTicketPdfService
 {
     /**
-     * @param  string  $formato  Ancho de rollo 56|57|58|80
+     * Datos compartidos por la vista HTML de impresión y el PDF DomPDF.
+     *
+     * @return array<string, mixed>
      */
-    public function render(Venta $venta, string $formato = '80'): \Barryvdh\DomPDF\PDF
+    public function viewData(Venta $venta, string $formato = '80', bool $shrinkLogo = true): array
     {
         $venta->loadMissing([
             'pedido.lineas',
@@ -79,21 +81,8 @@ class VentaTicketPdfService
 
         $anchoFallback = $cfg !== null ? $cfg->ticket_ancho_mm : TicketAnchoMm::DEFAULT;
         $ancho = TicketAnchoMm::normalize($formato, $anchoFallback);
-        $tf = TicketAnchoMm::typography($ancho);
-        // Ancho útil del cabezal, no el del rollo: 80 mm de papel imprimen ~72 mm.
-        $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
 
-        $logoDataUri = $this->resolveLogoDataUri($cfg);
-        // Una sola página térmica: alto holgado para que no salte a página 2.
-        $heightPt = max(
-            980.0,
-            620.0
-            + ($logoDataUri !== '' ? 90.0 : 0.0)
-            + (count($lineas) * 42.0)
-            + (count($pagos) * 28.0),
-        );
-
-        $pdf = Pdf::loadView('pdf.venta-ticket', [
+        return [
             'venta' => $venta,
             'lineas' => $lineas,
             'pagos' => $pagos,
@@ -101,7 +90,7 @@ class VentaTicketPdfService
             'clinic_ruc' => $cfg?->ruc,
             'clinic_direccion' => $cfg?->direccion,
             'clinic_telefono' => $cfg?->telefono,
-            'logoDataUri' => $logoDataUri,
+            'logoDataUri' => $this->resolveLogoDataUri($cfg, $shrinkLogo),
             'moneda' => (string) ($cfg?->moneda ?? 'PEN'),
             'igv_porcentaje' => $igvPct,
             'subtotal_sin_igv' => number_format($subtotalSinIgv, 2, '.', ''),
@@ -111,9 +100,33 @@ class VentaTicketPdfService
             'monto_recibido' => number_format($montoRecibido, 2, '.', ''),
             'vuelto' => number_format($vuelto, 2, '.', ''),
             'ancho_mm' => $ancho,
-            'tf' => $tf,
-        ]);
+            'tf' => TicketAnchoMm::typography($ancho),
+            'printable_mm' => TicketAnchoMm::printableMm($ancho),
+            'auto_print' => false,
+        ];
+    }
 
+    /**
+     * @param  string  $formato  Ancho de rollo 56|57|58|80
+     */
+    public function render(Venta $venta, string $formato = '80'): \Barryvdh\DomPDF\PDF
+    {
+        $data = $this->viewData($venta, $formato, true);
+        $ancho = (string) $data['ancho_mm'];
+        $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
+        $lineas = is_array($data['lineas']) ? $data['lineas'] : [];
+        $pagos = is_array($data['pagos']) ? $data['pagos'] : [];
+        $logoDataUri = (string) ($data['logoDataUri'] ?? '');
+
+        $heightPt = max(
+            980.0,
+            620.0
+            + ($logoDataUri !== '' ? 90.0 : 0.0)
+            + (count($lineas) * 42.0)
+            + (count($pagos) * 28.0),
+        );
+
+        $pdf = Pdf::loadView('pdf.venta-ticket', $data);
         $pdf->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
         $pdf->setOption('isHtml5ParserEnabled', true);
         $pdf->setOption('isRemoteEnabled', false);
@@ -124,7 +137,7 @@ class VentaTicketPdfService
         return $pdf;
     }
 
-    private function resolveLogoDataUri(?RestaurantSetting $cfg): string
+    private function resolveLogoDataUri(?RestaurantSetting $cfg, bool $shrink = true): string
     {
         $binary = null;
         $mime = 'image/png';
@@ -152,15 +165,15 @@ class VentaTicketPdfService
             $mime = 'image/png';
         }
 
-        // DomPDF no renderiza SVG de forma fiable en térmica.
         if (! str_starts_with($mime, 'image/') || str_contains($mime, 'svg')) {
             return '';
         }
 
-        // Reducir logo: DomPDF con PNG grandes tarda mucho.
-        $resized = $this->shrinkImageForTicket((string) $binary, $mime);
-        if ($resized !== null) {
-            return $resized;
+        if ($shrink) {
+            $resized = $this->shrinkImageForTicket((string) $binary, $mime);
+            if ($resized !== null) {
+                return $resized;
+            }
         }
 
         return 'data:'.$mime.';base64,'.base64_encode((string) $binary);
@@ -222,5 +235,4 @@ class VentaTicketPdfService
 
         return 'data:image/jpeg;base64,'.base64_encode($out);
     }
-
 }

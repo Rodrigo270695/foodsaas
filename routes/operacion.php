@@ -220,6 +220,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:caja.view')
                     ->get('{cajaSesion}/arqueo-pdf', [CajaController::class, 'arqueoPdf'])
                     ->name('arqueo-pdf');
+                Route::middleware('permission:caja.view')
+                    ->get('{cajaSesion}/arqueo-ticket', [CajaController::class, 'arqueoTicket'])
+                    ->name('arqueo-ticket');
                 Route::middleware('permission:caja.egreso')
                     ->post('egresos', [CajaController::class, 'egreso'])
                     ->name('egresos.store');
@@ -252,6 +255,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:ventas.view|caja.view')
                     ->get('{venta}/detalle', [VentaController::class, 'detalle'])
                     ->name('detalle');
+                Route::middleware('permission:ventas.view|caja.view')
+                    ->get('{venta}/ticket', [VentaController::class, 'ticket'])
+                    ->name('ticket');
                 Route::middleware('permission:ventas.view|caja.view')
                     ->get('{venta}/ticket-pdf', [VentaController::class, 'ticketPdf'])
                     ->name('ticket-pdf');

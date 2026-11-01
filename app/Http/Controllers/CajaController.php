@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -274,6 +275,36 @@ class CajaController extends Controller
         );
 
         return $pdfService->stream($cajaSesion, $tenantId, null, $formato);
+    }
+
+    /**
+     * Preview HTML del arqueo térmico (sin visor PDF del navegador).
+     */
+    public function arqueoTicket(
+        CajaSesion $cajaSesion,
+        CajaSesionArqueoPdfService $pdfService,
+        Request $request,
+    ): View {
+        $tenantId = $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $cajaSesion->sede_id);
+
+        $cajaSesion->loadMissing(['openedBy:id,name', 'closedBy:id,name']);
+
+        $formato = CajaSesionArqueoPdfService::normalizeFormato(
+            (string) $request->string('formato', TicketAnchoMm::DEFAULT),
+            TicketAnchoMm::DEFAULT,
+        );
+        if ($formato === 'a4') {
+            $formato = TicketAnchoMm::DEFAULT;
+        }
+
+        return $pdfService->ticketHtml(
+            $cajaSesion,
+            $tenantId,
+            $formato,
+            null,
+            $request->boolean('print'),
+        );
     }
 
     public function egreso(Request $request, CajaService $caja): RedirectResponse

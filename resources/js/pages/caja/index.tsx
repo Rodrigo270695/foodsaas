@@ -118,6 +118,13 @@ export default function Index({
         () => (imprimirSesionId ? caja.arqueoPdf(imprimirSesionId).url : ''),
         [imprimirSesionId],
     );
+    const imprimirTicketHtmlUrl = useMemo(
+        () =>
+            imprimirSesionId
+                ? caja.arqueoTicket(imprimirSesionId).url
+                : '',
+        [imprimirSesionId],
+    );
 
     const columns = useMemo<DataTableColumn<Sesion>[]>(() => {
         const base: DataTableColumn<Sesion>[] = [
@@ -557,6 +564,7 @@ export default function Index({
                     if (!open) setImprimirSesionId(null);
                 }}
                 pdfBaseUrl={imprimirPdfUrl}
+                ticketHtmlBaseUrl={imprimirTicketHtmlUrl}
             />
 
             <SesionArqueoDetalleModal

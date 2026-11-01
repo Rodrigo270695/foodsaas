@@ -1,7 +1,6 @@
 import { Printer } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PdfPreviewFrame } from '@/components/pdf-preview-frame';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -14,7 +13,6 @@ import {
 import { Label } from '@/components/ui/label';
 import {
     normalizeTicketAncho,
-    previewWidthPercent,
     printableMm,
     TICKET_ANCHO_OPTIONS,
     type TicketAnchoMm,
@@ -28,20 +26,25 @@ export type VentaTicketDialogProps = {
     onOpenChange: (open: boolean) => void;
     ventaId: string | null;
     defaultAncho?: TicketAnchoMm | string | null;
+    autoPrint?: boolean;
+    onAutoPrintConsumed?: () => void;
 };
 
-function buildPreviewUrl(
+function buildTicketPreviewUrl(
     baseUrl: string,
     formato: TicketAnchoMm,
     bust: number,
-    persist = false,
+    options?: { persist?: boolean; autoPrint?: boolean },
 ): string {
     const params = new URLSearchParams({
         formato,
         _pv: String(bust),
     });
-    if (persist) {
+    if (options?.persist) {
         params.set('persist', '1');
+    }
+    if (options?.autoPrint) {
+        params.set('print', '1');
     }
     const sep = baseUrl.includes('?') ? '&' : '?';
 
@@ -49,14 +52,16 @@ function buildPreviewUrl(
 }
 
 /**
- * Vista previa e impresión del ticket de venta (estilo VetSaaS / DomPDF térmico).
- * Rollos: 56/57/58/80. El PDF usa el área útil del cabezal (~48 u ~72 mm).
+ * Vista previa HTML e impresión del ticket (mismo patrón que VetSaaS).
+ * Sin visor PDF del navegador: el iframe carga text/html térmico.
  */
 export function VentaTicketDialog({
     open,
     onOpenChange,
     ventaId,
     defaultAncho,
+    autoPrint = false,
+    onAutoPrintConsumed,
 }: VentaTicketDialogProps) {
     const { t } = useTranslation(['ventas', 'common']);
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -73,21 +78,22 @@ export function VentaTicketDialog({
         }
     }, [open, defaultAncho, ventaId]);
 
-    const pdfBaseUrl = useMemo(
-        () => (ventaId ? ventas.ticketPdf(ventaId).url : ''),
+    const ticketBaseUrl = useMemo(
+        () => (ventaId ? ventas.ticket(ventaId).url : ''),
         [ventaId],
     );
 
     const iframeSrc = useMemo(
         () =>
-            pdfBaseUrl
-                ? buildPreviewUrl(pdfBaseUrl, formato, iframeBust)
+            ticketBaseUrl
+                ? buildTicketPreviewUrl(ticketBaseUrl, formato, iframeBust, {
+                      autoPrint,
+                  })
                 : '',
-        [pdfBaseUrl, formato, iframeBust],
+        [ticketBaseUrl, formato, iframeBust, autoPrint],
     );
 
     const utiles = printableMm(formato);
-    const paperPct = previewWidthPercent(formato);
 
     const handleFormatoChange = (next: TicketAnchoMm) => {
         setFormato(next);
@@ -95,24 +101,30 @@ export function VentaTicketDialog({
     };
 
     const imprimir = () => {
-        if (pdfBaseUrl) {
-            void fetch(buildPreviewUrl(pdfBaseUrl, formato, Date.now(), true), {
-                credentials: 'same-origin',
-            }).catch(() => undefined);
+        if (ticketBaseUrl) {
+            void fetch(
+                buildTicketPreviewUrl(ticketBaseUrl, formato, Date.now(), {
+                    persist: true,
+                }),
+                { credentials: 'same-origin' },
+            ).catch(() => undefined);
         }
         const win = iframeRef.current?.contentWindow;
         if (win) {
             win.focus();
             win.print();
-            return;
         }
-        if (iframeSrc) {
-            window.open(iframeSrc, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleOpenChange = (next: boolean) => {
+        onOpenChange(next);
+        if (!next) {
+            onAutoPrintConsumed?.();
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-3 p-4 sm:max-w-2xl sm:p-6">
                 <DialogHeader className="shrink-0 space-y-1 pr-8 text-left">
                     <DialogTitle>{t('ticket_dialog.title')}</DialogTitle>
@@ -159,18 +171,11 @@ export function VentaTicketDialog({
                 </div>
 
                 {open && iframeSrc ? (
-                    <PdfPreviewFrame
-                        src={iframeSrc}
+                    <iframe
+                        ref={iframeRef}
                         title={t('ticket_dialog.iframe_title')}
-                        iframeRef={iframeRef}
-                        loadingLabel={t('ticket_dialog.loading')}
-                        errorLabel={t('ticket_dialog.error')}
-                        openLabel={t('ticket_dialog.open_pdf')}
-                        paperWidthPercent={paperPct}
-                        paperCaption={t('ticket_dialog.preview_caption', {
-                            roll: formato,
-                            utiles,
-                        })}
+                        src={iframeSrc}
+                        className="min-h-[50vh] w-full flex-1 rounded-md border border-border bg-white"
                     />
                 ) : null}
 
@@ -178,7 +183,7 @@ export function VentaTicketDialog({
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => onOpenChange(false)}
+                        onClick={() => handleOpenChange(false)}
                         className="cursor-pointer"
                     >
                         {t('common:actions.close')}

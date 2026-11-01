@@ -26,6 +26,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -499,6 +500,32 @@ class VentaController extends Controller
                 'lineas' => $lineas,
             ],
         ]);
+    }
+
+    /**
+     * Vista HTML para impresora térmica (mismo patrón que VetSaaS).
+     * El modal de ventas usa esto; el PDF queda para adjuntos/descarga.
+     */
+    public function ticket(Request $request, Venta $venta, VentaTicketPdfService $tickets): View
+    {
+        $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $venta->sede_id);
+
+        $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
+        $formato = TicketAnchoMm::fromRequest($request, $cfg?->ticket_ancho_mm);
+
+        if (
+            $request->boolean('persist')
+            && $cfg !== null
+            && TicketAnchoMm::normalize((string) $cfg->ticket_ancho_mm) !== $formato
+        ) {
+            $cfg->forceFill(['ticket_ancho_mm' => $formato])->save();
+        }
+
+        $data = $tickets->viewData($venta, $formato, false);
+        $data['auto_print'] = $request->boolean('print');
+
+        return view('operacion.venta-ticket', $data);
     }
 
     public function ticketPdf(Request $request, Venta $venta, VentaTicketPdfService $tickets): SymfonyResponse

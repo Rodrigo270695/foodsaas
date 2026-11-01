@@ -34,6 +34,9 @@ const ventas = {
     detalle: (ventaId: string | number) => ({
         url: `${base}/${ventaId}/detalle`,
     }),
+    ticket: (ventaId: string | number) => ({
+        url: `${base}/${ventaId}/ticket`,
+    }),
     ticketPdf: (ventaId: string | number) => ({
         url: `${base}/${ventaId}/ticket-pdf`,
     }),
