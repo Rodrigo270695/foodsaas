@@ -77,6 +77,9 @@
         },
         "hint": "When printing, this width becomes the default. The next sale opens on that roll.",
         "iframe_title": "Ticket preview",
+        "loading": "Generating ticket…",
+        "error": "Could not generate the ticket PDF.",
+        "open_pdf": "Open PDF",
         "print": "Print"
     },
     "filters": {

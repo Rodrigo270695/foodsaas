@@ -519,10 +519,20 @@ class VentaController extends Controller
             $cfg->forceFill(['ticket_ancho_mm' => $formato])->save();
         }
 
-        $pdf = $tickets->render($venta, $formato);
-        $filename = 'ticket-'.($venta->numero ?: $venta->id).'-'.$formato.'mm.pdf';
+        try {
+            $pdf = $tickets->render($venta, $formato);
+            $filename = 'ticket-'.($venta->numero ?: $venta->id).'-'.$formato.'mm.pdf';
 
-        return $pdf->stream($filename);
+            return $pdf->stream($filename);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response(
+                'No se pudo generar el ticket: '.$e->getMessage(),
+                500,
+                ['Content-Type' => 'text/plain; charset=UTF-8'],
+            );
+        }
     }
 
     public function export(Request $request): StreamedResponse

@@ -77,6 +77,9 @@
         },
         "hint": "Al imprimir, este ancho queda como predeterminado. La siguiente venta abre en ese rollo.",
         "iframe_title": "Vista previa del ticket",
+        "loading": "Generando ticket…",
+        "error": "No se pudo generar el ticket PDF.",
+        "open_pdf": "Abrir PDF",
         "print": "Imprimir"
     },
     "filters": {

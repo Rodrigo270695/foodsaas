@@ -1,6 +1,7 @@
 import { Printer } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PdfPreviewFrame } from '@/components/pdf-preview-frame';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -140,12 +141,20 @@ export function ArqueoPrintDialog({
                     ) : null}
                 </div>
 
-                {open ? (
-                    <iframe
-                        ref={iframeRef}
-                        title={t('sesiones.dialog_imprimir.iframe_title')}
+                {open && iframeSrc ? (
+                    <PdfPreviewFrame
                         src={iframeSrc}
-                        className="min-h-[50vh] w-full flex-1 rounded-md border border-border bg-white"
+                        title={t('sesiones.dialog_imprimir.iframe_title')}
+                        iframeRef={iframeRef}
+                        loadingLabel={t('sesiones.dialog_imprimir.loading', {
+                            defaultValue: 'Cargando vista previa…',
+                        })}
+                        errorLabel={t('sesiones.dialog_imprimir.error', {
+                            defaultValue: 'No se pudo generar el PDF del arqueo.',
+                        })}
+                        openLabel={t('sesiones.dialog_imprimir.open_pdf', {
+                            defaultValue: 'Abrir PDF',
+                        })}
                     />
                 ) : null}
 

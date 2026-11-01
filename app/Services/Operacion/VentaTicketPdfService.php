@@ -82,6 +82,8 @@ class VentaTicketPdfService
         $tf = $this->ticketTypography($ancho);
         $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
 
+        $heightPt = max(520.0, 380.0 + (count($lineas) * 28.0) + (count($pagos) * 22.0));
+
         $pdf = Pdf::loadView('pdf.venta-ticket', [
             'venta' => $venta,
             'lineas' => $lineas,
@@ -103,7 +105,10 @@ class VentaTicketPdfService
             'tf' => $tf,
         ]);
 
-        $pdf->setPaper([0, 0, $widthPt, 1400], 'portrait');
+        $pdf->setPaper([0, 0, $widthPt, $heightPt], 'portrait');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('isRemoteEnabled', false);
+        $pdf->setOption('defaultFont', 'DejaVu Sans');
 
         return $pdf;
     }
@@ -120,7 +125,11 @@ class VentaTicketPdfService
                     if (! is_string($mime) || $mime === '') {
                         $mime = 'image/png';
                     }
-                    if (str_starts_with($mime, 'image/')) {
+                    // DomPDF no renderiza SVG de forma fiable en térmica.
+                    if (
+                        str_starts_with($mime, 'image/')
+                        && ! str_contains($mime, 'svg')
+                    ) {
                         return 'data:'.$mime.';base64,'.base64_encode((string) $binary);
                     }
                 }

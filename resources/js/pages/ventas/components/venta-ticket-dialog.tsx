@@ -1,6 +1,7 @@
 import { Printer } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PdfPreviewFrame } from '@/components/pdf-preview-frame';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -94,7 +95,6 @@ export function VentaTicketDialog({
 
     const imprimir = () => {
         if (pdfBaseUrl) {
-            // Persiste el ancho como predeterminado (configuración general).
             void fetch(buildPreviewUrl(pdfBaseUrl, formato, Date.now(), true), {
                 credentials: 'same-origin',
             }).catch(() => undefined);
@@ -103,6 +103,10 @@ export function VentaTicketDialog({
         if (win) {
             win.focus();
             win.print();
+            return;
+        }
+        if (iframeSrc) {
+            window.open(iframeSrc, '_blank', 'noopener,noreferrer');
         }
     };
 
@@ -148,11 +152,13 @@ export function VentaTicketDialog({
                 </div>
 
                 {open && iframeSrc ? (
-                    <iframe
-                        ref={iframeRef}
-                        title={t('ticket_dialog.iframe_title')}
+                    <PdfPreviewFrame
                         src={iframeSrc}
-                        className="min-h-[50vh] w-full flex-1 rounded-md border border-border bg-white"
+                        title={t('ticket_dialog.iframe_title')}
+                        iframeRef={iframeRef}
+                        loadingLabel={t('ticket_dialog.loading')}
+                        errorLabel={t('ticket_dialog.error')}
+                        openLabel={t('ticket_dialog.open_pdf')}
                     />
                 ) : null}
 
