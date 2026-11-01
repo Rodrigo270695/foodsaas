@@ -1,7 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
     Banknote,
-    CalendarDays,
     CheckCircle2,
     Plus,
     Receipt,
@@ -22,13 +21,13 @@ import {
     SearchField,
     type DataTableColumn,
 } from '@/components/data-page';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     FilterSelect,
     type FilterSelectOption,
 } from '@/components/ui/filter-select';
-import { Input } from '@/components/ui/input';
 import {
     Tooltip,
     TooltipContent,
@@ -39,6 +38,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
 import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
+import { todayIso } from '../pedidos/types';
 import caja from '../caja/caja-routes';
 import ventas from './ventas-routes';
 
@@ -91,7 +91,8 @@ type Props = {
         estado: string;
         medio: string;
         tipo: string;
-        fecha: string;
+        desde: string;
+        hasta: string;
         per_page: number;
         sort: string | null;
         direction: 'asc' | 'desc' | null;
@@ -130,7 +131,8 @@ export default function Index({
             estado: string;
             medio: string;
             tipo: string;
-            fecha: string;
+            desde: string;
+            hasta: string;
         }>({
             routeUrl: ventas.index().url,
             initialFilters: {
@@ -150,25 +152,6 @@ export default function Index({
             storageKey: 'foodsaas.ventas.prefs',
             defaults: { per_page: 15 },
         });
-
-    const vistaOptions = useMemo<readonly FilterSelectOption<Vista>[]>(
-        () => [
-            {
-                value: 'historial',
-                label: t('filters.vista_historial'),
-                tone: 'info',
-                icon: <Receipt className="size-3.5" aria-hidden />,
-            },
-            {
-                value: 'por_cobrar',
-                label: t('filters.vista_por_cobrar'),
-                count: stats.pendientes,
-                tone: stats.pendientes > 0 ? 'warning' : 'muted',
-                icon: <ShoppingCart className="size-3.5" aria-hidden />,
-            },
-        ],
-        [stats.pendientes, t],
-    );
 
     const estadoOptions = useMemo<readonly FilterSelectOption<string>[]>(
         () => [
@@ -515,37 +498,6 @@ export default function Index({
 
                             <Can
                                 permission={[
-                                    'ventas.view',
-                                    'caja.view',
-                                    'caja.cobrar',
-                                    'pedidos.cobrar',
-                                ]}
-                            >
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    className="cursor-pointer gap-2"
-                                    onClick={() =>
-                                        applyFilter({ vista: 'por_cobrar' })
-                                    }
-                                >
-                                    <ShoppingCart
-                                        className="size-4"
-                                        aria-hidden
-                                    />
-                                    <span className="hidden sm:inline">
-                                        {t('actions.pendientes')}
-                                    </span>
-                                    {stats.pendientes > 0 ? (
-                                        <Badge className="bg-brand-600 text-white">
-                                            {stats.pendientes}
-                                        </Badge>
-                                    ) : null}
-                                </Button>
-                            </Can>
-
-                            <Can
-                                permission={[
                                     'ventas.create',
                                     'caja.cobrar',
                                     'pedidos.cobrar',
@@ -592,13 +544,6 @@ export default function Index({
 
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <FilterSelect
-                            ariaLabel={t('filters.vista_label')}
-                            value={vista}
-                            onChange={(next) => applyFilter({ vista: next })}
-                            options={vistaOptions}
-                            disabled={isLoading}
-                        />
                         {!esPorCobrar ? (
                             <>
                                 <FilterSelect
@@ -626,26 +571,21 @@ export default function Index({
                                     options={tipoOptions}
                                     disabled={isLoading}
                                 />
-                                <div className="relative">
-                                    <CalendarDays
-                                        className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-brand-700"
-                                        aria-hidden
-                                    />
-                                    <Input
-                                        type="date"
-                                        value={filters.fecha}
-                                        aria-label={t('filters.fecha')}
-                                        className="h-9 w-[10.5rem] cursor-pointer pl-8"
-                                        disabled={isLoading}
-                                        onChange={(e) =>
-                                            applyFilter({
-                                                fecha:
-                                                    e.target.value ||
-                                                    filters.fecha,
-                                            })
-                                        }
-                                    />
-                                </div>
+                                <DateRangeFilter
+                                    desde={filters.desde}
+                                    hasta={filters.hasta}
+                                    disabled={isLoading}
+                                    onApply={(desde, hasta) =>
+                                        applyFilter({ desde, hasta })
+                                    }
+                                    onClear={() => {
+                                        const day = todayIso();
+                                        applyFilter({
+                                            desde: day,
+                                            hasta: day,
+                                        });
+                                    }}
+                                />
                             </>
                         ) : null}
                     </div>
@@ -710,7 +650,8 @@ export default function Index({
                                         filters.tipo !== 'todos'
                                             ? filters.tipo
                                             : undefined,
-                                    fecha: filters.fecha || undefined,
+                                    desde: filters.desde || undefined,
+                                    hasta: filters.hasta || undefined,
                                 }}
                             />
                         }

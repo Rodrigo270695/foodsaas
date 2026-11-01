@@ -37,7 +37,9 @@ class VentaController extends Controller
         $estado = (string) $request->query('estado', 'todos');
         $medio = (string) $request->query('medio', 'todos');
         $tipo = (string) $request->query('tipo', 'todos');
-        $fecha = trim((string) $request->query('fecha', ''));
+        $hoy = now()->toDateString();
+        $desde = trim((string) $request->query('desde', ''));
+        $hasta = trim((string) $request->query('hasta', ''));
         $perPage = min(100, max(10, (int) $request->query('per_page', 15)));
         $sort = (string) $request->query('sort', 'created_at');
         $direction = strtolower((string) $request->query('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
@@ -47,8 +49,14 @@ class VentaController extends Controller
             $sort = 'created_at';
         }
 
-        if ($fecha === '') {
-            $fecha = now()->toDateString();
+        if ($desde === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $desde)) {
+            $desde = $hoy;
+        }
+        if ($hasta === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $hasta)) {
+            $hasta = $hoy;
+        }
+        if ($desde > $hasta) {
+            [$desde, $hasta] = [$hasta, $desde];
         }
 
         $pedidosPendientes = collect();
@@ -93,7 +101,8 @@ class VentaController extends Controller
                     'createdBy:id,name',
                 ])
                 ->where('sede_id', $sedeId)
-                ->whereDate('created_at', $fecha);
+                ->whereDate('created_at', '>=', $desde)
+                ->whereDate('created_at', '<=', $hasta);
 
             if ($estado === 'pagada' || $estado === 'anulada') {
                 $ventasQuery->where('estado', $estado);
@@ -168,7 +177,8 @@ class VentaController extends Controller
                 'estado' => $estado,
                 'medio' => $medio,
                 'tipo' => $tipo,
-                'fecha' => $fecha,
+                'desde' => $desde,
+                'hasta' => $hasta,
                 'per_page' => $perPage,
                 'sort' => $sort,
                 'direction' => $direction,
