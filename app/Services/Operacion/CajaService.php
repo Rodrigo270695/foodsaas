@@ -334,6 +334,11 @@ class CajaService
                 'sede_id' => $locked->sede_id,
                 'pedido_id' => $locked->id,
                 'caja_sesion_id' => $sesion->id,
+                'numero' => $this->siguienteNumeroVenta((string) $locked->sede_id),
+                'origen' => Venta::ORIGEN_PEDIDO,
+                'tipo_comprobante' => Venta::TIPO_TICKET,
+                'cliente_nombre' => 'Varios',
+                'cliente_documento' => null,
                 'estado' => Venta::ESTADO_PAGADA,
                 'subtotal' => $locked->subtotal,
                 'descuento' => $locked->descuento,
@@ -382,6 +387,174 @@ class CajaService
 
             return $venta->load('pagos');
         });
+    }
+
+    /**
+     * Venta rápida (mostrador): crea pedido interno sin cocina y cobra al instante.
+     *
+     * @param  array{
+     *     items: list<array{producto_id: string, cantidad: float|int|string}>,
+     *     pagos: list<array{medio: string, monto: float|string, referencia?: string|null}>,
+     *     descuento?: float|null,
+     *     tipo_comprobante?: string,
+     *     cliente_nombre?: string|null,
+     *     cliente_documento?: string|null,
+     * }  $data
+     */
+    public function registrarVentaRapida(string $sedeId, array $data): Venta
+    {
+        $sesion = $this->sesionAbierta($sedeId);
+        if ($sesion === null) {
+            throw ValidationException::withMessages([
+                'caja' => 'Abre la caja antes de registrar una venta.',
+            ]);
+        }
+
+        $items = $data['items'] ?? [];
+        if (! is_array($items) || $items === []) {
+            throw ValidationException::withMessages([
+                'items' => 'Agrega al menos un producto al carrito.',
+            ]);
+        }
+
+        $tipo = (string) ($data['tipo_comprobante'] ?? Venta::TIPO_TICKET);
+        if (! in_array($tipo, Venta::TIPOS_COMPROBANTE, true)) {
+            throw ValidationException::withMessages([
+                'tipo_comprobante' => 'Tipo de comprobante no válido.',
+            ]);
+        }
+
+        $clienteNombre = isset($data['cliente_nombre']) && is_string($data['cliente_nombre'])
+            ? trim($data['cliente_nombre'])
+            : '';
+        if ($clienteNombre === '') {
+            $clienteNombre = 'Varios';
+        }
+
+        $clienteDoc = isset($data['cliente_documento']) && is_string($data['cliente_documento'])
+            ? trim($data['cliente_documento'])
+            : '';
+        $clienteDoc = $clienteDoc !== '' ? $clienteDoc : null;
+
+        if ($tipo === Venta::TIPO_FACTURA) {
+            if ($clienteNombre === '' || strcasecmp($clienteNombre, 'Varios') === 0) {
+                throw ValidationException::withMessages([
+                    'cliente_nombre' => 'Para factura indica la razón social.',
+                ]);
+            }
+            if ($clienteDoc === null || ! preg_match('/^\d{11}$/', $clienteDoc)) {
+                throw ValidationException::withMessages([
+                    'cliente_documento' => 'Para factura indica un RUC de 11 dígitos.',
+                ]);
+            }
+        }
+
+        $pagos = $data['pagos'] ?? [];
+        if (! is_array($pagos) || $pagos === []) {
+            throw ValidationException::withMessages([
+                'pagos' => 'Registra al menos un pago.',
+            ]);
+        }
+
+        $descuento = isset($data['descuento']) ? round(max(0, (float) $data['descuento']), 2) : 0.0;
+
+        return DB::transaction(function () use (
+            $sedeId,
+            $items,
+            $pagos,
+            $descuento,
+            $tipo,
+            $clienteNombre,
+            $clienteDoc,
+            $sesion,
+        ): Venta {
+            $numeroPedido = ((int) Pedido::query()->where('sede_id', $sedeId)->max('numero')) + 1;
+
+            $pedido = Pedido::query()->create([
+                'sede_id' => $sedeId,
+                'mesa_id' => null,
+                'numero' => $numeroPedido,
+                'estado' => Pedido::ESTADO_ABIERTO,
+                'comensales' => 1,
+                'canal' => Pedido::CANAL_MOSTRADOR,
+                'notas' => 'Venta rápida',
+                'subtotal' => 0,
+                'descuento' => $descuento,
+                'total' => 0,
+                'opened_by' => Auth::id(),
+            ]);
+
+            $orden = 0;
+            foreach ($items as $i => $item) {
+                $productoId = (string) ($item['producto_id'] ?? '');
+                $cantidad = round((float) ($item['cantidad'] ?? 0), 3);
+                if ($productoId === '' || $cantidad <= 0) {
+                    throw ValidationException::withMessages([
+                        "items.{$i}" => 'Ítem de carrito inválido.',
+                    ]);
+                }
+
+                /** @var ProductoCarta $producto */
+                $producto = ProductoCarta::query()
+                    ->whereKey($productoId)
+                    ->where('sede_id', $sedeId)
+                    ->where('activo', true)
+                    ->firstOrFail();
+
+                $precio = round((float) $producto->precio, 2);
+                $importe = round($precio * $cantidad, 2);
+                $orden++;
+
+                PedidoLinea::query()->create([
+                    'pedido_id' => $pedido->id,
+                    'producto_id' => $producto->id,
+                    'area_id' => $producto->area_id,
+                    'nombre' => $producto->nombre,
+                    'precio_unitario' => $precio,
+                    'cantidad' => $cantidad,
+                    'importe' => $importe,
+                    'estado' => PedidoLinea::ESTADO_LISTO,
+                    'notas' => null,
+                    'orden' => $orden,
+                    'enviado_at' => now(),
+                    'listo_at' => now(),
+                ]);
+            }
+
+            $this->pedidos->recalcularTotales($pedido);
+            $pedido->refresh();
+
+            $venta = $this->cobrarPedido($pedido, $pagos, $descuento);
+
+            $venta->forceFill([
+                'origen' => Venta::ORIGEN_RAPIDA,
+                'tipo_comprobante' => $tipo,
+                'cliente_nombre' => $clienteNombre,
+                'cliente_documento' => $clienteDoc,
+            ])->save();
+
+            return $venta->fresh(['pagos', 'pedido', 'createdBy']);
+        });
+    }
+
+    public function siguienteNumeroVenta(string $sedeId): string
+    {
+        $year = (int) now()->year;
+        $prefix = 'VTA-'.$year.'-';
+
+        $last = Venta::query()
+            ->where('sede_id', $sedeId)
+            ->where('numero', 'like', $prefix.'%')
+            ->orderByDesc('numero')
+            ->lockForUpdate()
+            ->value('numero');
+
+        $seq = 1;
+        if (is_string($last) && preg_match('/(\d+)$/', $last, $m) === 1) {
+            $seq = ((int) $m[1]) + 1;
+        }
+
+        return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 
     /**

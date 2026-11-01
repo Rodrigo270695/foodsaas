@@ -1,7 +1,23 @@
 const base = '/ventas';
 
 const ventas = {
-    index: () => ({ url: base }),
+    index: (query?: Record<string, string | number | null | undefined>) => {
+        if (!query) {
+            return { url: base };
+        }
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(query)) {
+            if (value === null || value === undefined || value === '') {
+                continue;
+            }
+            params.set(key, String(value));
+        }
+        const qs = params.toString();
+        return { url: qs ? `${base}?${qs}` : base };
+    },
+    pendientes: () => ({ url: `${base}/pendientes` }),
+    create: () => ({ url: `${base}/nueva` }),
+    store: () => ({ url: base }),
     desdePedido: (pedidoId: string | number) => ({
         url: `${base}/desde-pedido/${pedidoId}`,
     }),

@@ -1,17 +1,23 @@
 {
     "title": "Sales",
-    "description": "Charge pending orders and review today's tickets.",
+    "description": "Sales history from the register: totals, customer and voucher type.",
     "caja_cerrada": "Register closed",
-    "caja_cerrada_hint": "Open a cash session before charging.",
+    "caja_cerrada_hint": "Open a cash session before charging or recording a quick sale.",
     "ir_caja": "Go to register",
     "stats": {
         "pendientes": "To charge",
         "ventas_hoy": "Sales today",
-        "total_hoy": "Total today"
+        "total_hoy": "Total today",
+        "monto_total": "Total amount",
+        "ventas": "Sales",
+        "pagadas": "Paid",
+        "anuladas": "Voided",
+        "coincidencias": "Matches"
     },
     "sections": {
         "pendientes": "Orders to charge",
-        "hoy": "Today's sales"
+        "hoy": "Today's sales",
+        "historial": "Sales history"
     },
     "columns": {
         "pedido": "Order",
@@ -21,16 +27,84 @@
         "acciones": "Actions",
         "hora": "Time",
         "medios": "Methods",
-        "cajero": "Cashier"
+        "cajero": "Cashier",
+        "numero": "Number",
+        "fecha": "Date",
+        "cliente": "Customer",
+        "sede": "Branch",
+        "metodo": "Method",
+        "estado": "Status",
+        "comprobante": "Voucher",
+        "origen": "Source"
     },
     "actions": {
-        "cobrar": "Charge"
+        "cobrar": "Charge",
+        "nueva": "New sale",
+        "pendientes": "Charge orders",
+        "volver": "Back to history",
+        "registrar": "Record sale",
+        "agregar": "Add",
+        "quitar": "Remove"
+    },
+    "filters": {
+        "search": "Search by number or customer…",
+        "estado_todos": "All statuses",
+        "medio_todos": "All methods",
+        "tipo_todos": "All voucher types",
+        "fecha": "Date"
     },
     "empty": {
         "pendientes": "No orders to charge",
         "pendientes_hint": "Orders with kitchen or ready items will show up here.",
-        "ventas": "No sales today",
-        "ventas_hint": "Today's charges are listed here."
+        "ventas": "No sales in this period",
+        "ventas_hint": "Charges and quick sales for the day are listed here.",
+        "carrito": "Cart is empty",
+        "carrito_hint": "Search menu products and add them to charge."
+    },
+    "estado": {
+        "pagada": "Paid",
+        "anulada": "Voided"
+    },
+    "origen": {
+        "pedido": "Order",
+        "rapida": "Quick sale"
+    },
+    "tipo": {
+        "ticket": "Ticket",
+        "boleta": "Receipt",
+        "factura": "Invoice"
+    },
+    "sunat": {
+        "sin_comprobante": "No e-invoice",
+        "pendiente": "SUNAT pending",
+        "hint": "Electronic issuance comes later. For now only the type is stored."
+    },
+    "pendientes_page": {
+        "title": "Charge orders",
+        "description": "Dining room or kitchen orders ready to charge."
+    },
+    "nueva": {
+        "title": "New sale",
+        "description": "Quick counter sale: pick products, voucher type and charge.",
+        "cliente": "Customer / bill to",
+        "cliente_placeholder": "General",
+        "cliente_hint_ticket": "Optional. Leave empty to use «General».",
+        "cliente_hint_boleta": "Quick receipt: you can use «General» without ID.",
+        "cliente_hint_factura": "Invoice: enter business name and 11-digit tax ID.",
+        "documento": "Document",
+        "documento_placeholder_boleta": "ID (optional)",
+        "documento_placeholder_factura": "Tax ID 11 digits",
+        "comprobante": "Voucher type",
+        "buscar": "Search products",
+        "buscar_placeholder": "Name or code (min. 2 characters)",
+        "carrito": "Cart",
+        "cobro": "Payment",
+        "monto_recibido": "Amount received",
+        "subtotal": "Subtotal",
+        "descuento": "Discount",
+        "total": "Total",
+        "sin_caja": "Open the register to record the sale.",
+        "sede_moneda": "{{sede}} · PEN"
     },
     "cobrar": {
         "title": "Charge order #{{numero}}",
@@ -51,6 +125,8 @@
     "canal": {
         "mesa": "Table",
         "llevar": "Takeaway",
-        "delivery": "Delivery"
+        "delivery": "Delivery",
+        "salon": "Dining room",
+        "mostrador": "Counter"
     }
 }

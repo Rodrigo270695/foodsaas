@@ -12,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $sede_id
  * @property string|null $pedido_id
  * @property string|null $caja_sesion_id
+ * @property string|null $numero
+ * @property string $origen
+ * @property string $tipo_comprobante
+ * @property string|null $cliente_nombre
+ * @property string|null $cliente_documento
  * @property string $estado
  * @property string $total
  */
@@ -23,12 +28,33 @@ class Venta extends Model
 
     public const ESTADO_ANULADA = 'anulada';
 
+    public const ORIGEN_PEDIDO = 'pedido';
+
+    public const ORIGEN_RAPIDA = 'rapida';
+
+    public const TIPO_TICKET = 'ticket';
+
+    public const TIPO_BOLETA = 'boleta';
+
+    public const TIPO_FACTURA = 'factura';
+
+    public const TIPOS_COMPROBANTE = [
+        self::TIPO_TICKET,
+        self::TIPO_BOLETA,
+        self::TIPO_FACTURA,
+    ];
+
     protected $table = 'fin_ventas';
 
     protected $fillable = [
         'sede_id',
         'pedido_id',
         'caja_sesion_id',
+        'numero',
+        'origen',
+        'tipo_comprobante',
+        'cliente_nombre',
+        'cliente_documento',
         'estado',
         'subtotal',
         'descuento',

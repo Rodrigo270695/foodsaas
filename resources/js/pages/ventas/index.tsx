@@ -1,28 +1,48 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Banknote, Receipt, ShoppingCart, Wallet } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import {
+    Banknote,
+    Plus,
+    Receipt,
+    ShoppingCart,
+    Wallet,
+} from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EmptyState, PageHeader } from '@/components/data-page';
 import { Can } from '@/components/can';
+import {
+    DataPagination,
+    DataTable,
+    DataToolbar,
+    EmptyState,
+    PageHeader,
+} from '@/components/data-page';
+import type { DataTableColumn } from '@/components/data-page';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { useDataTablePage } from '@/hooks/use-data-table-page';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
+import { cn } from '@/lib/utils';
+import type { Paginated } from '@/types';
 import caja from '../caja/caja-routes';
 import ventas from './ventas-routes';
 
-type PedidoPendiente = {
-    id: string;
-    numero: number;
-    canal: string;
-    estado: string;
-    total: string | number;
-    mesa?: { id: string; codigo: string; nombre: string | null } | null;
-    openedBy?: { id: number; name: string } | null;
-    opened_by?: { id: number; name: string } | null;
-    updated_at: string;
-};
-
 type VentaRow = {
     id: string;
+    numero: string | null;
+    origen: string;
+    tipo_comprobante: string;
+    cliente_nombre: string | null;
+    cliente_documento: string | null;
+    estado: string;
     total: string | number;
     created_at: string;
     pedido?: {
@@ -31,6 +51,7 @@ type VentaRow = {
         canal: string;
         mesa?: { id: string; codigo: string; nombre: string | null } | null;
     } | null;
+    sede?: { id: string; nombre: string; codigo: string } | null;
     pagos: { id: string; medio: string; monto: string | number }[];
     createdBy?: { id: number; name: string } | null;
     created_by?: { id: number; name: string } | null;
@@ -38,9 +59,28 @@ type VentaRow = {
 
 type Props = {
     sesion_abierta: boolean;
-    ventas: VentaRow[];
-    pedidos_pendientes: PedidoPendiente[];
-    stats: { pendientes: number; ventas_hoy: number; total_hoy: number };
+    ventas: Paginated<VentaRow>;
+    medios: string[];
+    tipos_comprobante: string[];
+    filters: {
+        sede_id: string | null;
+        search: string;
+        estado: string;
+        medio: string;
+        tipo: string;
+        fecha: string;
+        per_page: number;
+        sort: string | null;
+        direction: 'asc' | 'desc' | null;
+    };
+    stats: {
+        pendientes: number;
+        monto_total: number;
+        ventas: number;
+        pagadas: number;
+        anuladas: number;
+        coincidencias: number;
+    };
 };
 
 function money(value: string | number): string {
@@ -49,11 +89,154 @@ function money(value: string | number): string {
 
 export default function Index({
     sesion_abierta,
-    ventas: ventasHoy,
-    pedidos_pendientes,
+    ventas: paginated,
+    medios,
+    tipos_comprobante,
+    filters,
     stats,
 }: Props) {
     const { t } = useTranslation(['ventas', 'caja', 'common']);
+
+    const { isLoading, search, setSearch, setPerPage, applyFilter, setSort, sort } =
+        useDataTablePage<{
+            estado: string;
+            medio: string;
+            tipo: string;
+            fecha: string;
+        }>({
+            routeUrl: ventas.index().url,
+            initialFilters: {
+                ...filters,
+                sort: filters.sort,
+                direction: filters.direction,
+            },
+            only: ['ventas', 'filters', 'stats'],
+            errorMessage: t('common:toast.load_error', {
+                defaultValue: 'No se pudo cargar el historial.',
+            }),
+            storageKey: 'foodsaas.ventas.prefs',
+            defaults: { per_page: 25 },
+        });
+
+    const columns = useMemo<DataTableColumn<VentaRow>[]>(
+        () => [
+            {
+                key: 'numero',
+                header: t('columns.numero'),
+                sortable: true,
+                sortKey: 'numero',
+                cell: (row) => (
+                    <span className="font-medium text-brand-600 tabular-nums">
+                        {row.numero ??
+                            (row.pedido ? `#${row.pedido.numero}` : '—')}
+                    </span>
+                ),
+            },
+            {
+                key: 'fecha',
+                header: t('columns.fecha'),
+                sortable: true,
+                sortKey: 'created_at',
+                cell: (row) => {
+                    const dt = formatPeruDateTime(row.created_at);
+                    return (
+                        <span className="tabular-nums text-muted-foreground">
+                            {dt.fecha}, {dt.hora}
+                        </span>
+                    );
+                },
+            },
+            {
+                key: 'cliente',
+                header: t('columns.cliente'),
+                cell: (row) => (
+                    <div className="min-w-0">
+                        <p className="truncate font-medium">
+                            {row.cliente_nombre?.trim() || 'Varios'}
+                        </p>
+                        {row.cliente_documento ? (
+                            <p className="truncate text-xs text-muted-foreground">
+                                {row.cliente_documento}
+                            </p>
+                        ) : null}
+                        {row.origen === 'rapida' ? (
+                            <p className="text-xs text-muted-foreground">
+                                {t('origen.rapida')}
+                            </p>
+                        ) : row.pedido?.mesa ? (
+                            <p className="text-xs text-muted-foreground">
+                                {row.pedido.mesa.nombre?.trim() ||
+                                    row.pedido.mesa.codigo}
+                            </p>
+                        ) : null}
+                    </div>
+                ),
+            },
+            {
+                key: 'total',
+                header: t('columns.total'),
+                sortable: true,
+                sortKey: 'total',
+                align: 'right',
+                cell: (row) => (
+                    <span className="font-semibold tabular-nums">
+                        {money(row.total)}
+                    </span>
+                ),
+            },
+            {
+                key: 'metodo',
+                header: t('columns.metodo'),
+                cell: (row) => (
+                    <span className="text-xs text-muted-foreground">
+                        {row.pagos.length === 0
+                            ? '—'
+                            : row.pagos
+                                  .map((p) => t(`caja:medios.${p.medio}`))
+                                  .join(' · ')}
+                    </span>
+                ),
+            },
+            {
+                key: 'estado',
+                header: t('columns.estado'),
+                sortable: true,
+                sortKey: 'estado',
+                cell: (row) => (
+                    <Badge
+                        variant={
+                            row.estado === 'anulada' ? 'destructive' : 'default'
+                        }
+                        className={cn(
+                            row.estado === 'pagada' &&
+                                'border-transparent bg-emerald-600 text-white',
+                        )}
+                    >
+                        {t(`estado.${row.estado}`, {
+                            defaultValue: row.estado,
+                        })}
+                    </Badge>
+                ),
+            },
+            {
+                key: 'comprobante',
+                header: t('columns.comprobante'),
+                cell: (row) => (
+                    <div className="space-y-0.5">
+                        <p className="text-sm">
+                            {t(`tipo.${row.tipo_comprobante}`, {
+                                defaultValue: row.tipo_comprobante,
+                            })}
+                        </p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                            {t('sunat.sin_comprobante')}
+                        </p>
+                    </div>
+                ),
+            },
+        ],
+        [t],
+    );
 
     return (
         <>
@@ -64,24 +247,99 @@ export default function Index({
                     description={t('description')}
                     stats={[
                         {
+                            label: t('stats.monto_total'),
+                            value: money(stats.monto_total),
+                            variant: 'success',
+                            icon: Banknote,
+                        },
+                        {
+                            label: t('stats.ventas'),
+                            value: stats.ventas,
+                            variant: 'info',
+                            icon: Receipt,
+                        },
+                        {
+                            label: t('stats.pagadas'),
+                            value: stats.pagadas,
+                            variant: 'success',
+                            icon: Wallet,
+                        },
+                        {
+                            label: t('stats.anuladas'),
+                            value: stats.anuladas,
+                            variant: 'danger',
+                            icon: Receipt,
+                            hideOnMobile: true,
+                        },
+                        {
                             label: t('stats.pendientes'),
                             value: stats.pendientes,
                             variant: 'warning',
                             icon: ShoppingCart,
                         },
                         {
-                            label: t('stats.ventas_hoy'),
-                            value: stats.ventas_hoy,
-                            variant: 'info',
+                            label: t('stats.coincidencias'),
+                            value: stats.coincidencias,
+                            variant: 'muted',
                             icon: Receipt,
-                        },
-                        {
-                            label: t('stats.total_hoy'),
-                            value: money(stats.total_hoy),
-                            variant: 'success',
-                            icon: Banknote,
+                            hideOnMobile: true,
                         },
                     ]}
+                    action={
+                        <>
+                            <Can
+                                permission={[
+                                    'ventas.view',
+                                    'caja.view',
+                                    'caja.cobrar',
+                                    'pedidos.cobrar',
+                                ]}
+                            >
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="cursor-pointer gap-1.5"
+                                    asChild
+                                >
+                                    <Link href={ventas.pendientes().url}>
+                                        <ShoppingCart className="size-4" aria-hidden />
+                                        {t('actions.pendientes')}
+                                        {stats.pendientes > 0 ? (
+                                            <Badge className="ml-0.5">
+                                                {stats.pendientes}
+                                            </Badge>
+                                        ) : null}
+                                    </Link>
+                                </Button>
+                            </Can>
+                            <Can
+                                permission={[
+                                    'ventas.create',
+                                    'caja.cobrar',
+                                    'pedidos.cobrar',
+                                ]}
+                            >
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    className="cursor-pointer gap-1.5"
+                                    asChild
+                                >
+                                    <Link
+                                        href={
+                                            sesion_abierta
+                                                ? ventas.create().url
+                                                : caja.index().url
+                                        }
+                                    >
+                                        <Plus className="size-4" aria-hidden />
+                                        {t('actions.nueva')}
+                                    </Link>
+                                </Button>
+                            </Can>
+                        </>
+                    }
                 />
 
                 {!sesion_abierta ? (
@@ -99,165 +357,107 @@ export default function Index({
                     </div>
                 ) : null}
 
-                <section className="space-y-3">
-                    <h2 className="text-base font-semibold">{t('sections.pendientes')}</h2>
-                    {pedidos_pendientes.length === 0 ? (
-                        <EmptyState
-                            icon={ShoppingCart}
-                            title={t('empty.pendientes')}
-                            description={t('empty.pendientes_hint')}
-                        />
-                    ) : (
-                        <div className="overflow-x-auto rounded-xl border bg-card/60">
-                            <table className="w-full min-w-[36rem] text-left text-sm">
-                                <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-                                    <tr>
-                                        <th className="px-3 py-2 font-medium">{t('columns.pedido')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.mesa')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.mesero')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.total')}</th>
-                                        <th className="px-3 py-2 font-medium text-right">
-                                            {t('columns.acciones')}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {pedidos_pendientes.map((p) => {
-                                        const mesero =
-                                            p.openedBy?.name ?? p.opened_by?.name ?? '—';
-                                        const mesa =
-                                            p.mesa?.nombre?.trim() ||
-                                            p.mesa?.codigo ||
-                                            '—';
+                <DataToolbar
+                    search={search}
+                    onSearchChange={setSearch}
+                    placeholder={t('filters.search')}
+                    isSearching={isLoading}
+                    searchWrapperClassName="sm:max-w-md"
+                >
+                    <Select
+                        value={filters.estado}
+                        onValueChange={(value) =>
+                            applyFilter({ estado: value ?? 'todos' })
+                        }
+                    >
+                        <SelectTrigger className="h-10 w-full cursor-pointer sm:w-[11rem]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="todos">
+                                {t('filters.estado_todos')}
+                            </SelectItem>
+                            <SelectItem value="pagada">{t('estado.pagada')}</SelectItem>
+                            <SelectItem value="anulada">
+                                {t('estado.anulada')}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
 
-                                        return (
-                                            <tr key={p.id} className="hover:bg-muted/30">
-                                                <td className="px-3 py-2.5 font-medium tabular-nums">
-                                                    #{p.numero}
-                                                </td>
-                                                <td className="px-3 py-2.5">{mesa}</td>
-                                                <td className="px-3 py-2.5 text-muted-foreground">
-                                                    {mesero}
-                                                </td>
-                                                <td className="px-3 py-2.5 font-semibold tabular-nums">
-                                                    {money(p.total)}
-                                                </td>
-                                                <td className="px-3 py-2.5 text-right">
-                                                    <Can
-                                                        permission={[
-                                                            'ventas.create',
-                                                            'caja.cobrar',
-                                                            'pedidos.cobrar',
-                                                        ]}
-                                                    >
-                                                        {sesion_abierta ? (
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                className="cursor-pointer gap-1.5"
-                                                                asChild
-                                                            >
-                                                                <Link
-                                                                    href={
-                                                                        ventas.desdePedido(
-                                                                            p.id,
-                                                                        ).url
-                                                                    }
-                                                                >
-                                                                    <Wallet className="size-4" />
-                                                                    {t('actions.cobrar')}
-                                                                </Link>
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                type="button"
-                                                                size="sm"
-                                                                className="cursor-pointer gap-1.5"
-                                                                onClick={() =>
-                                                                    router.visit(
-                                                                        caja.index().url,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Wallet className="size-4" />
-                                                                {t('actions.cobrar')}
-                                                            </Button>
-                                                        )}
-                                                    </Can>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </section>
+                    <Select
+                        value={filters.medio}
+                        onValueChange={(value) =>
+                            applyFilter({ medio: value ?? 'todos' })
+                        }
+                    >
+                        <SelectTrigger className="h-10 w-full cursor-pointer sm:w-[12rem]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="todos">
+                                {t('filters.medio_todos')}
+                            </SelectItem>
+                            {medios.map((m) => (
+                                <SelectItem key={m} value={m}>
+                                    {t(`caja:medios.${m}`)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-                <section className="space-y-3">
-                    <h2 className="text-base font-semibold">{t('sections.hoy')}</h2>
-                    {ventasHoy.length === 0 ? (
-                        <EmptyState
-                            icon={Receipt}
-                            title={t('empty.ventas')}
-                            description={t('empty.ventas_hint')}
-                        />
-                    ) : (
-                        <div className="overflow-x-auto rounded-xl border bg-card/60">
-                            <table className="w-full min-w-[36rem] text-left text-sm">
-                                <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-                                    <tr>
-                                        <th className="px-3 py-2 font-medium">{t('columns.hora')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.pedido')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.mesa')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.medios')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.total')}</th>
-                                        <th className="px-3 py-2 font-medium">{t('columns.cajero')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {ventasHoy.map((v) => {
-                                        const dt = formatPeruDateTime(v.created_at);
-                                        const mesa =
-                                            v.pedido?.mesa?.nombre?.trim() ||
-                                            v.pedido?.mesa?.codigo ||
-                                            '—';
-                                        const cajero =
-                                            v.createdBy?.name ??
-                                            v.created_by?.name ??
-                                            '—';
+                    <Select
+                        value={filters.tipo}
+                        onValueChange={(value) =>
+                            applyFilter({ tipo: value ?? 'todos' })
+                        }
+                    >
+                        <SelectTrigger className="h-10 w-full cursor-pointer sm:w-[12rem]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="todos">
+                                {t('filters.tipo_todos')}
+                            </SelectItem>
+                            {tipos_comprobante.map((tipo) => (
+                                <SelectItem key={tipo} value={tipo}>
+                                    {t(`tipo.${tipo}`)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-                                        return (
-                                            <tr key={v.id} className="hover:bg-muted/30">
-                                                <td className="px-3 py-2.5 tabular-nums text-muted-foreground">
-                                                    {dt.hora}
-                                                </td>
-                                                <td className="px-3 py-2.5 font-medium tabular-nums">
-                                                    {v.pedido
-                                                        ? `#${v.pedido.numero}`
-                                                        : '—'}
-                                                </td>
-                                                <td className="px-3 py-2.5">{mesa}</td>
-                                                <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                                                    {v.pagos
-                                                        .map(
-                                                            (p) =>
-                                                                `${t(`caja:medios.${p.medio}`)} ${money(p.monto)}`,
-                                                        )
-                                                        .join(' · ')}
-                                                </td>
-                                                <td className="px-3 py-2.5 font-semibold tabular-nums">
-                                                    {money(v.total)}
-                                                </td>
-                                                <td className="px-3 py-2.5">{cajero}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </section>
+                    <Input
+                        type="date"
+                        value={filters.fecha}
+                        aria-label={t('filters.fecha')}
+                        className="h-10 w-full cursor-pointer sm:w-[11rem]"
+                        onChange={(e) =>
+                            applyFilter({ fecha: e.target.value || filters.fecha })
+                        }
+                    />
+                </DataToolbar>
+
+                {paginated.data.length === 0 ? (
+                    <EmptyState
+                        icon={Receipt}
+                        title={t('empty.ventas')}
+                        description={t('empty.ventas_hint')}
+                    />
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={paginated.data}
+                        rowKey={(row) => row.id}
+                        sort={sort}
+                        onSortChange={setSort}
+                        footer={
+                            <DataPagination
+                                meta={paginated}
+                                onPerPageChange={setPerPage}
+                            />
+                        }
+                    />
+                )}
             </div>
         </>
     );

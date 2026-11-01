@@ -231,6 +231,15 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:ventas.view|caja.view')
                     ->get('/', [VentaController::class, 'index'])
                     ->name('index');
+                Route::middleware('permission:ventas.view|caja.view')
+                    ->get('pendientes', [VentaController::class, 'pendientes'])
+                    ->name('pendientes');
+                Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
+                    ->get('nueva', [VentaController::class, 'create'])
+                    ->name('create');
+                Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
+                    ->post('/', [VentaController::class, 'store'])
+                    ->name('store');
                 Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
                     ->get('desde-pedido/{pedido}', [VentaController::class, 'cobrarForm'])
                     ->name('desde-pedido');

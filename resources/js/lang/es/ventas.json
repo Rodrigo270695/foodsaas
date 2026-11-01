@@ -1,17 +1,23 @@
 {
     "title": "Ventas",
-    "description": "Cobra pedidos pendientes y revisa los tickets del día.",
+    "description": "Historial de ventas registradas en caja: totales, cliente y tipo de comprobante.",
     "caja_cerrada": "Caja cerrada",
-    "caja_cerrada_hint": "Debes abrir una sesión de caja antes de cobrar.",
+    "caja_cerrada_hint": "Debes abrir una sesión de caja antes de cobrar o registrar una venta rápida.",
     "ir_caja": "Ir a caja",
     "stats": {
         "pendientes": "Por cobrar",
         "ventas_hoy": "Ventas hoy",
-        "total_hoy": "Total hoy"
+        "total_hoy": "Total hoy",
+        "monto_total": "Monto total",
+        "ventas": "Ventas",
+        "pagadas": "Pagado",
+        "anuladas": "Anulado",
+        "coincidencias": "Coincidencias"
     },
     "sections": {
         "pendientes": "Pedidos por cobrar",
-        "hoy": "Ventas de hoy"
+        "hoy": "Ventas de hoy",
+        "historial": "Historial de ventas"
     },
     "columns": {
         "pedido": "Pedido",
@@ -21,16 +27,84 @@
         "acciones": "Acciones",
         "hora": "Hora",
         "medios": "Medios",
-        "cajero": "Cajero"
+        "cajero": "Cajero",
+        "numero": "Número",
+        "fecha": "Fecha",
+        "cliente": "Cliente",
+        "sede": "Sede",
+        "metodo": "Método",
+        "estado": "Estado",
+        "comprobante": "Comprobante",
+        "origen": "Origen"
     },
     "actions": {
-        "cobrar": "Cobrar"
+        "cobrar": "Cobrar",
+        "nueva": "Nueva venta",
+        "pendientes": "Cobrar pedidos",
+        "volver": "Volver al historial",
+        "registrar": "Registrar venta",
+        "agregar": "Agregar",
+        "quitar": "Quitar"
+    },
+    "filters": {
+        "search": "Buscar por número o cliente…",
+        "estado_todos": "Todos los estados",
+        "medio_todos": "Todos los métodos",
+        "tipo_todos": "Todos los comprobantes",
+        "fecha": "Fecha"
     },
     "empty": {
         "pendientes": "No hay pedidos por cobrar",
         "pendientes_hint": "Cuando haya ítems en cocina o listos, aparecerán aquí.",
-        "ventas": "Sin ventas hoy",
-        "ventas_hint": "Los cobros del día se listan aquí."
+        "ventas": "Sin ventas en este periodo",
+        "ventas_hint": "Los cobros y ventas rápidas del día se listan aquí.",
+        "carrito": "El carrito está vacío",
+        "carrito_hint": "Busca productos de la carta y agrégalos para cobrar."
+    },
+    "estado": {
+        "pagada": "Pagado",
+        "anulada": "Anulado"
+    },
+    "origen": {
+        "pedido": "Pedido",
+        "rapida": "Venta rápida"
+    },
+    "tipo": {
+        "ticket": "Ticket",
+        "boleta": "Boleta",
+        "factura": "Factura"
+    },
+    "sunat": {
+        "sin_comprobante": "Sin CPE",
+        "pendiente": "Pendiente SUNAT",
+        "hint": "La emisión electrónica se activará después. Por ahora solo se guarda el tipo."
+    },
+    "pendientes_page": {
+        "title": "Cobrar pedidos",
+        "description": "Pedidos de salón o cocina listos para cobrar en caja."
+    },
+    "nueva": {
+        "title": "Nueva venta",
+        "description": "Venta rápida de mostrador: elige productos, tipo de comprobante y cobra.",
+        "cliente": "Cliente / facturar a",
+        "cliente_placeholder": "Varios",
+        "cliente_hint_ticket": "Opcional. Si lo dejas vacío se usará «Varios».",
+        "cliente_hint_boleta": "Boleta rápida: puedes usar «Varios» sin DNI.",
+        "cliente_hint_factura": "Factura: indica razón social y RUC (11 dígitos).",
+        "documento": "Documento",
+        "documento_placeholder_boleta": "DNI (opcional)",
+        "documento_placeholder_factura": "RUC 11 dígitos",
+        "comprobante": "Tipo de comprobante",
+        "buscar": "Buscar productos",
+        "buscar_placeholder": "Nombre o código (mín. 2 caracteres)",
+        "carrito": "Carrito",
+        "cobro": "Cobro",
+        "monto_recibido": "Monto recibido",
+        "subtotal": "Subtotal",
+        "descuento": "Descuento",
+        "total": "Total",
+        "sin_caja": "Abre la caja para registrar la venta.",
+        "sede_moneda": "{{sede}} · PEN"
     },
     "cobrar": {
         "title": "Cobrar pedido #{{numero}}",
@@ -51,6 +125,8 @@
     "canal": {
         "mesa": "Mesa",
         "llevar": "Para llevar",
-        "delivery": "Delivery"
+        "delivery": "Delivery",
+        "salon": "Salón",
+        "mostrador": "Mostrador"
     }
 }
