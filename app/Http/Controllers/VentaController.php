@@ -222,9 +222,59 @@ class VentaController extends Controller
         $sedePayload = collect(ActiveSedeContext::accessibleCatalog())
             ->firstWhere('id', $sedeId);
 
+        $pedidosPendientes = $sedeId === ''
+            ? collect()
+            : Pedido::query()
+                ->with([
+                    'mesa:id,codigo,nombre',
+                    'openedBy:id,name',
+                    'lineas' => fn ($q) => $q
+                        ->whereIn('estado', [
+                            PedidoLinea::ESTADO_EN_COLA,
+                            PedidoLinea::ESTADO_LISTO,
+                        ])
+                        ->orderBy('orden')
+                        ->select([
+                            'id',
+                            'pedido_id',
+                            'producto_id',
+                            'nombre',
+                            'precio_unitario',
+                            'cantidad',
+                            'importe',
+                            'estado',
+                        ]),
+                ])
+                ->where('sede_id', $sedeId)
+                ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+                ->where('total', '>', 0)
+                ->whereHas('lineas', fn ($q) => $q->whereIn('estado', [
+                    PedidoLinea::ESTADO_EN_COLA,
+                    PedidoLinea::ESTADO_LISTO,
+                ]))
+                // Sin ítems pendientes: mismos criterios que CajaService::cobrarPedido.
+                ->whereDoesntHave('lineas', fn ($q) => $q->where(
+                    'estado',
+                    PedidoLinea::ESTADO_PENDIENTE,
+                ))
+                ->orderByDesc('updated_at')
+                ->get([
+                    'id',
+                    'numero',
+                    'mesa_id',
+                    'canal',
+                    'estado',
+                    'total',
+                    'subtotal',
+                    'descuento',
+                    'opened_by',
+                    'updated_at',
+                ]);
+
         return Inertia::render('ventas/nueva', [
             'sesion_abierta' => $sesion !== null,
             'productos' => $productos,
+            'pedidos_pendientes' => $pedidosPendientes,
             'medios' => Pago::MEDIOS,
             'tipos_comprobante' => Venta::TIPOS_COMPROBANTE,
             'sede' => $sedePayload,

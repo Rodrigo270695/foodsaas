@@ -110,7 +110,7 @@
         "documento_placeholder_factura": "RUC 11 dígitos",
         "comprobante": "Tipo de comprobante",
         "buscar": "Buscar productos",
-        "buscar_placeholder": "Nombre o código (mín. 2 caracteres)",
+        "buscar_placeholder": "Nombre o código…",
         "carrito": "Carrito",
         "cobro": "Cobro",
         "monto_recibido": "Monto recibido",
@@ -118,7 +118,18 @@
         "descuento": "Descuento",
         "total": "Total",
         "sin_caja": "Abre la caja para registrar la venta.",
-        "sede_moneda": "{{sede}} · PEN"
+        "sede_moneda": "{{sede}} · PEN",
+        "pedido_activo": "Cobrando pedido #{{numero}}",
+        "pedido_mesa": "Mesa {{mesa}}",
+        "pedido_locked_hint": "Ítems del pedido (solo lectura). Ajusta descuento y medio de pago a la derecha.",
+        "limpiar_pedido": "Quitar pedido",
+        "cobrar_pedido": "Cobrar pedido",
+        "modal_pedidos_title": "Pedidos por cobrar",
+        "modal_pedidos_description": "Elige un pedido para cargar su total e ítems en el cobro.",
+        "modal_pedidos_empty": "No hay pedidos listos para cobrar.",
+        "modal_pedidos_items": "{{count}} ítem(s)",
+        "modal_pedidos_usar": "Usar en cobro",
+        "vuelto": "Vuelto"
     },
     "cobrar": {
         "title": "Cobrar pedido #{{numero}}",

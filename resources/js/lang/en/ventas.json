@@ -110,7 +110,7 @@
         "documento_placeholder_factura": "Tax ID 11 digits",
         "comprobante": "Voucher type",
         "buscar": "Search products",
-        "buscar_placeholder": "Name or code (min. 2 characters)",
+        "buscar_placeholder": "Name or code…",
         "carrito": "Cart",
         "cobro": "Payment",
         "monto_recibido": "Amount received",
@@ -118,7 +118,18 @@
         "descuento": "Discount",
         "total": "Total",
         "sin_caja": "Open the register to record the sale.",
-        "sede_moneda": "{{sede}} · PEN"
+        "sede_moneda": "{{sede}} · PEN",
+        "pedido_activo": "Charging order #{{numero}}",
+        "pedido_mesa": "Table {{mesa}}",
+        "pedido_locked_hint": "Order items (read-only). Adjust discount and payment on the right.",
+        "limpiar_pedido": "Clear order",
+        "cobrar_pedido": "Charge order",
+        "modal_pedidos_title": "Orders to charge",
+        "modal_pedidos_description": "Pick an order to load its total and items into payment.",
+        "modal_pedidos_empty": "No orders ready to charge.",
+        "modal_pedidos_items": "{{count}} item(s)",
+        "modal_pedidos_usar": "Use in payment",
+        "vuelto": "Change"
     },
     "cobrar": {
         "title": "Charge order #{{numero}}",
