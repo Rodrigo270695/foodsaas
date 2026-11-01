@@ -165,6 +165,8 @@
             },
             "hint_a4": "Reporte general: métodos, detalle de ventas y branding.",
             "hint_ticket": "Resumen compacto para impresora térmica.",
+            "hint_printable": "Rollo {{roll}} mm → área útil del cabezal ≈ {{utiles}} mm (no es el ancho del papel borde a borde).",
+            "preview_caption": "Vista previa a escala · rollo {{roll}} mm · cabezal ≈ {{utiles}} mm útiles",
             "hint_config": "El ancho configurado del ticket es {{ancho}}.",
             "iframe_title": "Vista previa del arqueo",
             "print": "Imprimir"

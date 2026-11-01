@@ -507,10 +507,7 @@ class VentaController extends Controller
         ActiveSedeContext::assertAccessible((string) $venta->sede_id);
 
         $cfg = RestaurantSetting::tableReady() ? RestaurantSetting::query()->first() : null;
-        $formato = TicketAnchoMm::normalize(
-            (string) $request->query('formato', ''),
-            $cfg?->ticket_ancho_mm,
-        );
+        $formato = TicketAnchoMm::fromRequest($request, $cfg?->ticket_ancho_mm);
 
         if (
             $request->boolean('persist')

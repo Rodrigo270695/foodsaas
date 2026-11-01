@@ -12,11 +12,16 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+    normalizeTicketAncho,
+    previewWidthPercent,
+    printableMm,
+    TICKET_ANCHO_OPTIONS,
+    type TicketAnchoMm,
+} from '@/lib/ticket-ancho';
 import ventas from '../ventas-routes';
 
-export type TicketAnchoMm = '56' | '57' | '58' | '80';
-
-const FORMATOS: readonly TicketAnchoMm[] = ['56', '57', '58', '80'];
+export type { TicketAnchoMm };
 
 export type VentaTicketDialogProps = {
     open: boolean;
@@ -43,16 +48,9 @@ function buildPreviewUrl(
     return `${baseUrl}${sep}${params.toString()}`;
 }
 
-function normalizeAncho(value: string | null | undefined): TicketAnchoMm {
-    if (value === '56' || value === '57' || value === '58' || value === '80') {
-        return value;
-    }
-
-    return '80';
-}
-
 /**
  * Vista previa e impresión del ticket de venta (estilo VetSaaS / DomPDF térmico).
+ * Rollos: 56/57/58/80. El PDF usa el área útil del cabezal (~48 u ~72 mm).
  */
 export function VentaTicketDialog({
     open,
@@ -63,14 +61,14 @@ export function VentaTicketDialog({
     const { t } = useTranslation(['ventas', 'common']);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [formato, setFormato] = useState<TicketAnchoMm>(() =>
-        normalizeAncho(defaultAncho),
+        normalizeTicketAncho(defaultAncho),
     );
     const [iframeBust, setIframeBust] = useState(0);
 
     useEffect(() => {
         if (open) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setFormato(normalizeAncho(defaultAncho));
+            setFormato(normalizeTicketAncho(defaultAncho));
             setIframeBust((value) => value + 1);
         }
     }, [open, defaultAncho, ventaId]);
@@ -87,6 +85,9 @@ export function VentaTicketDialog({
                 : '',
         [pdfBaseUrl, formato, iframeBust],
     );
+
+    const utiles = printableMm(formato);
+    const paperPct = previewWidthPercent(formato);
 
     const handleFormatoChange = (next: TicketAnchoMm) => {
         setFormato(next);
@@ -129,7 +130,7 @@ export function VentaTicketDialog({
                         role="radiogroup"
                         aria-label={t('ticket_dialog.format_label')}
                     >
-                        {FORMATOS.map((value) => (
+                        {TICKET_ANCHO_OPTIONS.map((value) => (
                             <Button
                                 key={value}
                                 type="button"
@@ -149,6 +150,12 @@ export function VentaTicketDialog({
                     <p className="text-[0.7rem] leading-snug text-muted-foreground">
                         {t('ticket_dialog.hint')}
                     </p>
+                    <p className="text-[0.7rem] leading-snug text-muted-foreground">
+                        {t('ticket_dialog.hint_printable', {
+                            roll: formato,
+                            utiles,
+                        })}
+                    </p>
                 </div>
 
                 {open && iframeSrc ? (
@@ -159,6 +166,11 @@ export function VentaTicketDialog({
                         loadingLabel={t('ticket_dialog.loading')}
                         errorLabel={t('ticket_dialog.error')}
                         openLabel={t('ticket_dialog.open_pdf')}
+                        paperWidthPercent={paperPct}
+                        paperCaption={t('ticket_dialog.preview_caption', {
+                            roll: formato,
+                            utiles,
+                        })}
                     />
                 ) : null}
 

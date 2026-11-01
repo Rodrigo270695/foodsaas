@@ -79,7 +79,8 @@ class VentaTicketPdfService
 
         $anchoFallback = $cfg !== null ? $cfg->ticket_ancho_mm : TicketAnchoMm::DEFAULT;
         $ancho = TicketAnchoMm::normalize($formato, $anchoFallback);
-        $tf = $this->ticketTypography($ancho);
+        $tf = TicketAnchoMm::typography($ancho);
+        // Ancho útil del cabezal, no el del rollo: 80 mm de papel imprimen ~72 mm.
         $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
 
         $logoDataUri = $this->resolveLogoDataUri($cfg);
@@ -222,42 +223,4 @@ class VentaTicketPdfService
         return 'data:image/jpeg;base64,'.base64_encode($out);
     }
 
-    /**
-     * Tipografía gruesa legible en térmica (misma familia que arqueo / VetSaaS).
-     *
-     * @return array{fs: int, fs_sm: int, fs_title: int, fs_total: int, logo_max: int, footer: int, pad_x: string}
-     */
-    private function ticketTypography(string $ancho): array
-    {
-        // Tipografía gruesa estilo VetSaaS: legible en térmica (a menudo falla con fuentes finas).
-        return match (TicketAnchoMm::normalize($ancho)) {
-            '56' => [
-                'fs' => 12,
-                'fs_sm' => 11,
-                'fs_title' => 14,
-                'fs_total' => 15,
-                'logo_max' => 12,
-                'footer' => 9,
-                'pad_x' => '1.5mm',
-            ],
-            '57', '58' => [
-                'fs' => 12,
-                'fs_sm' => 11,
-                'fs_title' => 14,
-                'fs_total' => 15,
-                'logo_max' => 13,
-                'footer' => 9,
-                'pad_x' => '2mm',
-            ],
-            default => [
-                'fs' => 14,
-                'fs_sm' => 12,
-                'fs_title' => 16,
-                'fs_total' => 18,
-                'logo_max' => 18,
-                'footer' => 10,
-                'pad_x' => '2mm',
-            ],
-        };
-    }
 }

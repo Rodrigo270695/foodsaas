@@ -73,7 +73,7 @@ final class CajaSesionArqueoPdfService
 
         $anchoFallback = $cfg !== null ? $cfg->ticket_ancho_mm : TicketAnchoMm::DEFAULT;
         $ancho = TicketAnchoMm::normalize($formato, $anchoFallback);
-        $tf = $this->ticketTypography($ancho);
+        $tf = TicketAnchoMm::typography($ancho);
         $widthPt = ((float) TicketAnchoMm::printableMm($ancho)) * 72 / 25.4;
         $metodosCount = is_array($arqueo['metodos'] ?? null) ? count($arqueo['metodos']) : 0;
         $billeterasCount = is_array($arqueo['billeteras'] ?? null) ? count($arqueo['billeteras']) : 0;
@@ -168,41 +168,6 @@ final class CajaSesionArqueoPdfService
         }
 
         return '';
-    }
-
-    /**
-     * Tamaños tipográficos según ancho de rollo térmico.
-     *
-     * @return array{fs: int, fs_sm: int, fs_title: int, logo_max: int, footer: int, pad_x: string}
-     */
-    private function ticketTypography(string $ancho): array
-    {
-        return match (TicketAnchoMm::normalize($ancho)) {
-            '56' => [
-                'fs' => 10,
-                'fs_sm' => 9,
-                'fs_title' => 12,
-                'logo_max' => 11,
-                'footer' => 8,
-                'pad_x' => '1.5mm',
-            ],
-            '57', '58' => [
-                'fs' => 10,
-                'fs_sm' => 9,
-                'fs_title' => 12,
-                'logo_max' => 12,
-                'footer' => 8,
-                'pad_x' => '2mm',
-            ],
-            default => [
-                'fs' => 12,
-                'fs_sm' => 11,
-                'fs_title' => 14,
-                'logo_max' => 14,
-                'footer' => 9,
-                'pad_x' => '1.5mm',
-            ],
-        };
     }
 
     /**

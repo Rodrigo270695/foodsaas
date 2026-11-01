@@ -12,13 +12,18 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+    previewWidthPercent,
+    printableMm,
+    type TicketAnchoMm,
+} from '@/lib/ticket-ancho';
 
-export type ArqueoPrintFormato = 'a4' | '56' | '57' | '58' | '80';
+export type ArqueoPrintFormato = 'a4' | TicketAnchoMm;
 
 const FORMATOS: readonly ArqueoPrintFormato[] = ['a4', '56', '57', '58', '80'];
 
 /** Ancho térmico por defecto del ticket (sin preferencia de usuario persistida). */
-const DEFAULT_TICKET_ANCHO: ArqueoPrintFormato = '80';
+const DEFAULT_TICKET_ANCHO: TicketAnchoMm = '58';
 
 export type ArqueoPrintDialogProps = {
     open: boolean;
@@ -85,6 +90,10 @@ export function ArqueoPrintDialog({
             ? 'sesiones.dialog_imprimir.hint_a4'
             : 'sesiones.dialog_imprimir.hint_ticket';
 
+    const isThermal = formato !== 'a4';
+    const utiles = isThermal ? printableMm(formato) : null;
+    const paperPct = isThermal ? previewWidthPercent(formato) : 100;
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="flex max-h-[90vh] max-w-[calc(100%-1rem)] flex-col gap-3 p-4 sm:max-w-2xl sm:p-6">
@@ -130,7 +139,15 @@ export function ArqueoPrintDialog({
                     <p className="text-[0.7rem] leading-snug text-muted-foreground">
                         {t(hintKey)}
                     </p>
-                    {formato !== 'a4' ? (
+                    {isThermal && utiles !== null ? (
+                        <p className="text-[0.7rem] leading-snug text-muted-foreground">
+                            {t('sesiones.dialog_imprimir.hint_printable', {
+                                roll: formato,
+                                utiles,
+                            })}
+                        </p>
+                    ) : null}
+                    {isThermal ? (
                         <p className="text-[0.7rem] leading-snug text-muted-foreground">
                             {t('sesiones.dialog_imprimir.hint_config', {
                                 ancho: t(
@@ -155,6 +172,15 @@ export function ArqueoPrintDialog({
                         openLabel={t('sesiones.dialog_imprimir.open_pdf', {
                             defaultValue: 'Abrir PDF',
                         })}
+                        paperWidthPercent={isThermal ? paperPct : undefined}
+                        paperCaption={
+                            isThermal && utiles !== null
+                                ? t('sesiones.dialog_imprimir.preview_caption', {
+                                      roll: formato,
+                                      utiles,
+                                  })
+                                : undefined
+                        }
                     />
                 ) : null}
 

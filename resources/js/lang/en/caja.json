@@ -165,6 +165,8 @@
             },
             "hint_a4": "Full report with sales and payout detail.",
             "hint_ticket": "Compact summary for a thermal printer.",
+            "hint_printable": "{{roll}} mm roll → usable print head width ≈ {{utiles}} mm (not edge-to-edge paper).",
+            "preview_caption": "Scaled preview · {{roll}} mm roll · head ≈ {{utiles}} mm usable",
             "hint_config": "The configured ticket width is {{ancho}}.",
             "iframe_title": "Cash count preview",
             "print": "Print"

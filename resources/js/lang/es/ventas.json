@@ -76,6 +76,8 @@
             "80": "80 mm"
         },
         "hint": "Al imprimir, este ancho queda como predeterminado. La siguiente venta abre en ese rollo.",
+        "hint_printable": "Eliges el rollo que compras ({{roll}} mm). La ticketera no imprime borde a borde: área útil ≈ {{utiles}} mm. Un rollo de ~76 mm se usa en impresora de 80 → elige 80 mm.",
+        "preview_caption": "Vista previa a escala · rollo {{roll}} mm · cabezal ≈ {{utiles}} mm útiles",
         "iframe_title": "Vista previa del ticket",
         "loading": "Generando ticket…",
         "error": "No se pudo generar el ticket PDF.",

@@ -76,6 +76,8 @@
             "80": "80 mm"
         },
         "hint": "When printing, this width becomes the default. The next sale opens on that roll.",
+        "hint_printable": "You pick the roll you buy ({{roll}} mm). The printer head does not print edge-to-edge: usable width ≈ {{utiles}} mm. A ~76 mm roll goes in an 80 mm printer → choose 80 mm.",
+        "preview_caption": "Scaled preview · {{roll}} mm roll · head ≈ {{utiles}} mm usable",
         "iframe_title": "Ticket preview",
         "loading": "Generating ticket…",
         "error": "Could not generate the ticket PDF.",
