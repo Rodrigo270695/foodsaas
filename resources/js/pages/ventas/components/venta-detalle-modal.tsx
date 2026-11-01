@@ -11,8 +11,15 @@ import ventas from '../ventas-routes';
 type VentaDetalle = {
     id: string;
     numero: string | null;
+    numero_display?: string | null;
     origen: string;
     tipo_comprobante: string;
+    fel_estado?: string;
+    cpe_numero?: string | null;
+    fel_pdf_url?: string | null;
+    fel_pdf_a4_url?: string | null;
+    fel_enlace_consulta?: string | null;
+    fel_error?: string | null;
     cliente_nombre: string | null;
     cliente_documento: string | null;
     estado: string;
@@ -43,11 +50,22 @@ type VentaDetalle = {
     }[];
 };
 
+type CpePayload = {
+    venta_id: string;
+    tipo_comprobante: string;
+    numero_completo: string | null;
+    pdf_ticket_url: string | null;
+    pdf_a4_url: string | null;
+    enlace_consulta: string | null;
+};
+
 type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     ventaId: string | null;
     onImprimir?: (ventaId: string) => void;
+    onImprimirCpe?: (payload: CpePayload) => void;
+    onEmitirCpe?: (ventaId: string) => void;
 };
 
 function money(value: string | number): string {
@@ -64,6 +82,8 @@ export function VentaDetalleModal({
     onOpenChange,
     ventaId,
     onImprimir,
+    onImprimirCpe,
+    onEmitirCpe,
 }: Props) {
     const { t } = useTranslation(['ventas', 'caja', 'common']);
     const [venta, setVenta] = useState<VentaDetalle | null>(null);
@@ -131,7 +151,43 @@ export function VentaDetalleModal({
                     >
                         {t('common:actions.close')}
                     </Button>
-                    {venta && onImprimir ? (
+                    {venta &&
+                    (venta.tipo_comprobante === 'boleta' ||
+                        venta.tipo_comprobante === 'factura') &&
+                    (venta.fel_estado === 'sin_cpe' ||
+                        venta.fel_estado === 'rechazado') &&
+                    onEmitirCpe ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="cursor-pointer"
+                            onClick={() => onEmitirCpe(venta.id)}
+                        >
+                            {t('actions_extra.reintentar_cpe')}
+                        </Button>
+                    ) : null}
+                    {venta &&
+                    venta.fel_estado === 'emitido' &&
+                    (venta.fel_pdf_url || venta.fel_enlace_consulta) &&
+                    onImprimirCpe ? (
+                        <Button
+                            type="button"
+                            className="cursor-pointer"
+                            onClick={() =>
+                                onImprimirCpe({
+                                    venta_id: venta.id,
+                                    tipo_comprobante: venta.tipo_comprobante,
+                                    numero_completo: venta.cpe_numero ?? null,
+                                    pdf_ticket_url: venta.fel_pdf_url ?? null,
+                                    pdf_a4_url: venta.fel_pdf_a4_url ?? null,
+                                    enlace_consulta:
+                                        venta.fel_enlace_consulta ?? null,
+                                })
+                            }
+                        >
+                            {t('actions_extra.imprimir_cpe')}
+                        </Button>
+                    ) : venta && onImprimir ? (
                         <Button
                             type="button"
                             className="cursor-pointer"
@@ -176,6 +232,9 @@ export function VentaDetalleModal({
                             <span className="text-sm text-muted-foreground">
                                 {t(`tipo.${venta.tipo_comprobante}`)} ·{' '}
                                 {t(`origen.${venta.origen}`)}
+                                {venta.fel_estado
+                                    ? ` · ${t(`sunat.${venta.fel_estado === 'sin_cpe' ? 'sin_comprobante' : venta.fel_estado}`, { defaultValue: venta.fel_estado })}`
+                                    : null}
                             </span>
                         </div>
 
@@ -185,8 +244,16 @@ export function VentaDetalleModal({
                                     {t('columns.numero')}
                                 </dt>
                                 <dd className="font-semibold tabular-nums text-brand-700">
-                                    {venta.numero ?? '—'}
+                                    {venta.cpe_numero ??
+                                        venta.numero_display ??
+                                        venta.numero ??
+                                        '—'}
                                 </dd>
+                                {venta.cpe_numero && venta.numero ? (
+                                    <p className="text-[11px] text-muted-foreground">
+                                        {venta.numero}
+                                    </p>
+                                ) : null}
                             </div>
                             <div>
                                 <dt className="text-xs text-muted-foreground">

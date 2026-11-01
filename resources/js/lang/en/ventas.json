@@ -122,9 +122,29 @@
         "factura": "Invoice"
     },
     "sunat": {
-        "sin_comprobante": "No e-invoice",
+        "sin_comprobante": "No CPE",
         "pendiente": "SUNAT pending",
-        "hint": "Electronic issuance comes later. For now only the type is stored."
+        "emitido": "Issued",
+        "rechazado": "Rejected",
+        "anulado": "Voided",
+        "hint": "Receipts and invoices are issued to SUNAT via APISUNAT (Lucode)."
+    },
+    "cpe_dialog": {
+        "title_boleta": "Electronic receipt (APISUNAT)",
+        "title_factura": "Electronic invoice (APISUNAT)",
+        "description": "Official PDF issued by Lucode / SUNAT.",
+        "description_numero": "Document {{numero}} — official Lucode / SUNAT PDF.",
+        "format_ticket": "Ticket",
+        "format_a4": "A4",
+        "open_external": "Open PDF",
+        "iframe_title": "CPE preview",
+        "print": "Print",
+        "sin_pdf": "No Lucode PDF yet for this document. Retry issuance or sync status under Billing."
+    },
+    "actions_extra": {
+        "imprimir_cpe": "Print CPE",
+        "reintentar_cpe": "Issue CPE",
+        "ver_pdf_cpe": "View Lucode PDF"
     },
     "pendientes_page": {
         "title": "Charge orders",

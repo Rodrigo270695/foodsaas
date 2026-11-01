@@ -43,6 +43,7 @@ import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 import { todayIso } from '../pedidos/types';
 import caja from '../caja/caja-routes';
+import { VentaCpeDialog } from './components/venta-cpe-dialog';
 import { VentaDetalleModal } from './components/venta-detalle-modal';
 import { VentaTicketDialog } from './components/venta-ticket-dialog';
 import ventas from './ventas-routes';
@@ -62,8 +63,14 @@ type PedidoPendiente = {
 type VentaRow = {
     id: string;
     numero: string | null;
+    numero_display?: string | null;
     origen: string;
     tipo_comprobante: string;
+    fel_estado?: string;
+    cpe_numero?: string | null;
+    fel_pdf_url?: string | null;
+    fel_pdf_a4_url?: string | null;
+    fel_enlace_consulta?: string | null;
     cliente_nombre: string | null;
     cliente_documento: string | null;
     estado: string;
@@ -80,6 +87,57 @@ type VentaRow = {
     created_by?: { id: number; name: string } | null;
 };
 
+type OpenCpe = {
+    venta_id: string;
+    tipo_comprobante: string;
+    numero_completo: string | null;
+    pdf_ticket_url: string | null;
+    pdf_a4_url: string | null;
+    enlace_consulta: string | null;
+};
+
+function esComprobanteSunat(tipo: string): boolean {
+    return tipo === 'boleta' || tipo === 'factura';
+}
+
+function cpeListo(row: VentaRow): boolean {
+    return (
+        esComprobanteSunat(row.tipo_comprobante) &&
+        row.fel_estado === 'emitido' &&
+        Boolean(row.fel_pdf_url || row.fel_enlace_consulta)
+    );
+}
+
+function felBadgeClass(estado: string | undefined): string {
+    switch (estado) {
+        case 'emitido':
+            return 'text-emerald-700 dark:text-emerald-300';
+        case 'pendiente':
+            return 'text-sky-700 dark:text-sky-300';
+        case 'rechazado':
+            return 'text-destructive';
+        case 'anulado':
+            return 'text-muted-foreground';
+        default:
+            return 'text-amber-700 dark:text-amber-300';
+    }
+}
+
+function felLabelKey(estado: string | undefined): string {
+    switch (estado) {
+        case 'emitido':
+            return 'sunat.emitido';
+        case 'pendiente':
+            return 'sunat.pendiente';
+        case 'rechazado':
+            return 'sunat.rechazado';
+        case 'anulado':
+            return 'sunat.anulado';
+        default:
+            return 'sunat.sin_comprobante';
+    }
+}
+
 type Vista = 'historial' | 'por_cobrar';
 
 type Props = {
@@ -91,6 +149,7 @@ type Props = {
     tipos_comprobante: string[];
     ticket_ancho_mm?: string | null;
     open_ticket_id?: string | null;
+    open_cpe?: OpenCpe | null;
     filters: {
         sede_id: string | null;
         search: string;
@@ -127,6 +186,7 @@ export default function Index({
     tipos_comprobante,
     ticket_ancho_mm,
     open_ticket_id,
+    open_cpe,
     filters,
     stats,
 }: Props) {
@@ -135,23 +195,75 @@ export default function Index({
     const esPorCobrar = vista === 'por_cobrar';
     const [ticketVentaId, setTicketVentaId] = useState<string | null>(null);
     const [detalleVentaId, setDetalleVentaId] = useState<string | null>(null);
+    const [cpeOpen, setCpeOpen] = useState(false);
+    const [cpePayload, setCpePayload] = useState<OpenCpe | null>(null);
+    const [cpeAutoPrint, setCpeAutoPrint] = useState(false);
+    const [emitiendoId, setEmitiendoId] = useState<string | null>(null);
+
+    const clearTicketQuery = useCallback(() => {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has('ticket')) {
+            return;
+        }
+        url.searchParams.delete('ticket');
+        const qs = url.searchParams.toString();
+        window.history.replaceState(
+            {},
+            '',
+            `${url.pathname}${qs ? `?${qs}` : ''}${url.hash}`,
+        );
+    }, []);
 
     useEffect(() => {
+        if (open_cpe) {
+            setCpePayload(open_cpe);
+            setCpeOpen(true);
+            setCpeAutoPrint(true);
+            clearTicketQuery();
+            return;
+        }
         if (!open_ticket_id) {
             return;
         }
         setTicketVentaId(open_ticket_id);
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('ticket')) {
-            url.searchParams.delete('ticket');
-            const qs = url.searchParams.toString();
-            window.history.replaceState(
-                {},
-                '',
-                `${url.pathname}${qs ? `?${qs}` : ''}${url.hash}`,
-            );
-        }
-    }, [open_ticket_id]);
+        clearTicketQuery();
+    }, [open_ticket_id, open_cpe, clearTicketQuery]);
+
+    const abrirCpe = useCallback((row: VentaRow, autoPrint = false) => {
+        setCpePayload({
+            venta_id: row.id,
+            tipo_comprobante: row.tipo_comprobante,
+            numero_completo: row.cpe_numero ?? null,
+            pdf_ticket_url: row.fel_pdf_url ?? null,
+            pdf_a4_url: row.fel_pdf_a4_url ?? null,
+            enlace_consulta: row.fel_enlace_consulta ?? null,
+        });
+        setCpeAutoPrint(autoPrint);
+        setCpeOpen(true);
+    }, []);
+
+    const imprimirVenta = useCallback(
+        (row: VentaRow) => {
+            if (cpeListo(row)) {
+                abrirCpe(row);
+                return;
+            }
+            setTicketVentaId(row.id);
+        },
+        [abrirCpe],
+    );
+
+    const reintentarCpe = useCallback((ventaId: string) => {
+        setEmitiendoId(ventaId);
+        router.post(
+            ventas.emitirFel(ventaId).url,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setEmitiendoId(null),
+            },
+        );
+    }, []);
 
     const { search, setSearch, isLoading, setPerPage, applyFilter, fetch } =
         useDataTablePage<{
@@ -259,19 +371,36 @@ export default function Index({
             {
                 key: 'numero',
                 header: t('columns.numero'),
-                cell: (row) => (
-                    <div className="min-w-0">
-                        <p className="truncate font-medium text-brand-700 tabular-nums">
-                            {row.numero ??
-                                (row.pedido ? `#${row.pedido.numero}` : '—')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                            {row.origen === 'rapida'
-                                ? t('origen.rapida')
-                                : t('origen.pedido')}
-                        </p>
-                    </div>
-                ),
+                cell: (row) => {
+                    const display =
+                        row.numero_display ??
+                        row.cpe_numero ??
+                        row.numero ??
+                        (row.pedido ? `#${row.pedido.numero}` : '—');
+                    const interno =
+                        row.cpe_numero &&
+                        row.numero &&
+                        row.cpe_numero !== row.numero
+                            ? row.numero
+                            : null;
+
+                    return (
+                        <div className="min-w-0">
+                            <p
+                                className="truncate font-medium text-brand-700 tabular-nums"
+                                title={interno ?? undefined}
+                            >
+                                {display}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {t(`origen.${row.origen}`, {
+                                    defaultValue: row.origen,
+                                })}
+                                {interno ? ` · ${interno}` : null}
+                            </p>
+                        </div>
+                    );
+                },
             },
             {
                 key: 'fecha',
@@ -353,18 +482,35 @@ export default function Index({
             {
                 key: 'comprobante',
                 header: t('columns.comprobante'),
-                cell: (row) => (
-                    <div className="flex min-w-0 flex-col justify-center gap-0.5 leading-tight">
-                        <span className="text-sm font-medium">
-                            {t(`tipo.${row.tipo_comprobante}`, {
-                                defaultValue: row.tipo_comprobante,
-                            })}
-                        </span>
-                        <span className="text-[11px] text-amber-700 dark:text-amber-300">
-                            {t('sunat.sin_comprobante')}
-                        </span>
-                    </div>
-                ),
+                cell: (row) => {
+                    const esSunat = esComprobanteSunat(row.tipo_comprobante);
+                    const estado = row.fel_estado ?? 'sin_cpe';
+
+                    return (
+                        <div className="flex min-w-0 flex-col justify-center gap-0.5 leading-tight">
+                            <span className="text-sm font-medium">
+                                {row.cpe_numero ??
+                                    t(`tipo.${row.tipo_comprobante}`, {
+                                        defaultValue: row.tipo_comprobante,
+                                    })}
+                            </span>
+                            {esSunat ? (
+                                <span
+                                    className={cn(
+                                        'text-[11px]',
+                                        felBadgeClass(estado),
+                                    )}
+                                >
+                                    {t(felLabelKey(estado))}
+                                </span>
+                            ) : (
+                                <span className="text-[11px] text-muted-foreground">
+                                    {t('tipo.ticket')}
+                                </span>
+                            )}
+                        </div>
+                    );
+                },
                 className: 'hidden align-middle md:table-cell',
             },
             {
@@ -373,44 +519,78 @@ export default function Index({
                     <span className="sr-only">{t('columns.acciones')}</span>
                 ),
                 align: 'right',
-                cell: (row) => (
-                    <div className="flex items-center justify-end gap-0.5">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-violet-600 shadow-none hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
-                            onClick={() => setDetalleVentaId(row.id)}
-                            aria-label={t('actions.ver_detalle')}
-                            title={t('actions.ver_detalle')}
-                        >
-                            <Eye
-                                className="size-4"
-                                strokeWidth={2.25}
-                                aria-hidden
-                            />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-sky-600 shadow-none hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
-                            onClick={() => setTicketVentaId(row.id)}
-                            aria-label={t('actions.imprimir_ticket')}
-                            title={t('actions.imprimir_ticket')}
-                        >
-                            <Printer
-                                className="size-4"
-                                strokeWidth={2.25}
-                                aria-hidden
-                            />
-                        </Button>
-                    </div>
-                ),
-                className: 'w-20',
+                cell: (row) => {
+                    const listo = cpeListo(row);
+                    const puedeReemitir =
+                        esComprobanteSunat(row.tipo_comprobante) &&
+                        (row.fel_estado === 'sin_cpe' ||
+                            row.fel_estado === 'rechazado') &&
+                        row.estado === 'pagada';
+                    const printLabel = listo
+                        ? t('actions_extra.imprimir_cpe')
+                        : t('actions.imprimir_ticket');
+
+                    return (
+                        <div className="flex items-center justify-end gap-0.5">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-violet-600 shadow-none hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+                                onClick={() => setDetalleVentaId(row.id)}
+                                aria-label={t('actions.ver_detalle')}
+                                title={t('actions.ver_detalle')}
+                            >
+                                <Eye
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                />
+                            </Button>
+                            {puedeReemitir ? (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-amber-600 shadow-none hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-400"
+                                    disabled={emitiendoId === row.id}
+                                    onClick={() => reintentarCpe(row.id)}
+                                    aria-label={t('actions_extra.reintentar_cpe')}
+                                    title={t('actions_extra.reintentar_cpe')}
+                                >
+                                    <RefreshCw
+                                        className={cn(
+                                            'size-4',
+                                            emitiendoId === row.id &&
+                                                'animate-spin',
+                                        )}
+                                        strokeWidth={2.25}
+                                        aria-hidden
+                                    />
+                                </Button>
+                            ) : null}
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-sky-600 shadow-none hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
+                                onClick={() => imprimirVenta(row)}
+                                aria-label={printLabel}
+                                title={printLabel}
+                            >
+                                <Printer
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                />
+                            </Button>
+                        </div>
+                    );
+                },
+                className: 'w-24',
             },
         ],
-        [t],
+        [t, emitiendoId, imprimirVenta, reintentarCpe],
     );
 
     const pedidoColumns = useMemo<DataTableColumn<PedidoPendiente>[]>(
@@ -818,7 +998,22 @@ export default function Index({
                 ventaId={detalleVentaId}
                 onImprimir={(id) => {
                     setDetalleVentaId(null);
+                    const row = paginated.data.find((v) => v.id === id);
+                    if (row) {
+                        imprimirVenta(row);
+                        return;
+                    }
                     setTicketVentaId(id);
+                }}
+                onImprimirCpe={(payload) => {
+                    setDetalleVentaId(null);
+                    setCpePayload(payload);
+                    setCpeAutoPrint(false);
+                    setCpeOpen(true);
+                }}
+                onEmitirCpe={(id) => {
+                    setDetalleVentaId(null);
+                    reintentarCpe(id);
                 }}
             />
 
@@ -831,6 +1026,24 @@ export default function Index({
                 }}
                 ventaId={ticketVentaId}
                 defaultAncho={ticket_ancho_mm}
+            />
+
+            <VentaCpeDialog
+                open={cpeOpen}
+                onOpenChange={(open) => {
+                    setCpeOpen(open);
+                    if (!open) {
+                        setCpePayload(null);
+                        setCpeAutoPrint(false);
+                    }
+                }}
+                numeroCompleto={cpePayload?.numero_completo}
+                tipoComprobante={cpePayload?.tipo_comprobante}
+                pdfTicketUrl={cpePayload?.pdf_ticket_url}
+                pdfA4Url={cpePayload?.pdf_a4_url}
+                enlaceConsulta={cpePayload?.enlace_consulta}
+                autoPrint={cpeAutoPrint}
+                onAutoPrintConsumed={() => setCpeAutoPrint(false)}
             />
         </>
     );

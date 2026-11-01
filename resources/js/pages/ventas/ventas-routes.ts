@@ -40,6 +40,9 @@ const ventas = {
     ticketPdf: (ventaId: string | number) => ({
         url: `${base}/${ventaId}/ticket-pdf`,
     }),
+    emitirFel: (ventaId: string | number) => ({
+        url: `${base}/${ventaId}/emitir-fel`,
+    }),
 };
 
 export default ventas;

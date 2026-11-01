@@ -19,6 +19,7 @@ use App\Services\Operacion\CajaService;
 use App\Services\Operacion\VentaTicketPdfService;
 use App\Support\Caja\TicketAnchoMm;
 use App\Support\Fel\FelComprobanteAvailability;
+use App\Support\Fel\FelDocumentPdfUrls;
 use App\Support\Sedes\ActiveSedeContext;
 use App\Tenancy\TenantManager;
 use RuntimeException;
@@ -134,7 +135,8 @@ class VentaController extends Controller
         $ventas = $ventasQuery
             ->orderBy($sort, $direction)
             ->paginate($perPage)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (Venta $v): array => $this->serializeVentaRow($v));
 
         $stats['coincidencias'] = $vista === 'por_cobrar'
             ? $pedidosPendientes->count()
@@ -166,6 +168,32 @@ class VentaController extends Controller
             $openTicket = '';
         }
 
+        $openPrint = null;
+        $openCpe = null;
+        if ($openTicket !== '') {
+            $ventaOpen = Venta::query()
+                ->with('felDocument:id,venta_id,numero_completo,estado,url_pdf,enlace_consulta')
+                ->find($openTicket);
+            if ($ventaOpen !== null) {
+                $doc = $ventaOpen->felDocument;
+                $pdf = $doc?->url_pdf ?: $doc?->enlace_consulta;
+                $esCpe = in_array((string) $ventaOpen->tipo_comprobante, [Venta::TIPO_BOLETA, Venta::TIPO_FACTURA], true);
+                if ($esCpe && (string) $ventaOpen->fel_estado === Venta::FEL_EMITIDO && filled($pdf)) {
+                    $openPrint = 'cpe';
+                    $openCpe = [
+                        'venta_id' => $ventaOpen->id,
+                        'tipo_comprobante' => $ventaOpen->tipo_comprobante,
+                        'numero_completo' => $doc?->numero_completo,
+                        'pdf_ticket_url' => $doc?->url_pdf,
+                        'pdf_a4_url' => FelDocumentPdfUrls::pdfA4FromTicket($doc?->url_pdf),
+                        'enlace_consulta' => $doc?->enlace_consulta,
+                    ];
+                } else {
+                    $openPrint = 'ticket';
+                }
+            }
+        }
+
         return Inertia::render('ventas/index', [
             'sesion_abierta' => $sesion !== null,
             'vista' => $vista,
@@ -174,7 +202,8 @@ class VentaController extends Controller
             'medios' => Pago::MEDIOS,
             'tipos_comprobante' => Venta::TIPOS_COMPROBANTE,
             'ticket_ancho_mm' => $ticketAncho,
-            'open_ticket_id' => $openTicket !== '' ? $openTicket : null,
+            'open_ticket_id' => $openPrint === 'ticket' && $openTicket !== '' ? $openTicket : null,
+            'open_cpe' => $openCpe,
             'filters' => [
                 'sede_id' => $sedeId !== '' ? $sedeId : null,
                 'search' => $search,
@@ -410,6 +439,38 @@ class VentaController extends Controller
             ->with($flashKey, $mensaje);
     }
 
+    public function emitirFel(Venta $venta): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $venta->sede_id);
+
+        if (! in_array((string) $venta->tipo_comprobante, [Venta::TIPO_BOLETA, Venta::TIPO_FACTURA], true)) {
+            return back()->with('error', 'Solo boletas y facturas emiten CPE.');
+        }
+
+        FelComprobanteAvailability::assertPuedeEmitir(
+            (string) $venta->sede_id,
+            (string) $venta->tipo_comprobante,
+        );
+
+        try {
+            $doc = app(FelEmisionVentaService::class)->emitir($venta->fresh(['pedido.lineas']));
+        } catch (RuntimeException $e) {
+            return back()->with('error', 'No se emitió el CPE: '.$e->getMessage());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Error al emitir el CPE. Revisa Facturación.');
+        }
+
+        return redirect()
+            ->route('ventas.index', ['ticket' => $venta->id])
+            ->with(
+                'success',
+                'CPE '.$doc->numero_completo.' ('.strtoupper((string) $doc->estado).')',
+            );
+    }
+
     public function cobrarForm(Pedido $pedido, CajaService $caja): Response
     {
         $this->tenantIdOrAbort();
@@ -469,6 +530,7 @@ class VentaController extends Controller
             'sede:id,nombre,codigo',
             'pagos',
             'createdBy:id,name',
+            'felDocument:id,venta_id,numero_completo,estado,url_pdf,url_xml,url_cdr,enlace_consulta,apisunat_mode,error_mensaje',
         ]);
 
         $lineas = [];
@@ -487,12 +549,22 @@ class VentaController extends Controller
             }
         }
 
+        $doc = $venta->felDocument;
+        $pdfTicket = $doc?->url_pdf;
+
         return response()->json([
             'venta' => [
                 'id' => $venta->id,
                 'numero' => $venta->numero,
+                'numero_display' => $doc?->numero_completo ?? $venta->numero,
                 'origen' => $venta->origen,
                 'tipo_comprobante' => $venta->tipo_comprobante,
+                'fel_estado' => (string) ($venta->fel_estado ?? Venta::FEL_SIN_CPE),
+                'cpe_numero' => $doc?->numero_completo,
+                'fel_pdf_url' => $pdfTicket,
+                'fel_pdf_a4_url' => FelDocumentPdfUrls::pdfA4FromTicket($pdfTicket),
+                'fel_enlace_consulta' => $doc?->enlace_consulta,
+                'fel_error' => $doc?->error_mensaje,
                 'cliente_nombre' => $venta->cliente_nombre,
                 'cliente_documento' => $venta->cliente_documento,
                 'estado' => $venta->estado,
@@ -532,6 +604,55 @@ class VentaController extends Controller
                 'lineas' => $lineas,
             ],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeVentaRow(Venta $v): array
+    {
+        $doc = $v->relationLoaded('felDocument') ? $v->felDocument : null;
+        $pdfTicket = $doc?->url_pdf;
+
+        return [
+            'id' => $v->id,
+            'numero' => $v->numero,
+            'numero_display' => $doc?->numero_completo ?? $v->numero,
+            'origen' => $v->origen,
+            'tipo_comprobante' => $v->tipo_comprobante,
+            'fel_estado' => (string) ($v->fel_estado ?? Venta::FEL_SIN_CPE),
+            'cpe_numero' => $doc?->numero_completo,
+            'fel_pdf_url' => $pdfTicket,
+            'fel_pdf_a4_url' => FelDocumentPdfUrls::pdfA4FromTicket($pdfTicket),
+            'fel_enlace_consulta' => $doc?->enlace_consulta,
+            'cliente_nombre' => $v->cliente_nombre,
+            'cliente_documento' => $v->cliente_documento,
+            'estado' => $v->estado,
+            'total' => (string) $v->total,
+            'created_at' => $v->created_at?->toIso8601String(),
+            'pedido' => $v->pedido
+                ? [
+                    'id' => $v->pedido->id,
+                    'numero' => $v->pedido->numero,
+                    'canal' => $v->pedido->canal,
+                    'mesa' => $v->pedido->mesa
+                        ? [
+                            'id' => $v->pedido->mesa->id,
+                            'codigo' => $v->pedido->mesa->codigo,
+                            'nombre' => $v->pedido->mesa->nombre,
+                        ]
+                        : null,
+                ]
+                : null,
+            'pagos' => $v->pagos->map(static fn ($p): array => [
+                'id' => $p->id,
+                'medio' => $p->medio,
+                'monto' => (string) $p->monto,
+            ])->values()->all(),
+            'created_by' => $v->createdBy
+                ? ['id' => $v->createdBy->id, 'name' => $v->createdBy->name]
+                : null,
+        ];
     }
 
     /**
@@ -693,6 +814,7 @@ class VentaController extends Controller
                 'sede:id,nombre,codigo',
                 'pagos',
                 'createdBy:id,name',
+                'felDocument:id,venta_id,numero_completo,estado,url_pdf,enlace_consulta',
             ])
             ->where('sede_id', $sedeId)
             ->whereDate('created_at', '>=', $desde)
@@ -711,10 +833,15 @@ class VentaController extends Controller
         }
 
         if ($search !== '') {
-            $query->where(function ($q) use ($search): void {
-                $q->where('numero', 'ilike', '%'.$search.'%')
-                    ->orWhere('cliente_nombre', 'ilike', '%'.$search.'%')
-                    ->orWhere('cliente_documento', 'ilike', '%'.$search.'%');
+            $like = '%'.addcslashes($search, '%_\\').'%';
+            $query->where(function ($q) use ($search, $like): void {
+                $q->where('numero', 'ilike', $like)
+                    ->orWhere('cliente_nombre', 'ilike', $like)
+                    ->orWhere('cliente_documento', 'ilike', $like)
+                    ->orWhereHas(
+                        'felDocument',
+                        fn ($fq) => $fq->where('numero_completo', 'ilike', $like),
+                    );
 
                 if (ctype_digit(ltrim($search, '#'))) {
                     $num = (int) ltrim($search, '#');

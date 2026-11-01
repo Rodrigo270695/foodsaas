@@ -124,7 +124,27 @@
     "sunat": {
         "sin_comprobante": "Sin CPE",
         "pendiente": "Pendiente SUNAT",
-        "hint": "La emisión electrónica se activará después. Por ahora solo se guarda el tipo."
+        "emitido": "Emitido",
+        "rechazado": "Rechazado",
+        "anulado": "Anulado",
+        "hint": "Boleta y factura se emiten a SUNAT vía APISUNAT (Lucode)."
+    },
+    "cpe_dialog": {
+        "title_boleta": "Boleta electrónica (APISUNAT)",
+        "title_factura": "Factura electrónica (APISUNAT)",
+        "description": "PDF oficial emitido por Lucode / SUNAT.",
+        "description_numero": "Comprobante {{numero}} — PDF oficial Lucode / SUNAT.",
+        "format_ticket": "Ticket",
+        "format_a4": "A4",
+        "open_external": "Abrir PDF",
+        "iframe_title": "Vista previa CPE",
+        "print": "Imprimir",
+        "sin_pdf": "Aún no hay PDF de Lucode para este comprobante. Reintenta la emisión o sincroniza el estado en Facturación."
+    },
+    "actions_extra": {
+        "imprimir_cpe": "Imprimir CPE",
+        "reintentar_cpe": "Emitir CPE",
+        "ver_pdf_cpe": "Ver PDF Lucode"
     },
     "pendientes_page": {
         "title": "Cobrar pedidos",
