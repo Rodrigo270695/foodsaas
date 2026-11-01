@@ -30,7 +30,7 @@ class PermissionsSeeder extends Seeder
         'pedidos' => ['view', 'view-all', 'create', 'update', 'enviar', 'anular', 'cobrar'],
         'cocina' => ['view', 'update'],
         'caja' => ['view', 'abrir', 'cerrar', 'egreso', 'cobrar'],
-        'ventas' => ['view', 'create', 'export'],
+        'ventas' => ['view', 'create', 'export', 'delete'],
         'config-general' => ['view', 'update'],
         'series' => ['view', 'create', 'update', 'delete'],
         'documentos' => ['view', 'create', 'send', 'cancel'],

@@ -52,7 +52,21 @@
         "quitar": "Remove",
         "ver_ticket": "View ticket",
         "ver_detalle": "View details",
-        "imprimir_ticket": "Print ticket"
+        "imprimir_ticket": "Print ticket",
+        "anular_venta": "Void sale"
+    },
+    "anulacion": {
+        "title": "Void sale",
+        "desc_ticket": "Marks the sale as voided, excludes it from cash reconciliation, and restores stock for SKU-tracked products.",
+        "desc_sunat": "Also voids the e-invoice at SUNAT via Lucode (voided for invoices or daily summary for receipts).",
+        "motivo": "Reason",
+        "motivo_placeholder": "Describe the reason (min. 5 characters)…",
+        "confirm": "Confirm void",
+        "cancelar": "Cancel",
+        "banner": "Sale voided",
+        "motivo_label": "Reason:",
+        "sandbox_bloqueado": "Cannot void a CPE issued in Test mode. Move it to production under Billing or void it in Lucode.",
+        "procesando": "Voiding…"
     },
     "detalle": {
         "title": "Sale details",

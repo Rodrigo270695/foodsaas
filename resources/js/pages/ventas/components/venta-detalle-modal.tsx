@@ -1,9 +1,20 @@
+import { router } from '@inertiajs/react';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FormModal } from '@/components/forms';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
 import { cn } from '@/lib/utils';
 import ventas from '../ventas-routes';
@@ -20,6 +31,9 @@ type VentaDetalle = {
     fel_pdf_a4_url?: string | null;
     fel_enlace_consulta?: string | null;
     fel_error?: string | null;
+    anulado_at?: string | null;
+    motivo_anulacion?: string | null;
+    puede_anular?: boolean;
     cliente_nombre: string | null;
     cliente_documento: string | null;
     estado: string;
@@ -89,6 +103,9 @@ export function VentaDetalleModal({
     const [venta, setVenta] = useState<VentaDetalle | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [anularOpen, setAnularOpen] = useState(false);
+    const [motivo, setMotivo] = useState('');
+    const [anulando, setAnulando] = useState(false);
 
     useEffect(() => {
         if (!open || !ventaId) {
@@ -97,6 +114,8 @@ export function VentaDetalleModal({
 
         setVenta(null);
         setError(null);
+        setAnularOpen(false);
+        setMotivo('');
         setLoading(true);
 
         const token = csrfToken();
@@ -129,8 +148,35 @@ export function VentaDetalleModal({
     const dt = venta?.created_at
         ? formatPeruDateTime(venta.created_at)
         : null;
+    const anuladoDt = venta?.anulado_at
+        ? formatPeruDateTime(venta.anulado_at)
+        : null;
+
+    const confirmarAnulacion = () => {
+        if (!venta || motivo.trim().length < 5) {
+            return;
+        }
+        setAnulando(true);
+        router.post(
+            ventas.anular(venta.id).url,
+            { motivo: motivo.trim() },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setAnulando(false);
+                    setAnularOpen(false);
+                    onOpenChange(false);
+                },
+            },
+        );
+    };
+
+    const esSunat =
+        venta?.tipo_comprobante === 'boleta' ||
+        venta?.tipo_comprobante === 'factura';
 
     return (
+        <>
         <FormModal
             open={open && ventaId !== null}
             onOpenChange={onOpenChange}
@@ -187,7 +233,7 @@ export function VentaDetalleModal({
                         >
                             {t('actions_extra.imprimir_cpe')}
                         </Button>
-                    ) : venta && onImprimir ? (
+                    ) : venta && venta.estado !== 'anulada' && onImprimir ? (
                         <Button
                             type="button"
                             className="cursor-pointer"
@@ -216,6 +262,23 @@ export function VentaDetalleModal({
 
                 {venta ? (
                     <>
+                        {venta.estado === 'anulada' ? (
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                                <p className="font-medium">
+                                    {t('anulacion.banner')}
+                                    {anuladoDt
+                                        ? ` · ${anuladoDt.fecha}, ${anuladoDt.hora}`
+                                        : null}
+                                </p>
+                                {venta.motivo_anulacion ? (
+                                    <p className="mt-1 text-xs">
+                                        {t('anulacion.motivo_label')}{' '}
+                                        {venta.motivo_anulacion}
+                                    </p>
+                                ) : null}
+                            </div>
+                        ) : null}
+
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge
                                 className={cn(
@@ -391,9 +454,86 @@ export function VentaDetalleModal({
                                 </ul>
                             </div>
                         ) : null}
+
+                        {venta.puede_anular && venta.estado !== 'anulada' ? (
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                                <p className="text-sm font-medium text-destructive">
+                                    {t('anulacion.title')}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {esSunat
+                                        ? t('anulacion.desc_sunat')
+                                        : t('anulacion.desc_ticket')}
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="mt-3 cursor-pointer"
+                                    onClick={() => setAnularOpen(true)}
+                                >
+                                    {t('actions.anular_venta')}
+                                </Button>
+                            </div>
+                        ) : null}
                     </>
                 ) : null}
             </div>
         </FormModal>
+
+        <Dialog open={anularOpen} onOpenChange={setAnularOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{t('anulacion.title')}</DialogTitle>
+                    <DialogDescription>
+                        {esSunat
+                            ? t('anulacion.desc_sunat')
+                            : t('anulacion.desc_ticket')}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-2">
+                    <Label htmlFor="motivo-anulacion">
+                        {t('anulacion.motivo')}
+                    </Label>
+                    <Textarea
+                        id="motivo-anulacion"
+                        value={motivo}
+                        onChange={(e) => setMotivo(e.target.value)}
+                        placeholder={t('anulacion.motivo_placeholder')}
+                        rows={3}
+                        disabled={anulando}
+                    />
+                </div>
+                <DialogFooter className="gap-2 sm:justify-end">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="cursor-pointer"
+                        disabled={anulando}
+                        onClick={() => setAnularOpen(false)}
+                    >
+                        {t('anulacion.cancelar')}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        className="cursor-pointer gap-1.5"
+                        disabled={anulando || motivo.trim().length < 5}
+                        onClick={confirmarAnulacion}
+                    >
+                        {anulando ? (
+                            <Loader2
+                                className="size-3.5 animate-spin"
+                                aria-hidden
+                            />
+                        ) : null}
+                        {anulando
+                            ? t('anulacion.procesando')
+                            : t('anulacion.confirm')}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>
     );
 }

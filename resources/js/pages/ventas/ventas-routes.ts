@@ -43,6 +43,9 @@ const ventas = {
     emitirFel: (ventaId: string | number) => ({
         url: `${base}/${ventaId}/emitir-fel`,
     }),
+    anular: (ventaId: string | number) => ({
+        url: `${base}/${ventaId}/anular`,
+    }),
 };
 
 export default ventas;

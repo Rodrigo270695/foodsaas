@@ -52,7 +52,21 @@
         "quitar": "Quitar",
         "ver_ticket": "Ver ticket",
         "ver_detalle": "Ver detalle",
-        "imprimir_ticket": "Imprimir ticket"
+        "imprimir_ticket": "Imprimir ticket",
+        "anular_venta": "Anular venta"
+    },
+    "anulacion": {
+        "title": "Anular venta",
+        "desc_ticket": "Marca la venta como anulada, la excluye del arqueo y devuelve el stock de productos con control de inventario.",
+        "desc_sunat": "Además anula el CPE en SUNAT vía Lucode (baja para factura o resumen diario para boleta).",
+        "motivo": "Motivo",
+        "motivo_placeholder": "Describe el motivo (mín. 5 caracteres)…",
+        "confirm": "Confirmar anulación",
+        "cancelar": "Cancelar",
+        "banner": "Venta anulada",
+        "motivo_label": "Motivo:",
+        "sandbox_bloqueado": "No se puede anular un CPE emitido en modo Prueba. Pásalo a producción desde Facturación o anúlalo en Lucode.",
+        "procesando": "Anulando…"
     },
     "detalle": {
         "title": "Detalle de venta",

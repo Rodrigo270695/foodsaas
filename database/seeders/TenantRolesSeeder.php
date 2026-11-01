@@ -75,6 +75,7 @@ class TenantRolesSeeder extends Seeder
                 'ventas.view',
                 'ventas.create',
                 'ventas.export',
+                'ventas.delete',
                 'config-general.view',
                 'config-general.update',
                 'series.view',
@@ -109,6 +110,7 @@ class TenantRolesSeeder extends Seeder
                 'ventas.view',
                 'ventas.create',
                 'ventas.export',
+                'ventas.delete',
             ],
         ],
         'mesero' => [

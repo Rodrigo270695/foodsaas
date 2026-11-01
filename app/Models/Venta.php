@@ -54,6 +54,8 @@ class Venta extends Model
 
     public const FEL_RECHAZADO = 'rechazado';
 
+    public const FEL_ANULADO = 'anulado';
+
     protected $table = 'fin_ventas';
 
     protected $fillable = [
@@ -72,6 +74,9 @@ class Venta extends Model
         'descuento',
         'total',
         'created_by',
+        'anulado_at',
+        'anulado_por_id',
+        'motivo_anulacion',
     ];
 
     protected function casts(): array
@@ -80,6 +85,7 @@ class Venta extends Model
             'subtotal' => 'decimal:2',
             'descuento' => 'decimal:2',
             'total' => 'decimal:2',
+            'anulado_at' => 'datetime',
         ];
     }
 
@@ -113,6 +119,19 @@ class Venta extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function anuladoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'anulado_por_id');
+    }
+
+    public function estaAnulada(): bool
+    {
+        return $this->estado === self::ESTADO_ANULADA;
     }
 
     /**

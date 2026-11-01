@@ -264,6 +264,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar|documentos.create')
                     ->post('{venta}/emitir-fel', [VentaController::class, 'emitirFel'])
                     ->name('emitir-fel');
+                Route::middleware('permission:ventas.delete')
+                    ->post('{venta}/anular', [VentaController::class, 'anular'])
+                    ->name('anular');
                 Route::middleware('permission:ventas.create|caja.cobrar|pedidos.cobrar')
                     ->get('desde-pedido/{pedido}', [VentaController::class, 'cobrarForm'])
                     ->name('desde-pedido');

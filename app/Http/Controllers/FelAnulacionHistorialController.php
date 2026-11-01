@@ -87,7 +87,8 @@ class FelAnulacionHistorialController extends Controller
 
         $query = FelDocument::query()
             ->with([
-                'venta:id,numero,sede_id,estado',
+                'venta:id,numero,sede_id,estado,motivo_anulacion,anulado_at,anulado_por_id',
+                'venta.anuladoPor:id,name',
             ])
             ->where('estado', FelDocument::ESTADO_ANULADO)
             ->where('tipo_comprobante', $tipoComprobante);
@@ -141,11 +142,10 @@ class FelAnulacionHistorialController extends Controller
                 'total' => (string) $doc->total,
                 'moneda' => $doc->moneda,
                 'emitido_at' => $doc->emitido_at?->toIso8601String(),
-                // `fin_ventas` todavía no registra motivo/usuario de anulación: solo mostramos
-                // la fecha de anulación persistida en el propio comprobante FEL.
-                'anulado_at' => $doc->anulado_at?->toIso8601String(),
-                'motivo_anulacion' => null,
-                'anulado_por' => null,
+                'anulado_at' => $doc->anulado_at?->toIso8601String()
+                    ?? $venta?->anulado_at?->toIso8601String(),
+                'motivo_anulacion' => $venta?->motivo_anulacion,
+                'anulado_por' => $venta?->anuladoPor?->name,
                 'venta_id' => $doc->venta_id,
                 'venta_numero' => $venta?->numero,
                 'venta_estado' => $venta?->estado,

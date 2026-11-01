@@ -16,9 +16,11 @@ use App\Services\Integrations\ApiPeruDniService;
 use App\Services\Integrations\ApiPeruRucService;
 use App\Services\Fel\FelEmisionVentaService;
 use App\Services\Operacion\CajaService;
+use App\Services\Operacion\VentaAnulacionService;
 use App\Services\Operacion\VentaTicketPdfService;
 use App\Support\Caja\TicketAnchoMm;
 use App\Support\Fel\FelComprobanteAvailability;
+use App\Support\Fel\FelDocumentApisunatModeResolver;
 use App\Support\Fel\FelDocumentPdfUrls;
 use App\Support\Sedes\ActiveSedeContext;
 use App\Tenancy\TenantManager;
@@ -471,6 +473,30 @@ class VentaController extends Controller
             );
     }
 
+    public function anular(
+        Request $request,
+        Venta $venta,
+        VentaAnulacionService $anulacion,
+    ): RedirectResponse {
+        $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $venta->sede_id);
+        abort_unless($request->user()?->can('ventas.delete'), 403);
+
+        $data = $request->validate([
+            'motivo' => ['required', 'string', 'min:5', 'max:2000'],
+        ]);
+
+        try {
+            $anulacion->anular($venta, $data, $request->user());
+        } catch (RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()
+            ->route('ventas.index')
+            ->with('success', 'Venta '.($venta->numero ?? '').' anulada.');
+    }
+
     public function cobrarForm(Pedido $pedido, CajaService $caja): Response
     {
         $this->tenantIdOrAbort();
@@ -551,6 +577,12 @@ class VentaController extends Controller
 
         $doc = $venta->felDocument;
         $pdfTicket = $doc?->url_pdf;
+        $esSandboxFel = $doc !== null
+            && $doc->estado === \App\Models\FelDocument::ESTADO_EMITIDO
+            && FelDocumentApisunatModeResolver::resolveAndPersist($doc) === 'sandbox';
+        $puedeAnular = (bool) request()->user()?->can('ventas.delete')
+            && $venta->estado === Venta::ESTADO_PAGADA
+            && ! $esSandboxFel;
 
         return response()->json([
             'venta' => [
@@ -565,6 +597,9 @@ class VentaController extends Controller
                 'fel_pdf_a4_url' => FelDocumentPdfUrls::pdfA4FromTicket($pdfTicket),
                 'fel_enlace_consulta' => $doc?->enlace_consulta,
                 'fel_error' => $doc?->error_mensaje,
+                'anulado_at' => $venta->anulado_at?->toIso8601String(),
+                'motivo_anulacion' => $venta->motivo_anulacion,
+                'puede_anular' => $puedeAnular,
                 'cliente_nombre' => $venta->cliente_nombre,
                 'cliente_documento' => $venta->cliente_documento,
                 'estado' => $venta->estado,
@@ -625,6 +660,8 @@ class VentaController extends Controller
             'fel_pdf_url' => $pdfTicket,
             'fel_pdf_a4_url' => FelDocumentPdfUrls::pdfA4FromTicket($pdfTicket),
             'fel_enlace_consulta' => $doc?->enlace_consulta,
+            'anulado_at' => $v->anulado_at?->toIso8601String(),
+            'motivo_anulacion' => $v->motivo_anulacion,
             'cliente_nombre' => $v->cliente_nombre,
             'cliente_documento' => $v->cliente_documento,
             'estado' => $v->estado,
