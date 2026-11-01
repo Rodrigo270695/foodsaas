@@ -2,10 +2,34 @@ export type Producto = {
     id: string;
     nombre: string;
     codigo: string | null;
+    codigo_barras?: string | null;
     precio: string | number;
     imagen_url?: string | null;
     categoria?: { id: string; nombre: string } | null;
 };
+
+/** Match exacto por código de barras o código interno (pistoleo). */
+export function findProductoByScan(
+    productos: readonly Producto[],
+    raw: string,
+): Producto | null {
+    const q = raw.trim().toLowerCase();
+    if (q.length < 1) {
+        return null;
+    }
+
+    const byBarras = productos.find(
+        (p) => (p.codigo_barras ?? '').trim().toLowerCase() === q,
+    );
+    if (byBarras) {
+        return byBarras;
+    }
+
+    return (
+        productos.find((p) => (p.codigo ?? '').trim().toLowerCase() === q) ??
+        null
+    );
+}
 
 export type PedidoLinea = {
     id: string;

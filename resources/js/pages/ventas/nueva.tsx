@@ -64,7 +64,12 @@ export default function Nueva({
             .filter((p) => {
                 const nombre = p.nombre.toLowerCase();
                 const codigo = (p.codigo ?? '').toLowerCase();
-                return nombre.includes(q) || codigo.includes(q);
+                const barras = (p.codigo_barras ?? '').toLowerCase();
+                return (
+                    nombre.includes(q) ||
+                    codigo.includes(q) ||
+                    barras.includes(q)
+                );
             })
             .slice(0, 36);
     }, [productos, deferredQuery]);
@@ -324,6 +329,7 @@ export default function Nueva({
                                 <ProductosSearch
                                     query={query}
                                     onQueryChange={setQuery}
+                                    catalogo={productos}
                                     productos={filtered}
                                     onAdd={addProduct}
                                 />

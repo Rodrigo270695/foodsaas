@@ -34,6 +34,7 @@ export type ProductoCarta = {
     nombre: string;
     descripcion: string | null;
     codigo: string | null;
+    codigo_barras: string | null;
     precio: string;
     orden: number;
     activo: boolean;

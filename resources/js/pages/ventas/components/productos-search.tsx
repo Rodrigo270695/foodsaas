@@ -1,11 +1,18 @@
 import { Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
-import { money, type Producto } from './types';
+import {
+    findProductoByScan,
+    money,
+    type Producto,
+} from './types';
 
 type Props = {
     query: string;
     onQueryChange: (value: string) => void;
+    /** Catálogo completo (para pistoleo exacto). */
+    catalogo: Producto[];
+    /** Resultados filtrados a mostrar. */
     productos: Producto[];
     onAdd: (producto: Producto) => void;
 };
@@ -13,10 +20,21 @@ type Props = {
 export function ProductosSearch({
     query,
     onQueryChange,
+    catalogo,
     productos,
     onAdd,
 }: Props) {
     const { t } = useTranslation('ventas');
+
+    const tryScanAdd = (raw: string): boolean => {
+        const match = findProductoByScan(catalogo, raw);
+        if (!match) {
+            return false;
+        }
+        onAdd(match);
+        onQueryChange('');
+        return true;
+    };
 
     return (
         <section className="flex min-h-0 flex-col rounded-xl border bg-card/70 p-3">
@@ -32,9 +50,27 @@ export function ProductosSearch({
             <Input
                 value={query}
                 placeholder={t('nueva.buscar_placeholder')}
+                autoComplete="off"
+                autoFocus
                 onChange={(e) => onQueryChange(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key !== 'Enter') {
+                        return;
+                    }
+                    e.preventDefault();
+                    if (!tryScanAdd(query)) {
+                        // Sin match exacto: si hay un solo resultado filtrado, agrégalo.
+                        if (productos.length === 1) {
+                            onAdd(productos[0]);
+                            onQueryChange('');
+                        }
+                    }
+                }}
                 className="mb-2 h-9"
             />
+            <p className="mb-2 text-[11px] leading-snug text-muted-foreground">
+                {t('nueva.buscar_scan_hint')}
+            </p>
             <div className="grid max-h-[min(28rem,52vh)] gap-1.5 overflow-y-auto pr-0.5 sm:grid-cols-1">
                 {productos.map((p) => (
                     <button
@@ -47,9 +83,9 @@ export function ProductosSearch({
                             <span className="block truncate text-sm font-medium">
                                 {p.nombre}
                             </span>
-                            {p.codigo ? (
-                                <span className="text-[11px] text-muted-foreground">
-                                    {p.codigo}
+                            {p.codigo_barras || p.codigo ? (
+                                <span className="text-[11px] text-muted-foreground tabular-nums">
+                                    {p.codigo_barras || p.codigo}
                                 </span>
                             ) : null}
                         </span>

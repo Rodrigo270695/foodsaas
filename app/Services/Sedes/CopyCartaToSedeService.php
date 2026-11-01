@@ -102,6 +102,7 @@ final class CopyCartaToSedeService
                     'nombre' => $prod->nombre,
                     'descripcion' => $prod->descripcion,
                     'codigo' => $prod->codigo,
+                    'codigo_barras' => $prod->codigo_barras,
                     'precio' => $prod->precio,
                     'orden' => $prod->orden,
                     'activo' => $prod->activo,

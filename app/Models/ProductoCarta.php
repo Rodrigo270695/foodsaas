@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Storage;
  * @property string $nombre
  * @property string $precio
  * @property string|null $imagen_path
+ * @property string|null $codigo
+ * @property string|null $codigo_barras
  * @property string $control_inventario
  * @property string|null $stock
  * @property string|null $stock_minimo
@@ -45,6 +47,7 @@ class ProductoCarta extends Model
         'descripcion',
         'imagen_path',
         'codigo',
+        'codigo_barras',
         'precio',
         'orden',
         'activo',

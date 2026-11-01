@@ -40,6 +40,7 @@ class ProductoCartaRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:150'],
             'descripcion' => ['nullable', 'string', 'max:500'],
             'codigo' => ['nullable', 'string', 'max:40'],
+            'codigo_barras' => ['nullable', 'string', 'max:64'],
             'precio' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
             'orden' => ['nullable', 'integer', 'min:0', 'max:9999'],
             'activo' => ['required', 'boolean'],
@@ -82,6 +83,7 @@ class ProductoCartaRequest extends FormRequest
             'nombre' => 'nombre',
             'descripcion' => 'descripción',
             'codigo' => 'código',
+            'codigo_barras' => 'código de barras',
             'precio' => 'precio',
             'orden' => 'orden',
             'activo' => 'estado',
@@ -95,6 +97,7 @@ class ProductoCartaRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $codigo = trim((string) $this->input('codigo', ''));
+        $codigoBarras = trim((string) $this->input('codigo_barras', ''));
         $areaId = trim((string) $this->input('area_id', ''));
         $control = trim((string) $this->input('control_inventario', ProductoCarta::CONTROL_NONE));
         if (! in_array($control, ProductoCarta::CONTROLES, true)) {
@@ -108,6 +111,9 @@ class ProductoCartaRequest extends FormRequest
             'nombre' => trim((string) $this->input('nombre', '')),
             'descripcion' => trim((string) $this->input('descripcion', '')) ?: null,
             'codigo' => $codigo !== '' ? $codigo : null,
+            'codigo_barras' => $control === ProductoCarta::CONTROL_SKU && $codigoBarras !== ''
+                ? $codigoBarras
+                : null,
             'area_id' => $areaId !== '' ? $areaId : null,
             'orden' => $this->filled('orden') ? (int) $this->input('orden') : 0,
             'activo' => $this->boolean('activo'),
@@ -179,26 +185,48 @@ class ProductoCartaRequest extends FormRequest
                 }
             }
 
+            $ignoreId = $this->route('productoCarta')?->id;
+
             $codigo = trim((string) $this->input('codigo', ''));
-            if ($codigo === '' || $v->errors()->has('codigo')) {
-                return;
+            if ($codigo !== '' && ! $v->errors()->has('codigo')) {
+                $dup = ProductoCarta::query()
+                    ->where('sede_id', $sedeId)
+                    ->whereRaw('lower(codigo) = ?', [mb_strtolower($codigo)])
+                    ->when(
+                        is_string($ignoreId) && $ignoreId !== '',
+                        fn ($q) => $q->whereKeyNot($ignoreId),
+                    )
+                    ->exists();
+
+                if ($dup) {
+                    $v->errors()->add(
+                        'codigo',
+                        'Ya existe un producto con ese código en esta sede.',
+                    );
+                }
             }
 
-            $ignoreId = $this->route('productoCarta')?->id;
-            $dup = ProductoCarta::query()
-                ->where('sede_id', $sedeId)
-                ->whereRaw('lower(codigo) = ?', [mb_strtolower($codigo)])
-                ->when(
-                    is_string($ignoreId) && $ignoreId !== '',
-                    fn ($q) => $q->whereKeyNot($ignoreId),
-                )
-                ->exists();
+            $codigoBarras = trim((string) $this->input('codigo_barras', ''));
+            if (
+                $codigoBarras !== ''
+                && ! $v->errors()->has('codigo_barras')
+                && (string) $this->input('control_inventario') === ProductoCarta::CONTROL_SKU
+            ) {
+                $dupBarras = ProductoCarta::query()
+                    ->where('sede_id', $sedeId)
+                    ->whereRaw('lower(codigo_barras) = ?', [mb_strtolower($codigoBarras)])
+                    ->when(
+                        is_string($ignoreId) && $ignoreId !== '',
+                        fn ($q) => $q->whereKeyNot($ignoreId),
+                    )
+                    ->exists();
 
-            if ($dup) {
-                $v->errors()->add(
-                    'codigo',
-                    'Ya existe un producto con ese código en esta sede.',
-                );
+                if ($dupBarras) {
+                    $v->errors()->add(
+                        'codigo_barras',
+                        'Ya existe un producto con ese código de barras en esta sede.',
+                    );
+                }
             }
         });
     }

@@ -50,6 +50,7 @@ type ProductoFormData = {
     nombre: string;
     descripcion: string;
     codigo: string;
+    codigo_barras: string;
     precio: string;
     orden: OrdenValue;
     activo: boolean;
@@ -80,6 +81,7 @@ const emptyForm = (
     nombre: '',
     descripcion: '',
     codigo: '',
+    codigo_barras: '',
     precio: '',
     orden: suggestedProductoOrden(categoriaId, nextOrdenByCategoria),
     activo: true,
@@ -100,6 +102,7 @@ const buildInitialData = (
     nombre: producto?.nombre ?? '',
     descripcion: producto?.descripcion ?? '',
     codigo: producto?.codigo ?? '',
+    codigo_barras: producto?.codigo_barras ?? '',
     precio: producto?.precio ?? '',
     orden: producto
         ? producto.orden
@@ -573,14 +576,15 @@ export function ProductoFormModal({
                         hint={t('producto_form.fields.control_hint')}
                         className="sm:col-span-2"
                     >
-                        <Select
+                            <Select
                             value={data.control_inventario}
-                            onValueChange={(v) =>
-                                setData(
-                                    'control_inventario',
-                                    v as ControlInventario,
-                                )
-                            }
+                            onValueChange={(v) => {
+                                const next = v as ControlInventario;
+                                setData('control_inventario', next);
+                                if (next !== 'sku') {
+                                    setData('codigo_barras', '');
+                                }
+                            }}
                             disabled={saving}
                         >
                             <SelectTrigger id="producto-control" className="w-full">
@@ -602,6 +606,33 @@ export function ProductoFormModal({
 
                     {data.control_inventario === 'sku' ? (
                         <>
+                            <FormField
+                                id="producto-codigo-barras"
+                                label={t(
+                                    'producto_form.fields.codigo_barras',
+                                )}
+                                error={errors.codigo_barras}
+                                hint={t(
+                                    'producto_form.fields.codigo_barras_hint',
+                                )}
+                                className="sm:col-span-2"
+                            >
+                                <Input
+                                    id="producto-codigo-barras"
+                                    value={data.codigo_barras}
+                                    placeholder={t(
+                                        'producto_form.fields.codigo_barras_placeholder',
+                                    )}
+                                    autoComplete="off"
+                                    inputMode="numeric"
+                                    onChange={(e) =>
+                                        setData(
+                                            'codigo_barras',
+                                            e.target.value.trim(),
+                                        )
+                                    }
+                                />
+                            </FormField>
                             {!isEdit ||
                             (producto &&
                                 producto.control_inventario !== 'sku') ? (

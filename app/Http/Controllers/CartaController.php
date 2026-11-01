@@ -86,6 +86,7 @@ class CartaController extends Controller
             $query->where(function ($q) use ($search): void {
                 $q->where('nombre', 'ilike', "%{$search}%")
                     ->orWhere('codigo', 'ilike', "%{$search}%")
+                    ->orWhere('codigo_barras', 'ilike', "%{$search}%")
                     ->orWhere('descripcion', 'ilike', "%{$search}%");
             });
         }
@@ -275,6 +276,7 @@ class CartaController extends Controller
         if ($data['control_inventario'] !== ProductoCarta::CONTROL_SKU) {
             $data['stock'] = null;
             $data['stock_minimo'] = null;
+            $data['codigo_barras'] = null;
         } else {
             $data['stock'] = 0;
         }
@@ -307,6 +309,7 @@ class CartaController extends Controller
         if ($newControl !== ProductoCarta::CONTROL_SKU) {
             $data['stock'] = null;
             $data['stock_minimo'] = null;
+            $data['codigo_barras'] = null;
         } else {
             // El stock operativo solo se mueve por kardex; conservar el actual.
             unset($data['stock']);
@@ -358,6 +361,7 @@ class CartaController extends Controller
             $query->where(function ($q) use ($search): void {
                 $q->where('nombre', 'ilike', "%{$search}%")
                     ->orWhere('codigo', 'ilike', "%{$search}%")
+                    ->orWhere('codigo_barras', 'ilike', "%{$search}%")
                     ->orWhere('descripcion', 'ilike', "%{$search}%");
             });
         }

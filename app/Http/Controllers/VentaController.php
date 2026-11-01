@@ -231,6 +231,7 @@ class VentaController extends Controller
                     'categoria_id',
                     'nombre',
                     'codigo',
+                    'codigo_barras',
                     'precio',
                     'imagen_path',
                     'control_inventario',
