@@ -254,6 +254,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:clientes.create|clientes.update')
                     ->get('consulta-dni', [ClienteController::class, 'consultaDni'])
                     ->name('consulta-dni');
+                Route::middleware('permission:clientes.create|clientes.update')
+                    ->get('consulta-ruc', [ClienteController::class, 'consultaRuc'])
+                    ->name('consulta-ruc');
                 Route::middleware('permission:clientes.create')
                     ->post('/', [ClienteController::class, 'store'])
                     ->name('store');

@@ -3,13 +3,14 @@ import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    CLIENTE_DOCUMENT_TYPE_CODES,
     DocumentNumberLookupField,
     DocumentTypeSelect,
     FormField,
     FormModal,
     FormSection,
-    STAFF_DOCUMENT_TYPE_CODES,
-    isStaffDocumentTypeCode,
+    documentNumberLengthFor,
+    isClienteDocumentTypeCode,
     soloDigitosDocumento,
 } from '@/components/forms';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,7 @@ const normalizeDocumentoTipo = (raw: string | null | undefined): string => {
         return 'DNI';
     }
     const u = raw.trim().toUpperCase();
-    return isStaffDocumentTypeCode(u) ? u : 'DNI';
+    return isClienteDocumentTypeCode(u) ? u : 'DNI';
 };
 
 export function ClienteFormModal({
@@ -71,11 +72,11 @@ export function ClienteFormModal({
         });
 
     const tipoDoc = data.documento_tipo.trim().toUpperCase();
-    const isDni = tipoDoc === 'DNI';
-    const docMaxLen = isDni ? 8 : undefined;
+    const docMaxLen = documentNumberLengthFor(tipoDoc);
+    const isLookupTipo = tipoDoc === 'DNI' || tipoDoc === 'RUC';
+    const docDigits = soloDigitosDocumento(data.documento, docMaxLen);
     const docCompleto =
-        docMaxLen !== undefined &&
-        soloDigitosDocumento(data.documento).length === docMaxLen;
+        docMaxLen !== undefined && docDigits.length === docMaxLen;
 
     useEffect(() => {
         if (!open) {
@@ -84,7 +85,8 @@ export function ClienteFormModal({
         clearErrors();
         setConsultandoDoc(false);
         const tipo = normalizeDocumentoTipo(cliente?.documento_tipo);
-        const numero = cliente?.documento ?? '';
+        const max = documentNumberLengthFor(tipo);
+        const numero = soloDigitosDocumento(cliente?.documento ?? '', max);
         setData({
             nombre: cliente?.nombre ?? '',
             documento_tipo: tipo,
@@ -93,36 +95,48 @@ export function ClienteFormModal({
             email: cliente?.email ?? '',
             notas: cliente?.notas ?? '',
         });
-        const max = tipo === 'DNI' ? 8 : undefined;
-        const digits = soloDigitosDocumento(numero, max);
         lastConsultaKeyRef.current =
-            max !== undefined && digits.length === max ? `${tipo}:${digits}` : null;
+            max !== undefined &&
+            (tipo === 'DNI' || tipo === 'RUC') &&
+            numero.length === max
+                ? `${tipo}:${numero}`
+                : null;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, cliente?.id]);
 
-    const onConsultarDni = async (forcedNumero?: string) => {
-        const dni = soloDigitosDocumento(forcedNumero ?? data.documento, 8);
-        if (dni.length !== 8) {
+    const onConsultarDocumento = async (forcedNumero?: string) => {
+        if (!isLookupTipo || docMaxLen === undefined) {
+            return;
+        }
+        const digits = soloDigitosDocumento(
+            forcedNumero ?? data.documento,
+            docMaxLen,
+        );
+        if (digits.length !== docMaxLen) {
             toastManager.error({
-                title: t('clientes:form.consultar_invalid_dni'),
+                title:
+                    tipoDoc === 'RUC'
+                        ? t('clientes:form.consultar_invalid_ruc')
+                        : t('clientes:form.consultar_invalid_dni'),
             });
             return;
         }
-        const key = `DNI:${dni}`;
+        const key = `${tipoDoc}:${digits}`;
         lastConsultaKeyRef.current = key;
         setConsultandoDoc(true);
         try {
-            const res = await fetch(
-                `/clientes/consulta-dni?dni=${encodeURIComponent(dni)}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
+            const url =
+                tipoDoc === 'RUC'
+                    ? `/clientes/consulta-ruc?ruc=${encodeURIComponent(digits)}`
+                    : `/clientes/consulta-dni?dni=${encodeURIComponent(digits)}`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-            );
+                credentials: 'same-origin',
+            });
             const body = (await res.json()) as {
                 success?: boolean;
                 message?: string;
@@ -131,49 +145,81 @@ export function ClienteFormModal({
                     nombres?: string;
                     apellidos?: string;
                     dni?: string;
+                    razon_social?: string;
+                    ruc?: string;
                 };
             };
             if (!res.ok || !body.success || !body.data) {
                 toastManager.error({
                     title:
-                        body.message ?? t('clientes:form.consultar_error'),
+                        body.message ??
+                        (tipoDoc === 'RUC'
+                            ? t('clientes:form.consultar_ruc_error')
+                            : t('clientes:form.consultar_error')),
                 });
                 return;
             }
-            const completo =
-                body.data.nombre_completo?.trim() ||
-                [body.data.nombres, body.data.apellidos]
-                    .filter(Boolean)
-                    .join(' ')
-                    .trim();
-            setData((prev) => ({
-                ...prev,
-                documento_tipo: 'DNI',
-                documento: body.data?.dni ?? dni,
-                nombre: completo || prev.nombre,
-            }));
-            if (completo) {
-                toastManager.success({
-                    title: t('clientes:form.consultar_ok'),
-                });
+
+            if (tipoDoc === 'RUC') {
+                const razon = body.data.razon_social?.trim() ?? '';
+                setData((prev) => ({
+                    ...prev,
+                    documento_tipo: 'RUC',
+                    documento: body.data?.ruc ?? digits,
+                    nombre: razon || prev.nombre,
+                }));
+                if (razon) {
+                    toastManager.success({
+                        title: t('clientes:form.consultar_ruc_ok'),
+                    });
+                }
+            } else {
+                const completo =
+                    body.data.nombre_completo?.trim() ||
+                    [body.data.nombres, body.data.apellidos]
+                        .filter(Boolean)
+                        .join(' ')
+                        .trim();
+                setData((prev) => ({
+                    ...prev,
+                    documento_tipo: 'DNI',
+                    documento: body.data?.dni ?? digits,
+                    nombre: completo || prev.nombre,
+                }));
+                if (completo) {
+                    toastManager.success({
+                        title: t('clientes:form.consultar_ok'),
+                    });
+                }
             }
         } catch {
-            toastManager.error({ title: t('clientes:form.consultar_error') });
+            toastManager.error({
+                title:
+                    tipoDoc === 'RUC'
+                        ? t('clientes:form.consultar_ruc_error')
+                        : t('clientes:form.consultar_error'),
+            });
         } finally {
             setConsultandoDoc(false);
         }
     };
 
     useEffect(() => {
-        if (!open || !isDni || !docCompleto || consultandoDoc || processing) {
+        if (
+            !open ||
+            !isLookupTipo ||
+            !docCompleto ||
+            consultandoDoc ||
+            processing
+        ) {
             return;
         }
-        const digits = soloDigitosDocumento(data.documento, 8);
-        const key = `DNI:${digits}`;
+        const digits = soloDigitosDocumento(data.documento, docMaxLen);
+        const key = `${tipoDoc}:${digits}`;
         if (lastConsultaKeyRef.current === key) {
             return;
         }
-        void onConsultarDni(digits);
+        void onConsultarDocumento(digits);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         open,
@@ -185,14 +231,12 @@ export function ClienteFormModal({
     ]);
 
     const handleTipoChange = (value: string) => {
-        const next = value.trim().toUpperCase();
+        const next = value.trim().toUpperCase() || 'DNI';
+        const max = documentNumberLengthFor(next);
         setData((prev) => ({
             ...prev,
-            documento_tipo: next || 'DNI',
-            documento:
-                next === 'DNI'
-                    ? soloDigitosDocumento(prev.documento, 8)
-                    : prev.documento,
+            documento_tipo: next,
+            documento: soloDigitosDocumento(prev.documento, max),
         }));
         lastConsultaKeyRef.current = null;
     };
@@ -204,11 +248,21 @@ export function ClienteFormModal({
         if (data.nombre.trim().length < 2) {
             return false;
         }
-        if (isDni && data.documento !== '') {
-            return soloDigitosDocumento(data.documento).length === 8;
+        const doc = data.documento.trim();
+        if (doc === '') {
+            return true;
         }
-        return true;
-    }, [processing, consultandoDoc, data.nombre, data.documento, isDni]);
+        if (docMaxLen === undefined) {
+            return false;
+        }
+        return soloDigitosDocumento(doc).length === docMaxLen;
+    }, [
+        processing,
+        consultandoDoc,
+        data.nombre,
+        data.documento,
+        docMaxLen,
+    ]);
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -228,6 +282,11 @@ export function ClienteFormModal({
         }
         post('/clientes', opts);
     };
+
+    const consultAriaLabel =
+        tipoDoc === 'RUC'
+            ? t('clientes:form.consultar_ruc')
+            : t('clientes:form.consultar_dni');
 
     return (
         <FormModal
@@ -281,7 +340,7 @@ export function ClienteFormModal({
                         id="cliente-documento-tipo"
                         value={data.documento_tipo}
                         onValueChange={handleTipoChange}
-                        codes={STAFF_DOCUMENT_TYPE_CODES}
+                        codes={CLIENTE_DOCUMENT_TYPE_CODES}
                         invalid={Boolean(errors.documento_tipo)}
                         disabled={processing}
                     />
@@ -300,8 +359,12 @@ export function ClienteFormModal({
                         consulting={consultandoDoc}
                         disabled={processing}
                         invalid={Boolean(errors.documento)}
-                        onConsult={() => void onConsultarDni()}
-                        consultAriaLabel={t('clientes:form.consultar_dni')}
+                        onConsult={
+                            isLookupTipo
+                                ? () => void onConsultarDocumento()
+                                : undefined
+                        }
+                        consultAriaLabel={consultAriaLabel}
                     />
                 </FormField>
 

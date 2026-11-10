@@ -10,6 +10,13 @@ export {
     soloDigitosDocumento,
     type DocumentNumberLookupFieldProps,
 } from './document-number-lookup-field';
+export {
+    CLIENTE_DOCUMENT_TYPE_CODES,
+    DOCUMENT_NUMBER_LENGTH,
+    documentNumberLengthFor,
+    isClienteDocumentTypeCode,
+    type ClienteDocumentTypeCode,
+} from '@/lib/document-type-options';
 export { FormField, type FormFieldProps } from './form-field';
 export {
     FormModal,
