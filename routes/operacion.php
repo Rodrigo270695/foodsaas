@@ -251,10 +251,11 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:clientes.view')
                     ->get('/', [ClienteController::class, 'index'])
                     ->name('index');
-                Route::middleware('permission:clientes.create|clientes.update')
+                // Estáticas antes de {cliente}; whereUuid evita capturar "consulta-dni".
+                Route::middleware(['permission:clientes.create|clientes.update'])
                     ->get('consulta-dni', [ClienteController::class, 'consultaDni'])
                     ->name('consulta-dni');
-                Route::middleware('permission:clientes.create|clientes.update')
+                Route::middleware(['permission:clientes.create|clientes.update'])
                     ->get('consulta-ruc', [ClienteController::class, 'consultaRuc'])
                     ->name('consulta-ruc');
                 Route::middleware('permission:clientes.create')
@@ -262,9 +263,11 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->name('store');
                 Route::middleware('permission:clientes.update')
                     ->match(['put', 'patch'], '{cliente}', [ClienteController::class, 'update'])
+                    ->whereUuid('cliente')
                     ->name('update');
                 Route::middleware('permission:clientes.delete')
                     ->delete('{cliente}', [ClienteController::class, 'destroy'])
+                    ->whereUuid('cliente')
                     ->name('destroy');
             });
 
