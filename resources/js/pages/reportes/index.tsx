@@ -19,6 +19,7 @@ import {
 import { DateRangeFilter } from '@/components/date-range-filter';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { todayIso } from '../pedidos/types';
 
 type Stats = {
     monto_total: number;
@@ -54,18 +55,29 @@ export default function ReportesIndex({
     por_comprobante,
     top_productos,
 }: Props) {
-    const { t } = useTranslation(['reportes', 'common', 'nav']);
+    const { t } = useTranslation(['reportes', 'common']);
 
     const applyRange = useCallback((desde: string, hasta: string) => {
         router.get(
             '/reportes',
             { desde, hasta },
-            { preserveState: true, preserveScroll: true, replace: true },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                only: [
+                    'filters',
+                    'stats',
+                    'medios',
+                    'por_comprobante',
+                    'top_productos',
+                ],
+            },
         );
     }, []);
 
     const clearRange = useCallback(() => {
-        const day = new Date().toISOString().slice(0, 10);
+        const day = todayIso();
         applyRange(day, day);
     }, [applyRange]);
 
@@ -75,7 +87,7 @@ export default function ReportesIndex({
                 id: 'medio',
                 header: t('reportes:columns.medio'),
                 cell: (row) => (
-                    <span className="font-medium capitalize">{row.medio}</span>
+                    <span className="font-semibold capitalize">{row.medio}</span>
                 ),
             },
             {
@@ -100,7 +112,7 @@ export default function ReportesIndex({
                 id: 'nombre',
                 header: t('reportes:columns.producto'),
                 cell: (row) => (
-                    <span className="font-medium">{row.nombre}</span>
+                    <span className="font-semibold">{row.nombre}</span>
                 ),
             },
             {
@@ -122,7 +134,7 @@ export default function ReportesIndex({
     return (
         <>
             <Head title={t('reportes:title')} />
-            <div className="flex flex-col gap-4 p-4 md:p-6">
+            <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('reportes:title')}
                     description={t('reportes:description')}
@@ -137,11 +149,13 @@ export default function ReportesIndex({
                             icon: Receipt,
                             label: t('reportes:stats.ventas'),
                             value: String(stats.ventas_count),
+                            variant: 'info',
                         },
                         {
                             icon: Ticket,
                             label: t('reportes:stats.ticket_promedio'),
                             value: money(stats.ticket_promedio),
+                            variant: 'success',
                         },
                         {
                             icon: XCircle,
@@ -153,23 +167,28 @@ export default function ReportesIndex({
                     action={
                         <Can permission="reportes.export">
                             <Button
-                                variant="outline"
-                                size="sm"
+                                variant="export"
+                                size="default"
                                 className="cursor-pointer gap-2"
                                 asChild
                             >
                                 <a
                                     href={`/reportes/export?desde=${filters.desde}&hasta=${filters.hasta}`}
                                 >
-                                    <Download className="size-4" />
-                                    {t('reportes:actions.export')}
+                                    <Download
+                                        className="size-4"
+                                        strokeWidth={2.5}
+                                    />
+                                    <span className="hidden sm:inline">
+                                        {t('reportes:actions.export')}
+                                    </span>
                                 </a>
                             </Button>
                         </Can>
                     }
                 />
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:flex-wrap sm:items-center sm:p-4">
                     <DateRangeFilter
                         desde={filters.desde}
                         hasta={filters.hasta}
@@ -181,21 +200,20 @@ export default function ReportesIndex({
                 <div className="grid gap-4 lg:grid-cols-2">
                     <section className="flex flex-col gap-3">
                         <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-                            <BarChart3 className="size-4 text-[#660033]" />
+                            <BarChart3 className="size-4 text-brand-600" />
                             {t('reportes:sections.medios')}
                         </h2>
-                        {medios.length === 0 ? (
-                            <EmptyState
-                                title={t('reportes:empty.medios')}
-                                description={t('reportes:empty.hint')}
-                            />
-                        ) : (
-                            <DataTable
-                                columns={medioColumns}
-                                data={medios}
-                                rowKey={(row) => row.medio}
-                            />
-                        )}
+                        <DataTable
+                            columns={medioColumns}
+                            data={medios}
+                            rowKey={(row) => row.medio}
+                            emptyState={
+                                <EmptyState
+                                    title={t('reportes:empty.medios')}
+                                    description={t('reportes:empty.hint')}
+                                />
+                            }
+                        />
                     </section>
 
                     <section className="flex flex-col gap-3">
@@ -208,13 +226,13 @@ export default function ReportesIndex({
                                 description={t('reportes:empty.hint')}
                             />
                         ) : (
-                            <div className="divide-y rounded-lg border">
+                            <div className="divide-y overflow-hidden rounded-xl border">
                                 {por_comprobante.map((row) => (
                                     <div
                                         key={row.tipo}
                                         className="flex items-center justify-between gap-3 px-4 py-3 text-sm"
                                     >
-                                        <span className="capitalize font-medium">
+                                        <span className="font-semibold capitalize">
                                             {row.tipo}
                                         </span>
                                         <span className="text-muted-foreground">
@@ -231,18 +249,17 @@ export default function ReportesIndex({
                     <h2 className="text-sm font-semibold tracking-tight">
                         {t('reportes:sections.top_productos')}
                     </h2>
-                    {top_productos.length === 0 ? (
-                        <EmptyState
-                            title={t('reportes:empty.productos')}
-                            description={t('reportes:empty.hint')}
-                        />
-                    ) : (
-                        <DataTable
-                            columns={productoColumns}
-                            data={top_productos}
-                            rowKey={(row) => row.nombre}
-                        />
-                    )}
+                    <DataTable
+                        columns={productoColumns}
+                        data={top_productos}
+                        rowKey={(row) => row.nombre}
+                        emptyState={
+                            <EmptyState
+                                title={t('reportes:empty.productos')}
+                                description={t('reportes:empty.hint')}
+                            />
+                        }
+                    />
                 </section>
             </div>
         </>

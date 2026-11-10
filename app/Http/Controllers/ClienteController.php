@@ -18,11 +18,17 @@ class ClienteController extends Controller
     use ResolvesActiveSede;
     use ResolvesTenantId;
 
+    private const PER_PAGE_OPTIONS = [10, 15, 20, 25, 50];
+
     public function index(Request $request): Response
     {
         $this->tenantIdOrAbort();
         $sedeId = ActiveSedeContext::id() ?? '';
         $search = trim((string) $request->string('search', ''));
+        $perPage = (int) $request->integer('per_page', 15);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
+            $perPage = 15;
+        }
 
         $query = Cliente::query()->orderBy('nombre');
 
@@ -35,8 +41,11 @@ class ClienteController extends Controller
             });
         }
 
+        $total = Cliente::query()->count();
+        $conDocumento = Cliente::query()->whereNotNull('documento')->where('documento', '!=', '')->count();
+
         $clientes = $query
-            ->paginate((int) $request->integer('per_page', 15))
+            ->paginate($perPage)
             ->withQueryString()
             ->through(function (Cliente $cliente) use ($sedeId): array {
                 $ventasQuery = Venta::query()
@@ -70,6 +79,15 @@ class ClienteController extends Controller
             'clientes' => $clientes,
             'filters' => [
                 'search' => $search,
+                'per_page' => $perPage,
+                'sort' => null,
+                'direction' => null,
+            ],
+            'stats' => [
+                'total' => $total,
+                'con_documento' => $conDocumento,
+                'filtros' => $search !== '' ? 1 : 0,
+                'coincidencias' => $clientes->total(),
             ],
         ]);
     }

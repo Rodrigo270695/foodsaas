@@ -2,9 +2,19 @@
     "title": "Customers",
     "description": "Restaurant customer directory.",
     "search_placeholder": "Search by name, document or phone…",
+    "toast": {
+        "load_error": "We could not load customers."
+    },
     "actions": {
         "new": "New customer",
+        "new_short": "New",
         "create_first": "Add first customer"
+    },
+    "stats": {
+        "total": "Total",
+        "con_documento": "With document",
+        "filtros": "Filters",
+        "coincidencias": "Matches"
     },
     "columns": {
         "nombre": "Customer",
@@ -20,6 +30,7 @@
         "create": "New customer",
         "edit": "Edit customer",
         "description": "Contact and document details.",
+        "section": "Customer details",
         "nombre": "Name",
         "documento": "Document",
         "telefono": "Phone",

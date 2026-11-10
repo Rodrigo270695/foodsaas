@@ -1,14 +1,21 @@
 {
     "title": "Delivery",
     "description": "Active and recent delivery orders.",
+    "search_placeholder": "Search by number or notes…",
+    "toast": {
+        "load_error": "We could not load delivery orders."
+    },
     "actions": {
         "new": "New delivery",
+        "new_short": "New",
         "create_first": "Open first delivery",
         "open": "Open"
     },
     "stats": {
         "activos": "Active",
-        "hoy": "Today"
+        "hoy": "Today",
+        "filtros": "Filters",
+        "coincidencias": "Matches"
     },
     "filters": {
         "label": "Status",
@@ -30,10 +37,12 @@
     "form": {
         "title": "New delivery order",
         "description": "Opens a delivery-channel order ready to build.",
+        "section": "Delivery details",
         "cliente": "Customer / address",
         "cliente_placeholder": "Name or delivery reference",
         "comensales": "Guests",
         "notas": "Notes",
+        "notas_hint": "Optional: phone, landmark or instructions.",
         "notas_placeholder": "Address, landmark, phone…",
         "submit": "Open order"
     }

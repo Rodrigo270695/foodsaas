@@ -1,14 +1,21 @@
 {
     "title": "Delivery",
     "description": "Pedidos a domicilio activos y recientes.",
+    "search_placeholder": "Buscar por número o notas…",
+    "toast": {
+        "load_error": "No pudimos cargar los pedidos delivery."
+    },
     "actions": {
         "new": "Nuevo delivery",
+        "new_short": "Nuevo",
         "create_first": "Abrir primer delivery",
         "open": "Abrir"
     },
     "stats": {
         "activos": "Activos",
-        "hoy": "Hoy"
+        "hoy": "Hoy",
+        "filtros": "Filtros",
+        "coincidencias": "Coincidencias"
     },
     "filters": {
         "label": "Estado",
@@ -30,10 +37,12 @@
     "form": {
         "title": "Nuevo pedido delivery",
         "description": "Se abre un pedido canal delivery listo para armar.",
+        "section": "Datos del delivery",
         "cliente": "Cliente / dirección",
         "cliente_placeholder": "Nombre o referencia de entrega",
         "comensales": "Personas",
         "notas": "Notas",
+        "notas_hint": "Opcional: teléfono, referencia o indicaciones.",
         "notas_placeholder": "Dirección, referencia, teléfono…",
         "submit": "Abrir pedido"
     }

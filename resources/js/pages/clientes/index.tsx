@@ -1,33 +1,37 @@
-import { Head, useForm } from '@inertiajs/react';
-import { Loader2, Pencil, Plus, Trash2, Users } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { Head } from '@inertiajs/react';
+import {
+    FileText,
+    Filter,
+    Pencil,
+    Plus,
+    ScreenShare,
+    Trash2,
+    Users,
+} from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Can } from '@/components/can';
 import {
     DataPagination,
     DataTable,
+    DataToolbar,
     EmptyState,
     PageHeader,
-    SearchField,
     type DataTableColumn,
 } from '@/components/data-page';
-import { FormField, FormModal, FormSection } from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
 import type { Paginated } from '@/types';
+import {
+    ClienteFormModal,
+    type ClienteFormRow,
+} from './components/cliente-form-modal';
 
-type ClienteRow = {
-    id: string;
-    nombre: string;
-    documento: string | null;
-    telefono: string | null;
-    email: string | null;
-    notas: string | null;
+type ClienteRow = ClienteFormRow & {
     total_compras: number;
     ultima_venta: string | null;
 };
@@ -36,28 +40,23 @@ type Props = {
     clientes: Paginated<ClienteRow>;
     filters: {
         search: string;
-        page?: number;
-        per_page?: number;
-        sort?: string | null;
-        direction?: 'asc' | 'desc' | null;
+        per_page: number;
+        sort: string | null;
+        direction: 'asc' | 'desc' | null;
+    };
+    stats: {
+        total: number;
+        con_documento: number;
+        filtros: number;
+        coincidencias: number;
     };
 };
 
-type FormState = {
-    nombre: string;
-    documento: string;
-    telefono: string;
-    email: string;
-    notas: string;
-};
-
-const emptyForm = (): FormState => ({
-    nombre: '',
-    documento: '',
-    telefono: '',
-    email: '',
-    notas: '',
-});
+type ModalState =
+    | { type: 'idle' }
+    | { type: 'create' }
+    | { type: 'edit'; cliente: ClienteRow }
+    | { type: 'delete'; cliente: ClienteRow };
 
 function money(value: number): string {
     return new Intl.NumberFormat('es-PE', {
@@ -67,70 +66,23 @@ function money(value: number): string {
     }).format(value);
 }
 
-export default function ClientesIndex({ clientes, filters }: Props) {
+export default function ClientesIndex({ clientes, filters, stats }: Props) {
     const { t } = useTranslation(['clientes', 'common']);
     const canCreate = usePermission('clientes.create');
     const canUpdate = usePermission('clientes.update');
     const canDelete = usePermission('clientes.delete');
+    const [modal, setModal] = useState<ModalState>({ type: 'idle' });
 
     const { search, setSearch, isLoading, setPerPage } = useDataTablePage({
         routeUrl: '/clientes',
-        initialFilters: {
-            search: filters.search,
-            page: clientes.current_page,
-            per_page: clientes.per_page,
-            sort: filters.sort ?? null,
-            direction: filters.direction ?? null,
-        },
-        only: ['clientes', 'filters'],
+        initialFilters: filters,
+        only: ['clientes', 'filters', 'stats'],
+        errorMessage: t('clientes:toast.load_error'),
         storageKey: 'foodsaas.clientes.prefs',
         defaults: { per_page: 15 },
     });
 
-    const [modal, setModal] = useState<
-        | { type: 'idle' }
-        | { type: 'create' }
-        | { type: 'edit'; cliente: ClienteRow }
-        | { type: 'delete'; cliente: ClienteRow }
-    >({ type: 'idle' });
-
-    const form = useForm<FormState>(emptyForm());
-
-    const openCreate = () => {
-        form.reset();
-        form.clearErrors();
-        form.setData(emptyForm());
-        setModal({ type: 'create' });
-    };
-
-    const openEdit = (cliente: ClienteRow) => {
-        form.clearErrors();
-        form.setData({
-            nombre: cliente.nombre,
-            documento: cliente.documento ?? '',
-            telefono: cliente.telefono ?? '',
-            email: cliente.email ?? '',
-            notas: cliente.notas ?? '',
-        });
-        setModal({ type: 'edit', cliente });
-    };
-
-    const onSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        if (modal.type === 'create') {
-            form.post('/clientes', {
-                preserveScroll: true,
-                onSuccess: () => setModal({ type: 'idle' }),
-            });
-            return;
-        }
-        if (modal.type === 'edit') {
-            form.put(`/clientes/${modal.cliente.id}`, {
-                preserveScroll: true,
-                onSuccess: () => setModal({ type: 'idle' }),
-            });
-        }
-    };
+    const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
 
     const columns = useMemo<DataTableColumn<ClienteRow>[]>(
         () => [
@@ -139,12 +91,12 @@ export default function ClientesIndex({ clientes, filters }: Props) {
                 header: t('clientes:columns.nombre'),
                 cell: (row) => (
                     <div className="min-w-0">
-                        <p className="truncate font-medium">{row.nombre}</p>
-                        {row.documento ? (
-                            <p className="text-muted-foreground truncate text-xs">
-                                {row.documento}
-                            </p>
-                        ) : null}
+                        <p className="truncate font-semibold uppercase">
+                            {row.nombre}
+                        </p>
+                        <p className="text-muted-foreground truncate text-xs">
+                            {row.documento || '—'}
+                        </p>
                     </div>
                 ),
             },
@@ -185,7 +137,9 @@ export default function ClientesIndex({ clientes, filters }: Props) {
                                 size="icon"
                                 variant="ghost"
                                 className="cursor-pointer"
-                                onClick={() => openEdit(row)}
+                                onClick={() =>
+                                    setModal({ type: 'edit', cliente: row })
+                                }
                             >
                                 <Pencil className="size-4" />
                             </Button>
@@ -211,178 +165,119 @@ export default function ClientesIndex({ clientes, filters }: Props) {
         [t, canUpdate, canDelete],
     );
 
-    const modalOpen = modal.type === 'create' || modal.type === 'edit';
-    const processing = form.processing;
-
     return (
         <>
             <Head title={t('clientes:title')} />
-            <div className="flex flex-col gap-4 p-4 md:p-6">
+            <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('clientes:title')}
                     description={t('clientes:description')}
+                    stats={[
+                        {
+                            icon: Users,
+                            label: t('clientes:stats.total'),
+                            value: stats.total,
+                            variant: 'info',
+                        },
+                        {
+                            icon: FileText,
+                            label: t('clientes:stats.con_documento'),
+                            value: stats.con_documento,
+                            variant: 'success',
+                        },
+                        {
+                            icon: Filter,
+                            label: t('clientes:stats.filtros'),
+                            value: stats.filtros,
+                            variant: 'warning',
+                        },
+                        {
+                            icon: ScreenShare,
+                            label: t('clientes:stats.coincidencias'),
+                            value: stats.coincidencias,
+                            variant: 'primary',
+                        },
+                    ]}
                     action={
-                        canCreate ? (
+                        <Can permission="clientes.create">
                             <Button
-                                size="sm"
-                                className="cursor-pointer gap-2 bg-[#660033] hover:bg-[#4d0026]"
-                                onClick={openCreate}
+                                type="button"
+                                className="cursor-pointer gap-2"
+                                onClick={() => setModal({ type: 'create' })}
                             >
-                                <Plus className="size-4" />
-                                {t('clientes:actions.new')}
+                                <Plus className="size-4" strokeWidth={2.5} />
+                                <span className="hidden sm:inline">
+                                    {t('clientes:actions.new')}
+                                </span>
+                                <span className="sm:hidden">
+                                    {t('clientes:actions.new_short')}
+                                </span>
                             </Button>
-                        ) : null
+                        </Can>
                     }
                 />
 
-                <SearchField
-                    value={search}
-                    onValueChange={setSearch}
-                    placeholder={t('clientes:search_placeholder')}
-                    isSearching={isLoading}
-                    className="w-full sm:w-72"
-                />
-
-                {clientes.data.length === 0 ? (
-                    <EmptyState
-                        icon={Users}
-                        title={t('clientes:empty.title')}
-                        description={t('clientes:empty.description')}
-                        action={
-                            canCreate ? (
-                                <Button
-                                    className="cursor-pointer gap-2"
-                                    onClick={openCreate}
-                                >
-                                    <Plus className="size-4" />
-                                    {t('clientes:actions.create_first')}
-                                </Button>
-                            ) : undefined
-                        }
-                    />
-                ) : (
-                    <>
-                        <DataTable
-                            columns={columns}
-                            data={clientes.data}
-                            rowKey={(row) => row.id}
+                <DataTable
+                    columns={columns}
+                    data={clientes.data}
+                    rowKey={(row) => row.id}
+                    isLoading={isLoading}
+                    toolbar={
+                        <DataToolbar
+                            search={search}
+                            onSearchChange={setSearch}
+                            isSearching={isLoading}
+                            placeholder={t('clientes:search_placeholder')}
                         />
+                    }
+                    footer={
                         <DataPagination
                             meta={clientes}
-                            preservedQuery={{ search: filters.search }}
                             onPerPageChange={setPerPage}
+                            preservedQuery={{
+                                search: filters.search || undefined,
+                                per_page: filters.per_page,
+                            }}
                         />
-                    </>
-                )}
+                    }
+                    emptyState={
+                        <EmptyState
+                            icon={Users}
+                            title={t('clientes:empty.title')}
+                            description={t('clientes:empty.description')}
+                            action={
+                                canCreate ? (
+                                    <Button
+                                        className="cursor-pointer gap-2"
+                                        onClick={() =>
+                                            setModal({ type: 'create' })
+                                        }
+                                    >
+                                        <Plus className="size-4" />
+                                        {t('clientes:actions.create_first')}
+                                    </Button>
+                                ) : undefined
+                            }
+                        />
+                    }
+                />
             </div>
 
-            <FormModal
-                open={modalOpen}
+            <ClienteFormModal
+                open={modal.type === 'create' || modal.type === 'edit'}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setModal({ type: 'idle' });
+                        closeModal();
                     }
                 }}
-                title={
-                    modal.type === 'edit'
-                        ? t('clientes:form.edit')
-                        : t('clientes:form.create')
-                }
-                description={t('clientes:form.description')}
-                onSubmit={onSubmit}
-                footer={
-                    <>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="cursor-pointer"
-                            disabled={processing}
-                            onClick={() => setModal({ type: 'idle' })}
-                        >
-                            {t('common:actions.cancel')}
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={processing || !form.data.nombre.trim()}
-                            className="cursor-pointer gap-2 bg-[#660033] hover:bg-[#4d0026]"
-                        >
-                            {processing ? (
-                                <Loader2 className="size-4 animate-spin" />
-                            ) : null}
-                            {modal.type === 'edit'
-                                ? t('clientes:form.submit_edit')
-                                : t('clientes:form.submit_create')}
-                        </Button>
-                    </>
-                }
-            >
-                <FormSection>
-                    <FormField
-                        label={t('clientes:form.nombre')}
-                        error={form.errors.nombre}
-                        required
-                    >
-                        <Input
-                            value={form.data.nombre}
-                            onChange={(e) =>
-                                form.setData('nombre', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('clientes:form.documento')}
-                        error={form.errors.documento}
-                    >
-                        <Input
-                            value={form.data.documento}
-                            onChange={(e) =>
-                                form.setData('documento', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('clientes:form.telefono')}
-                        error={form.errors.telefono}
-                    >
-                        <Input
-                            value={form.data.telefono}
-                            onChange={(e) =>
-                                form.setData('telefono', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('clientes:form.email')}
-                        error={form.errors.email}
-                    >
-                        <Input
-                            type="email"
-                            value={form.data.email}
-                            onChange={(e) =>
-                                form.setData('email', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('clientes:form.notas')}
-                        error={form.errors.notas}
-                    >
-                        <Textarea
-                            value={form.data.notas}
-                            onChange={(e) =>
-                                form.setData('notas', e.target.value)
-                            }
-                            rows={3}
-                        />
-                    </FormField>
-                </FormSection>
-            </FormModal>
+                cliente={modal.type === 'edit' ? modal.cliente : null}
+            />
 
             <ConfirmDeleteDialog
                 open={modal.type === 'delete'}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setModal({ type: 'idle' });
+                        closeModal();
                     }
                 }}
                 title={t('clientes:delete.title')}
@@ -398,7 +293,7 @@ export default function ClientesIndex({ clientes, filters }: Props) {
                         ? `/clientes/${modal.cliente.id}`
                         : null
                 }
-                onSuccess={() => setModal({ type: 'idle' })}
+                onSuccess={closeModal}
             />
         </>
     );

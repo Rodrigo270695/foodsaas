@@ -1,10 +1,21 @@
 {
     "title": "Reservas",
-    "description": "Reservas de mesa por día.",
+    "description": "Reservas de mesa por rango de fechas.",
     "sin_mesa": "Sin mesa",
+    "search_placeholder": "Buscar por cliente, teléfono o notas…",
+    "toast": {
+        "load_error": "No pudimos cargar las reservas."
+    },
     "actions": {
         "new": "Nueva reserva",
+        "new_short": "Nueva",
         "create_first": "Crear primera reserva"
+    },
+    "stats": {
+        "hoy": "Hoy",
+        "pendientes": "Pendientes",
+        "filtros": "Filtros",
+        "coincidencias": "Coincidencias"
     },
     "filters": {
         "label": "Estado",
@@ -24,13 +35,14 @@
         "estado": "Estado"
     },
     "empty": {
-        "title": "Sin reservas este día",
-        "description": "Crea una reserva o cambia la fecha."
+        "title": "Sin reservas en el rango",
+        "description": "Crea una reserva o cambia el rango de fechas."
     },
     "form": {
         "create": "Nueva reserva",
         "edit": "Editar reserva",
         "description": "Asigna mesa, horario y número de personas.",
+        "section": "Datos de la reserva",
         "cliente_nombre": "Cliente",
         "cliente_telefono": "Teléfono",
         "personas": "Personas",

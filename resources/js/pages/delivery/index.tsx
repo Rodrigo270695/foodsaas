@@ -1,31 +1,37 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     Bike,
     CheckCircle2,
     ClipboardList,
-    Loader2,
+    Filter,
     Plus,
+    ScreenShare,
 } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Can } from '@/components/can';
 import {
+    DataPagination,
     DataTable,
+    DataToolbar,
     EmptyState,
     PageHeader,
     type DataTableColumn,
 } from '@/components/data-page';
-import { FormField, FormModal, FormSection } from '@/components/forms';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     FilterSelect,
     type FilterSelectOption,
 } from '@/components/ui/filter-select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
+import type { Paginated } from '@/types';
+import { todayIso } from '../pedidos/types';
+import { DeliveryFormModal } from './components/delivery-form-modal';
 
 type PedidoRow = {
     id: string;
@@ -38,13 +44,25 @@ type PedidoRow = {
     lineas_cola_count: number;
     opened_by: string | null;
     created_at: string | null;
-    updated_at: string | null;
 };
 
 type Props = {
-    pedidos: PedidoRow[];
-    filters: { estado: string };
-    stats: { activos: number; hoy: number };
+    pedidos: Paginated<PedidoRow>;
+    filters: {
+        search: string;
+        estado: string;
+        desde: string;
+        hasta: string;
+        per_page: number;
+        sort: string | null;
+        direction: 'asc' | 'desc' | null;
+    };
+    stats: {
+        activos: number;
+        hoy: number;
+        filtros: number;
+        coincidencias: number;
+    };
 };
 
 function money(value: string | number): string {
@@ -58,18 +76,34 @@ function money(value: string | number): string {
 export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
     const { t } = useTranslation(['delivery', 'common']);
     const canCreate = usePermission('delivery.create');
-    const [open, setOpen] = useState(false);
+    const [openNew, setOpenNew] = useState(false);
 
-    const form = useForm({
-        cliente_nombre: '',
-        comensales: 1,
-        notas: '',
-    });
+    const { search, setSearch, isLoading, setPerPage, applyFilter } =
+        useDataTablePage<{
+            estado: string;
+            desde: string;
+            hasta: string;
+        }>({
+            routeUrl: '/delivery',
+            initialFilters: filters,
+            only: ['pedidos', 'filters', 'stats'],
+            errorMessage: t('delivery:toast.load_error'),
+            storageKey: 'foodsaas.delivery.prefs',
+            defaults: { per_page: 15 },
+        });
 
     const estadoOptions = useMemo<FilterSelectOption[]>(
         () => [
-            { value: 'activos', label: t('delivery:filters.activos') },
-            { value: 'historico', label: t('delivery:filters.historico') },
+            {
+                value: 'activos',
+                label: t('delivery:filters.activos'),
+                tone: 'warning',
+            },
+            {
+                value: 'historico',
+                label: t('delivery:filters.historico'),
+                tone: 'info',
+            },
             { value: 'todos', label: t('delivery:filters.todos') },
         ],
         [t],
@@ -84,7 +118,7 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                     <div className="min-w-0">
                         <Link
                             href={`/pedidos/${row.id}`}
-                            className="font-semibold text-[#660033] hover:underline"
+                            className="font-semibold text-brand-600 hover:underline"
                         >
                             #{row.numero}
                         </Link>
@@ -95,7 +129,7 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                 ),
             },
             {
-                id: 'cliente',
+                id: 'detalle',
                 header: t('delivery:columns.detalle'),
                 cell: (row) => (
                     <div className="max-w-xs truncate text-sm">
@@ -104,7 +138,7 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                 ),
             },
             {
-                id: 'lineas',
+                id: 'cocina',
                 header: t('delivery:columns.cocina'),
                 cell: (row) => (
                     <div className="flex flex-wrap gap-1">
@@ -132,7 +166,7 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                 className: 'text-right font-medium',
             },
             {
-                id: 'cuando',
+                id: 'hora',
                 header: t('delivery:columns.hora'),
                 cell: (row) =>
                     row.created_at ? formatPeruDateTime(row.created_at) : '—',
@@ -158,18 +192,10 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
         [t],
     );
 
-    const onSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        form.post('/delivery', {
-            preserveScroll: true,
-            onSuccess: () => setOpen(false),
-        });
-    };
-
     return (
         <>
             <Head title={t('delivery:title')} />
-            <div className="flex flex-col gap-4 p-4 md:p-6">
+            <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('delivery:title')}
                     description={t('delivery:description')}
@@ -179,150 +205,129 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                             label: t('delivery:stats.activos'),
                             value: stats.activos,
                             variant: 'primary',
+                            onClick: () =>
+                                applyFilter({
+                                    estado: 'activos',
+                                    desde: todayIso(),
+                                    hasta: todayIso(),
+                                }),
                         },
                         {
                             icon: CheckCircle2,
                             label: t('delivery:stats.hoy'),
                             value: stats.hoy,
+                            variant: 'success',
+                            onClick: () => {
+                                const day = todayIso();
+                                applyFilter({
+                                    desde: day,
+                                    hasta: day,
+                                });
+                            },
+                        },
+                        {
+                            icon: Filter,
+                            label: t('delivery:stats.filtros'),
+                            value: stats.filtros,
+                            variant: 'warning',
+                        },
+                        {
+                            icon: ScreenShare,
+                            label: t('delivery:stats.coincidencias'),
+                            value: stats.coincidencias,
+                            variant: 'info',
                         },
                     ]}
                     action={
-                        canCreate ? (
+                        <Can permission="delivery.create">
                             <Button
-                                size="sm"
-                                className="cursor-pointer gap-2 bg-[#660033] hover:bg-[#4d0026]"
-                                onClick={() => {
-                                    form.reset();
-                                    form.clearErrors();
-                                    setOpen(true);
-                                }}
+                                type="button"
+                                className="cursor-pointer gap-2"
+                                onClick={() => setOpenNew(true)}
                             >
-                                <Plus className="size-4" />
-                                {t('delivery:actions.new')}
+                                <Plus className="size-4" strokeWidth={2.5} />
+                                <span className="hidden sm:inline">
+                                    {t('delivery:actions.new')}
+                                </span>
+                                <span className="sm:hidden">
+                                    {t('delivery:actions.new_short')}
+                                </span>
                             </Button>
-                        ) : null
+                        </Can>
                     }
                 />
 
-                <FilterSelect
-                    ariaLabel={t('delivery:filters.label')}
-                    value={filters.estado}
-                    onChange={(estado) =>
-                        router.get(
-                            '/delivery',
-                            { estado },
-                            {
-                                preserveState: true,
-                                preserveScroll: true,
-                                replace: true,
-                                only: ['pedidos', 'filters', 'stats'],
-                            },
-                        )
+                <DataTable
+                    columns={columns}
+                    data={pedidos.data}
+                    rowKey={(row) => row.id}
+                    isLoading={isLoading}
+                    toolbar={
+                        <DataToolbar
+                            search={search}
+                            onSearchChange={setSearch}
+                            isSearching={isLoading}
+                            placeholder={t('delivery:search_placeholder')}
+                        >
+                            <FilterSelect
+                                ariaLabel={t('delivery:filters.label')}
+                                value={filters.estado}
+                                onChange={(estado) => applyFilter({ estado })}
+                                options={estadoOptions}
+                                disabled={isLoading}
+                            />
+                            <DateRangeFilter
+                                desde={filters.desde}
+                                hasta={filters.hasta}
+                                disabled={isLoading}
+                                onApply={(desde, hasta) =>
+                                    applyFilter({ desde, hasta })
+                                }
+                                onClear={() => {
+                                    const day = todayIso();
+                                    applyFilter({
+                                        desde: day,
+                                        hasta: day,
+                                    });
+                                }}
+                            />
+                        </DataToolbar>
                     }
-                    options={estadoOptions}
+                    footer={
+                        <DataPagination
+                            meta={pedidos}
+                            onPerPageChange={setPerPage}
+                            preservedQuery={{
+                                search: filters.search || undefined,
+                                estado: filters.estado,
+                                desde: filters.desde,
+                                hasta: filters.hasta,
+                                per_page: filters.per_page,
+                            }}
+                        />
+                    }
+                    emptyState={
+                        <EmptyState
+                            icon={ClipboardList}
+                            title={t('delivery:empty.title')}
+                            description={t('delivery:empty.description')}
+                            action={
+                                canCreate ? (
+                                    <Button
+                                        className="cursor-pointer gap-2"
+                                        onClick={() => setOpenNew(true)}
+                                    >
+                                        <Plus className="size-4" />
+                                        {t('delivery:actions.create_first')}
+                                    </Button>
+                                ) : undefined
+                            }
+                        />
+                    }
                 />
-
-                {pedidos.length === 0 ? (
-                    <EmptyState
-                        icon={ClipboardList}
-                        title={t('delivery:empty.title')}
-                        description={t('delivery:empty.description')}
-                        action={
-                            canCreate ? (
-                                <Button
-                                    className="cursor-pointer gap-2"
-                                    onClick={() => setOpen(true)}
-                                >
-                                    <Plus className="size-4" />
-                                    {t('delivery:actions.create_first')}
-                                </Button>
-                            ) : undefined
-                        }
-                    />
-                ) : (
-                    <DataTable
-                        columns={columns}
-                        data={pedidos}
-                        rowKey={(row) => row.id}
-                    />
-                )}
             </div>
 
-            <FormModal
-                open={open}
-                onOpenChange={setOpen}
-                title={t('delivery:form.title')}
-                description={t('delivery:form.description')}
-                onSubmit={onSubmit}
-                footer={
-                    <>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="cursor-pointer"
-                            disabled={form.processing}
-                            onClick={() => setOpen(false)}
-                        >
-                            {t('common:actions.cancel')}
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={form.processing}
-                            className="cursor-pointer gap-2 bg-[#660033] hover:bg-[#4d0026]"
-                        >
-                            {form.processing ? (
-                                <Loader2 className="size-4 animate-spin" />
-                            ) : null}
-                            {t('delivery:form.submit')}
-                        </Button>
-                    </>
-                }
-            >
-                <FormSection>
-                    <FormField
-                        label={t('delivery:form.cliente')}
-                        error={form.errors.cliente_nombre}
-                    >
-                        <Input
-                            value={form.data.cliente_nombre}
-                            onChange={(e) =>
-                                form.setData('cliente_nombre', e.target.value)
-                            }
-                            placeholder={t('delivery:form.cliente_placeholder')}
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('delivery:form.comensales')}
-                        error={form.errors.comensales}
-                    >
-                        <Input
-                            type="number"
-                            min={1}
-                            max={99}
-                            value={form.data.comensales}
-                            onChange={(e) =>
-                                form.setData(
-                                    'comensales',
-                                    Number(e.target.value) || 1,
-                                )
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('delivery:form.notas')}
-                        error={form.errors.notas}
-                    >
-                        <Textarea
-                            value={form.data.notas}
-                            onChange={(e) =>
-                                form.setData('notas', e.target.value)
-                            }
-                            rows={3}
-                            placeholder={t('delivery:form.notas_placeholder')}
-                        />
-                    </FormField>
-                </FormSection>
-            </FormModal>
+            <DeliveryFormModal open={openNew} onOpenChange={setOpenNew} />
         </>
     );
 }

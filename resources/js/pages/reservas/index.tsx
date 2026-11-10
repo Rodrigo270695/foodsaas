@@ -1,20 +1,24 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     CalendarDays,
-    Loader2,
+    Filter,
     Pencil,
     Plus,
+    ScreenShare,
     Trash2,
 } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Can } from '@/components/can';
 import {
+    DataPagination,
     DataTable,
+    DataToolbar,
     EmptyState,
     PageHeader,
     type DataTableColumn,
 } from '@/components/data-page';
-import { FormField, FormModal, FormSection } from '@/components/forms';
+import { DateRangeFilter } from '@/components/date-range-filter';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
@@ -22,154 +26,90 @@ import {
     FilterSelect,
     type FilterSelectOption,
 } from '@/components/ui/filter-select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
+import type { Paginated } from '@/types';
+import { todayIso } from '../pedidos/types';
+import {
+    ReservaFormModal,
+    type MesaOption,
+    type ReservaFormRow,
+} from './components/reserva-form-modal';
 
-type MesaOption = {
-    id: string;
-    codigo: string;
-    nombre: string | null;
-    capacidad: number;
-};
-
-type ReservaRow = {
-    id: string;
-    cliente_nombre: string;
-    cliente_telefono: string | null;
-    personas: number;
-    reserved_at: string | null;
-    estado: string;
-    notas: string | null;
-    mesa: { id: string; codigo: string; nombre: string | null } | null;
+type ReservaRow = ReservaFormRow & {
     created_by: string | null;
 };
 
 type Props = {
-    reservas: ReservaRow[];
+    reservas: Paginated<ReservaRow>;
     mesas: MesaOption[];
-    filters: { fecha: string; estado: string };
+    filters: {
+        search: string;
+        estado: string;
+        desde: string;
+        hasta: string;
+        per_page: number;
+        sort: string | null;
+        direction: 'asc' | 'desc' | null;
+    };
     estados: string[];
+    stats: {
+        hoy: number;
+        pendientes: number;
+        filtros: number;
+        coincidencias: number;
+    };
 };
 
-type FormState = {
-    mesa_id: string;
-    cliente_nombre: string;
-    cliente_telefono: string;
-    personas: number;
-    reserved_at: string;
-    estado: string;
-    notas: string;
-};
-
-function toLocalInput(iso: string | null | undefined): string {
-    if (!iso) {
-        const d = new Date();
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().slice(0, 16);
-    }
-    const d = new Date(iso);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().slice(0, 16);
-}
+type ModalState =
+    | { type: 'idle' }
+    | { type: 'create' }
+    | { type: 'edit'; reserva: ReservaRow }
+    | { type: 'delete'; reserva: ReservaRow };
 
 export default function ReservasIndex({
     reservas,
     mesas,
     filters,
     estados,
+    stats,
 }: Props) {
     const { t } = useTranslation(['reservas', 'common']);
     const canCreate = usePermission('reservas.create');
     const canUpdate = usePermission('reservas.update');
     const canDelete = usePermission('reservas.delete');
+    const [modal, setModal] = useState<ModalState>({ type: 'idle' });
 
-    const [modal, setModal] = useState<
-        | { type: 'idle' }
-        | { type: 'create' }
-        | { type: 'edit'; reserva: ReservaRow }
-        | { type: 'delete'; reserva: ReservaRow }
-    >({ type: 'idle' });
+    const { search, setSearch, isLoading, setPerPage, applyFilter } =
+        useDataTablePage<{
+            estado: string;
+            desde: string;
+            hasta: string;
+        }>({
+            routeUrl: '/reservas',
+            initialFilters: filters,
+            only: ['reservas', 'filters', 'stats', 'mesas'],
+            errorMessage: t('reservas:toast.load_error'),
+            storageKey: 'foodsaas.reservas.prefs',
+            defaults: { per_page: 15 },
+        });
 
-    const form = useForm<FormState>({
-        mesa_id: '',
-        cliente_nombre: '',
-        cliente_telefono: '',
-        personas: 2,
-        reserved_at: toLocalInput(null),
-        estado: 'pendiente',
-        notas: '',
-    });
+    const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
 
     const estadoOptions = useMemo<FilterSelectOption[]>(
         () => [
             { value: 'todas', label: t('reservas:filters.todas') },
             ...estados.map((estado) => ({
                 value: estado,
-                label: t(`reservas:estados.${estado}`, { defaultValue: estado }),
+                label: t(`reservas:estados.${estado}`, {
+                    defaultValue: estado,
+                }),
             })),
         ],
         [t, estados],
     );
-
-    const openCreate = () => {
-        form.reset();
-        form.clearErrors();
-        form.setData({
-            mesa_id: '',
-            cliente_nombre: '',
-            cliente_telefono: '',
-            personas: 2,
-            reserved_at: `${filters.fecha}T19:00`,
-            estado: 'pendiente',
-            notas: '',
-        });
-        setModal({ type: 'create' });
-    };
-
-    const openEdit = (reserva: ReservaRow) => {
-        form.clearErrors();
-        form.setData({
-            mesa_id: reserva.mesa?.id ?? '',
-            cliente_nombre: reserva.cliente_nombre,
-            cliente_telefono: reserva.cliente_telefono ?? '',
-            personas: reserva.personas,
-            reserved_at: toLocalInput(reserva.reserved_at),
-            estado: reserva.estado,
-            notas: reserva.notas ?? '',
-        });
-        setModal({ type: 'edit', reserva });
-    };
-
-    const onSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        const payload = {
-            ...form.data,
-            mesa_id: form.data.mesa_id || null,
-        };
-        if (modal.type === 'create') {
-            form.transform(() => payload).post('/reservas', {
-                preserveScroll: true,
-                onSuccess: () => setModal({ type: 'idle' }),
-            });
-            return;
-        }
-        if (modal.type === 'edit') {
-            form.transform(() => payload).put(`/reservas/${modal.reserva.id}`, {
-                preserveScroll: true,
-                onSuccess: () => setModal({ type: 'idle' }),
-            });
-        }
-    };
 
     const columns = useMemo<DataTableColumn<ReservaRow>[]>(
         () => [
@@ -186,7 +126,7 @@ export default function ReservasIndex({
                 header: t('reservas:columns.cliente'),
                 cell: (row) => (
                     <div className="min-w-0">
-                        <p className="truncate font-medium">
+                        <p className="truncate font-semibold uppercase">
                             {row.cliente_nombre}
                         </p>
                         <p className="text-muted-foreground text-xs">
@@ -225,7 +165,9 @@ export default function ReservasIndex({
                                 size="icon"
                                 variant="ghost"
                                 className="cursor-pointer"
-                                onClick={() => openEdit(row)}
+                                onClick={() =>
+                                    setModal({ type: 'edit', reserva: row })
+                                }
                             >
                                 <Pencil className="size-4" />
                             </Button>
@@ -251,273 +193,154 @@ export default function ReservasIndex({
         [t, canUpdate, canDelete],
     );
 
-    const modalOpen = modal.type === 'create' || modal.type === 'edit';
-
     return (
         <>
             <Head title={t('reservas:title')} />
-            <div className="flex flex-col gap-4 p-4 md:p-6">
+            <div className="flex flex-1 flex-col gap-5 p-4 sm:p-6">
                 <PageHeader
                     title={t('reservas:title')}
                     description={t('reservas:description')}
+                    stats={[
+                        {
+                            icon: CalendarDays,
+                            label: t('reservas:stats.hoy'),
+                            value: stats.hoy,
+                            variant: 'info',
+                            onClick: () => {
+                                const day = todayIso();
+                                applyFilter({ desde: day, hasta: day });
+                            },
+                        },
+                        {
+                            icon: CalendarDays,
+                            label: t('reservas:stats.pendientes'),
+                            value: stats.pendientes,
+                            variant: 'warning',
+                            onClick: () =>
+                                applyFilter({ estado: 'pendiente' }),
+                        },
+                        {
+                            icon: Filter,
+                            label: t('reservas:stats.filtros'),
+                            value: stats.filtros,
+                            variant: 'warning',
+                        },
+                        {
+                            icon: ScreenShare,
+                            label: t('reservas:stats.coincidencias'),
+                            value: stats.coincidencias,
+                            variant: 'primary',
+                        },
+                    ]}
                     action={
-                        canCreate ? (
+                        <Can permission="reservas.create">
                             <Button
-                                size="sm"
-                                className="cursor-pointer gap-2 bg-[#660033] hover:bg-[#4d0026]"
-                                onClick={openCreate}
+                                type="button"
+                                className="cursor-pointer gap-2"
+                                onClick={() => setModal({ type: 'create' })}
                             >
-                                <Plus className="size-4" />
-                                {t('reservas:actions.new')}
+                                <Plus className="size-4" strokeWidth={2.5} />
+                                <span className="hidden sm:inline">
+                                    {t('reservas:actions.new')}
+                                </span>
+                                <span className="sm:hidden">
+                                    {t('reservas:actions.new_short')}
+                                </span>
                             </Button>
-                        ) : null
+                        </Can>
                     }
                 />
 
-                <div className="flex flex-wrap items-center gap-2">
-                    <Input
-                        type="date"
-                        value={filters.fecha}
-                        className="w-auto"
-                        onChange={(e) =>
-                            router.get(
-                                '/reservas',
-                                {
-                                    fecha: e.target.value,
-                                    estado: filters.estado,
-                                },
-                                {
-                                    preserveState: true,
-                                    preserveScroll: true,
-                                    replace: true,
-                                    only: ['reservas', 'filters'],
-                                },
-                            )
-                        }
-                    />
-                    <FilterSelect
-                        ariaLabel={t('reservas:filters.label')}
-                        value={filters.estado}
-                        onChange={(estado) =>
-                            router.get(
-                                '/reservas',
-                                { fecha: filters.fecha, estado },
-                                {
-                                    preserveState: true,
-                                    preserveScroll: true,
-                                    replace: true,
-                                    only: ['reservas', 'filters'],
-                                },
-                            )
-                        }
-                        options={estadoOptions}
-                    />
-                </div>
-
-                {reservas.length === 0 ? (
-                    <EmptyState
-                        icon={CalendarDays}
-                        title={t('reservas:empty.title')}
-                        description={t('reservas:empty.description')}
-                        action={
-                            canCreate ? (
-                                <Button
-                                    className="cursor-pointer gap-2"
-                                    onClick={openCreate}
-                                >
-                                    <Plus className="size-4" />
-                                    {t('reservas:actions.create_first')}
-                                </Button>
-                            ) : undefined
-                        }
-                    />
-                ) : (
-                    <DataTable
-                        columns={columns}
-                        data={reservas}
-                        rowKey={(row) => row.id}
-                    />
-                )}
+                <DataTable
+                    columns={columns}
+                    data={reservas.data}
+                    rowKey={(row) => row.id}
+                    isLoading={isLoading}
+                    toolbar={
+                        <DataToolbar
+                            search={search}
+                            onSearchChange={setSearch}
+                            isSearching={isLoading}
+                            placeholder={t('reservas:search_placeholder')}
+                        >
+                            <FilterSelect
+                                ariaLabel={t('reservas:filters.label')}
+                                value={filters.estado}
+                                onChange={(estado) => applyFilter({ estado })}
+                                options={estadoOptions}
+                                disabled={isLoading}
+                            />
+                            <DateRangeFilter
+                                desde={filters.desde}
+                                hasta={filters.hasta}
+                                disabled={isLoading}
+                                onApply={(desde, hasta) =>
+                                    applyFilter({ desde, hasta })
+                                }
+                                onClear={() => {
+                                    const day = todayIso();
+                                    applyFilter({
+                                        desde: day,
+                                        hasta: day,
+                                    });
+                                }}
+                            />
+                        </DataToolbar>
+                    }
+                    footer={
+                        <DataPagination
+                            meta={reservas}
+                            onPerPageChange={setPerPage}
+                            preservedQuery={{
+                                search: filters.search || undefined,
+                                estado: filters.estado,
+                                desde: filters.desde,
+                                hasta: filters.hasta,
+                                per_page: filters.per_page,
+                            }}
+                        />
+                    }
+                    emptyState={
+                        <EmptyState
+                            icon={CalendarDays}
+                            title={t('reservas:empty.title')}
+                            description={t('reservas:empty.description')}
+                            action={
+                                canCreate ? (
+                                    <Button
+                                        className="cursor-pointer gap-2"
+                                        onClick={() =>
+                                            setModal({ type: 'create' })
+                                        }
+                                    >
+                                        <Plus className="size-4" />
+                                        {t('reservas:actions.create_first')}
+                                    </Button>
+                                ) : undefined
+                            }
+                        />
+                    }
+                />
             </div>
 
-            <FormModal
-                open={modalOpen}
+            <ReservaFormModal
+                open={modal.type === 'create' || modal.type === 'edit'}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setModal({ type: 'idle' });
+                        closeModal();
                     }
                 }}
-                title={
-                    modal.type === 'edit'
-                        ? t('reservas:form.edit')
-                        : t('reservas:form.create')
-                }
-                description={t('reservas:form.description')}
-                onSubmit={onSubmit}
-                footer={
-                    <>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="cursor-pointer"
-                            disabled={form.processing}
-                            onClick={() => setModal({ type: 'idle' })}
-                        >
-                            {t('common:actions.cancel')}
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={
-                                form.processing ||
-                                !form.data.cliente_nombre.trim()
-                            }
-                            className="cursor-pointer gap-2 bg-[#660033] hover:bg-[#4d0026]"
-                        >
-                            {form.processing ? (
-                                <Loader2 className="size-4 animate-spin" />
-                            ) : null}
-                            {modal.type === 'edit'
-                                ? t('reservas:form.submit_edit')
-                                : t('reservas:form.submit_create')}
-                        </Button>
-                    </>
-                }
-            >
-                <FormSection>
-                    <FormField
-                        label={t('reservas:form.cliente_nombre')}
-                        error={form.errors.cliente_nombre}
-                        required
-                    >
-                        <Input
-                            value={form.data.cliente_nombre}
-                            onChange={(e) =>
-                                form.setData('cliente_nombre', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('reservas:form.cliente_telefono')}
-                        error={form.errors.cliente_telefono}
-                    >
-                        <Input
-                            value={form.data.cliente_telefono}
-                            onChange={(e) =>
-                                form.setData(
-                                    'cliente_telefono',
-                                    e.target.value,
-                                )
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('reservas:form.personas')}
-                        error={form.errors.personas}
-                        required
-                    >
-                        <Input
-                            type="number"
-                            min={1}
-                            max={99}
-                            value={form.data.personas}
-                            onChange={(e) =>
-                                form.setData(
-                                    'personas',
-                                    Number(e.target.value) || 1,
-                                )
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('reservas:form.reserved_at')}
-                        error={form.errors.reserved_at}
-                        required
-                    >
-                        <Input
-                            type="datetime-local"
-                            value={form.data.reserved_at}
-                            onChange={(e) =>
-                                form.setData('reserved_at', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('reservas:form.mesa')}
-                        error={form.errors.mesa_id}
-                    >
-                        <Select
-                            value={form.data.mesa_id || '__none__'}
-                            onValueChange={(value) =>
-                                form.setData(
-                                    'mesa_id',
-                                    value === '__none__' ? '' : value,
-                                )
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue
-                                    placeholder={t('reservas:sin_mesa')}
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="__none__">
-                                    {t('reservas:sin_mesa')}
-                                </SelectItem>
-                                {mesas.map((mesa) => (
-                                    <SelectItem key={mesa.id} value={mesa.id}>
-                                        {mesa.nombre || mesa.codigo} (
-                                        {mesa.capacidad})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </FormField>
-                    {modal.type === 'edit' ? (
-                        <FormField
-                            label={t('reservas:form.estado')}
-                            error={form.errors.estado}
-                        >
-                            <Select
-                                value={form.data.estado}
-                                onValueChange={(value) =>
-                                    form.setData('estado', value)
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {estados.map((estado) => (
-                                        <SelectItem key={estado} value={estado}>
-                                            {t(`reservas:estados.${estado}`, {
-                                                defaultValue: estado,
-                                            })}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormField>
-                    ) : null}
-                    <FormField
-                        label={t('reservas:form.notas')}
-                        error={form.errors.notas}
-                    >
-                        <Textarea
-                            value={form.data.notas}
-                            onChange={(e) =>
-                                form.setData('notas', e.target.value)
-                            }
-                            rows={3}
-                        />
-                    </FormField>
-                </FormSection>
-            </FormModal>
+                reserva={modal.type === 'edit' ? modal.reserva : null}
+                mesas={mesas}
+                estados={estados}
+                defaultDate={filters.desde || todayIso()}
+            />
 
             <ConfirmDeleteDialog
                 open={modal.type === 'delete'}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setModal({ type: 'idle' });
+                        closeModal();
                     }
                 }}
                 title={t('reservas:delete.title')}
@@ -533,7 +356,7 @@ export default function ReservasIndex({
                         ? `/reservas/${modal.reserva.id}`
                         : null
                 }
-                onSuccess={() => setModal({ type: 'idle' })}
+                onSuccess={closeModal}
             />
         </>
     );

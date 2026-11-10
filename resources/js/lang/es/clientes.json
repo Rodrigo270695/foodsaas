@@ -2,9 +2,19 @@
     "title": "Clientes",
     "description": "Maestro de clientes del restaurante.",
     "search_placeholder": "Buscar por nombre, documento o teléfono…",
+    "toast": {
+        "load_error": "No pudimos cargar los clientes."
+    },
     "actions": {
         "new": "Nuevo cliente",
+        "new_short": "Nuevo",
         "create_first": "Registrar primer cliente"
+    },
+    "stats": {
+        "total": "Total",
+        "con_documento": "Con documento",
+        "filtros": "Filtros",
+        "coincidencias": "Coincidencias"
     },
     "columns": {
         "nombre": "Cliente",
@@ -20,6 +30,7 @@
         "create": "Nuevo cliente",
         "edit": "Editar cliente",
         "description": "Datos de contacto y documento.",
+        "section": "Datos del cliente",
         "nombre": "Nombre",
         "documento": "Documento",
         "telefono": "Teléfono",

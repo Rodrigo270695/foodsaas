@@ -1,10 +1,21 @@
 {
     "title": "Reservations",
-    "description": "Table reservations by day.",
+    "description": "Table reservations by date range.",
     "sin_mesa": "No table",
+    "search_placeholder": "Search by customer, phone or notes…",
+    "toast": {
+        "load_error": "We could not load reservations."
+    },
     "actions": {
         "new": "New reservation",
+        "new_short": "New",
         "create_first": "Create first reservation"
+    },
+    "stats": {
+        "hoy": "Today",
+        "pendientes": "Pending",
+        "filtros": "Filters",
+        "coincidencias": "Matches"
     },
     "filters": {
         "label": "Status",
@@ -24,13 +35,14 @@
         "estado": "Status"
     },
     "empty": {
-        "title": "No reservations this day",
-        "description": "Create a reservation or change the date."
+        "title": "No reservations in range",
+        "description": "Create a reservation or change the date range."
     },
     "form": {
         "create": "New reservation",
         "edit": "Edit reservation",
         "description": "Assign table, time and party size.",
+        "section": "Reservation details",
         "cliente_nombre": "Customer",
         "cliente_telefono": "Phone",
         "personas": "Guests",
