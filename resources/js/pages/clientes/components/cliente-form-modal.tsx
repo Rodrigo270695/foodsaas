@@ -28,10 +28,10 @@ export type ClienteFormRow = {
     notas: string | null;
 };
 
-type ClienteFormModalProps = {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    cliente: ClienteFormRow | null;
+export type ClienteQuickCreated = {
+    nombre: string;
+    telefono: string;
+    documento: string;
 };
 
 type FormData = {
@@ -41,6 +41,20 @@ type FormData = {
     telefono: string;
     email: string;
     notas: string;
+};
+
+type ClienteFormModalProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    cliente: ClienteFormRow | null;
+    /** Prefill al crear (p. ej. desde reservas). */
+    initialDraft?: Partial<
+        Pick<FormData, 'nombre' | 'telefono' | 'documento' | 'documento_tipo'>
+    >;
+    /** Tras crear con éxito (antes de cerrar). */
+    onCreated?: (created: ClienteQuickCreated) => void;
+    className?: string;
+    showOverlay?: boolean;
 };
 
 const normalizeDocumentoTipo = (raw: string | null | undefined): string => {
@@ -55,6 +69,10 @@ export function ClienteFormModal({
     open,
     onOpenChange,
     cliente,
+    initialDraft,
+    onCreated,
+    className,
+    showOverlay = true,
 }: ClienteFormModalProps) {
     const { t } = useTranslation(['clientes', 'common', 'forms']);
     const isEdit = cliente !== null;
@@ -76,18 +94,22 @@ export function ClienteFormModal({
         }
         clearErrors();
         setConsultandoDoc(false);
-        const tipo = normalizeDocumentoTipo(cliente?.documento_tipo);
+        const tipo = normalizeDocumentoTipo(
+            cliente?.documento_tipo ?? initialDraft?.documento_tipo,
+        );
         const max = documentNumberLengthFor(tipo);
+        const docSource =
+            cliente?.documento ?? initialDraft?.documento ?? '';
         setData({
-            nombre: cliente?.nombre ?? '',
+            nombre: cliente?.nombre ?? initialDraft?.nombre ?? '',
             documento_tipo: tipo,
-            documento: soloDigitosDocumento(cliente?.documento ?? '', max),
-            telefono: cliente?.telefono ?? '',
+            documento: soloDigitosDocumento(docSource, max),
+            telefono: cliente?.telefono ?? initialDraft?.telefono ?? '',
             email: cliente?.email ?? '',
             notas: cliente?.notas ?? '',
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, cliente?.id]);
+    }, [open, cliente?.id, initialDraft?.nombre, initialDraft?.telefono]);
 
     const canSubmit = useMemo(() => {
         if (processing || consultandoDoc) {
@@ -113,6 +135,13 @@ export function ClienteFormModal({
         const opts = {
             preserveScroll: true,
             onSuccess: () => {
+                if (!isEdit) {
+                    onCreated?.({
+                        nombre: data.nombre.trim(),
+                        telefono: data.telefono.trim(),
+                        documento: data.documento.trim(),
+                    });
+                }
                 reset();
                 onOpenChange(false);
             },
@@ -135,6 +164,8 @@ export function ClienteFormModal({
             }
             description={t('clientes:form.description')}
             onSubmit={onSubmit}
+            className={className}
+            showOverlay={showOverlay}
             footer={
                 <>
                     <Button

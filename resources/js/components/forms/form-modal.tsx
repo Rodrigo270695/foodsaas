@@ -39,6 +39,12 @@ export type FormModalProps = {
     blockEscape?: boolean;
     children: ReactNode;
     className?: string;
+    /**
+     * Controla el scrim del Dialog. Desactívalo en el segundo modal
+     * de un par lado-a-lado para no apilar overlays.
+     */
+    showOverlay?: boolean;
+    overlayClassName?: string;
 };
 
 const sizeClasses: Record<FormModalSize, string> = {
@@ -68,6 +74,8 @@ export function FormModal({
     blockEscape = false,
     children,
     className,
+    showOverlay = true,
+    overlayClassName,
 }: FormModalProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const { overflowTop, overflowBottom } = useScrollHint(scrollRef, open);
@@ -105,6 +113,8 @@ export function FormModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 data-form-modal
+                showOverlay={showOverlay}
+                overlayClassName={overlayClassName}
                 className={cn(
                     'flex max-h-[calc(100dvh-1.5rem)] flex-col gap-0 overflow-hidden border-border/60 bg-card p-0 shadow-xl shadow-foreground/8 ring-1 ring-border/50 dark:border-border/80 dark:shadow-black/25 dark:ring-border/60',
                     'data-[state=open]:animate-in data-[state=closed]:animate-out',

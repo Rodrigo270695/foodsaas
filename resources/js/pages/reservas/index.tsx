@@ -35,6 +35,7 @@ import { todayIso } from '../pedidos/types';
 import {
     ReservaFormModal,
     type MesaOption,
+    type ReservaClienteOption,
     type ReservaFormRow,
 } from './components/reserva-form-modal';
 
@@ -45,6 +46,7 @@ type ReservaRow = ReservaFormRow & {
 type Props = {
     reservas: Paginated<ReservaRow>;
     mesas: MesaOption[];
+    clientes: ReservaClienteOption[];
     filters: {
         search: string;
         estado: string;
@@ -72,6 +74,7 @@ type ModalState =
 export default function ReservasIndex({
     reservas,
     mesas,
+    clientes,
     filters,
     estados,
     stats,
@@ -90,7 +93,7 @@ export default function ReservasIndex({
         }>({
             routeUrl: '/reservas',
             initialFilters: filters,
-            only: ['reservas', 'filters', 'stats', 'mesas'],
+            only: ['reservas', 'filters', 'stats', 'mesas', 'clientes'],
             errorMessage: t('reservas:toast.load_error'),
             storageKey: 'foodsaas.reservas.prefs',
             defaults: { per_page: 15 },
@@ -339,6 +342,7 @@ export default function ReservasIndex({
                 }}
                 reserva={modal.type === 'edit' ? modal.reserva : null}
                 mesas={mesas}
+                clientes={clientes}
                 estados={estados}
                 defaultDate={filters.desde || todayIso()}
             />

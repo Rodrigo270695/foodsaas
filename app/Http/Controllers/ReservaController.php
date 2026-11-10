@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Models\Cliente;
 use App\Models\Mesa;
 use App\Models\Reserva;
 use App\Support\Sedes\ActiveSedeContext;
@@ -86,6 +87,20 @@ class ReservaController extends Controller
                 ->get(['id', 'codigo', 'nombre', 'capacidad'])
             : collect();
 
+        $clientes = Cliente::query()
+            ->orderBy('nombre')
+            ->limit(500)
+            ->get(['id', 'nombre', 'documento_tipo', 'documento', 'telefono'])
+            ->map(static fn (Cliente $c): array => [
+                'id' => $c->id,
+                'nombre' => $c->nombre,
+                'documento_tipo' => $c->documento_tipo,
+                'documento' => $c->documento,
+                'telefono' => $c->telefono,
+            ])
+            ->values()
+            ->all();
+
         $hoy = now()->toDateString();
         $pendientes = (clone $base)
             ->whereDate('reserved_at', '>=', $hoy)
@@ -107,6 +122,7 @@ class ReservaController extends Controller
         return Inertia::render('reservas/index', [
             'reservas' => $reservas,
             'mesas' => $mesas,
+            'clientes' => $clientes,
             'filters' => [
                 'search' => $search,
                 'estado' => $estado,
