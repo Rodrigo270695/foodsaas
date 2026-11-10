@@ -1,0 +1,48 @@
+{
+    "title": "Reservations",
+    "description": "Table reservations by day.",
+    "sin_mesa": "No table",
+    "actions": {
+        "new": "New reservation",
+        "create_first": "Create first reservation"
+    },
+    "filters": {
+        "label": "Status",
+        "todas": "All"
+    },
+    "estados": {
+        "pendiente": "Pending",
+        "confirmada": "Confirmed",
+        "sentada": "Seated",
+        "cancelada": "Cancelled",
+        "no_show": "No show"
+    },
+    "columns": {
+        "hora": "Time",
+        "cliente": "Customer",
+        "mesa": "Table",
+        "estado": "Status"
+    },
+    "empty": {
+        "title": "No reservations this day",
+        "description": "Create a reservation or change the date."
+    },
+    "form": {
+        "create": "New reservation",
+        "edit": "Edit reservation",
+        "description": "Assign table, time and party size.",
+        "cliente_nombre": "Customer",
+        "cliente_telefono": "Phone",
+        "personas": "Guests",
+        "reserved_at": "Date and time",
+        "mesa": "Table",
+        "estado": "Status",
+        "notas": "Notes",
+        "submit_create": "Save",
+        "submit_edit": "Update"
+    },
+    "delete": {
+        "title": "Delete reservation",
+        "description": "Delete the reservation for «{{name}}»?"
+    }
+}

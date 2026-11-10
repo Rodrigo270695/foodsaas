@@ -1,0 +1,48 @@
+{
+    "title": "Reservas",
+    "description": "Reservas de mesa por día.",
+    "sin_mesa": "Sin mesa",
+    "actions": {
+        "new": "Nueva reserva",
+        "create_first": "Crear primera reserva"
+    },
+    "filters": {
+        "label": "Estado",
+        "todas": "Todas"
+    },
+    "estados": {
+        "pendiente": "Pendiente",
+        "confirmada": "Confirmada",
+        "sentada": "Sentada",
+        "cancelada": "Cancelada",
+        "no_show": "No show"
+    },
+    "columns": {
+        "hora": "Horario",
+        "cliente": "Cliente",
+        "mesa": "Mesa",
+        "estado": "Estado"
+    },
+    "empty": {
+        "title": "Sin reservas este día",
+        "description": "Crea una reserva o cambia la fecha."
+    },
+    "form": {
+        "create": "Nueva reserva",
+        "edit": "Editar reserva",
+        "description": "Asigna mesa, horario y número de personas.",
+        "cliente_nombre": "Cliente",
+        "cliente_telefono": "Teléfono",
+        "personas": "Personas",
+        "reserved_at": "Fecha y hora",
+        "mesa": "Mesa",
+        "estado": "Estado",
+        "notas": "Notas",
+        "submit_create": "Guardar",
+        "submit_edit": "Actualizar"
+    },
+    "delete": {
+        "title": "Eliminar reserva",
+        "description": "¿Eliminar la reserva de «{{name}}»?"
+    }
+}

@@ -10,7 +10,9 @@ use App\Models\Plan;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantAdminAccessRecoverer;
 use App\Services\Tenancy\TenantProvisioner;
+use App\Support\Plan\PlanLimits;
 use App\Support\Restaurante\RestaurantBrandingUrls;
+use App\Support\Tenancy\TenantModuleRegistry;
 use App\Tenancy\TenantManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -518,5 +520,126 @@ class TenantController extends Controller
         }
 
         return $planId;
+    }
+
+    public function modulos(Tenant $tenant): Response
+    {
+        return Inertia::render('plataforma/tenants/modulos', [
+            'tenant' => [
+                'id' => $tenant->id,
+                'slug' => $tenant->slug,
+                'razon_social' => $tenant->razon_social,
+                'nombre_comercial' => $tenant->nombre_comercial,
+                'estado' => $tenant->estado,
+            ],
+            'module_groups' => TenantModuleRegistry::groupsForEditor($tenant),
+        ]);
+    }
+
+    public function updateModulos(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate([
+            'modulos_deshabilitados' => ['nullable', 'array'],
+            'modulos_deshabilitados.*' => ['string', 'max:64'],
+        ]);
+
+        $disabled = collect($data['modulos_deshabilitados'] ?? [])
+            ->map(fn ($k) => (string) $k)
+            ->filter(fn (string $k) => TenantModuleRegistry::isValid($k))
+            ->unique()
+            ->values()
+            ->all();
+
+        $tenant->modulos_deshabilitados = $disabled === [] ? null : $disabled;
+        $tenant->save();
+
+        return redirect()
+            ->route('plataforma.tenants.modulos', $tenant)
+            ->with('success', 'Módulos actualizados para este tenant.');
+    }
+
+    /**
+     * Vista de límites del plan (lectura + extras vía JSON en tenant si existe).
+     * MVP: muestra cupos efectivos del plan; guarda overrides en limites_overrides.
+     */
+    public function limites(Tenant $tenant): Response
+    {
+        $plan = $tenant->activeSubscription()?->plan
+            ?? Plan::query()->where('codigo', Plan::CODIGO_FREE)->where('activo', true)->first();
+
+        $overrides = is_array($tenant->getAttribute('limites_overrides'))
+            ? $tenant->getAttribute('limites_overrides')
+            : [];
+
+        $features = [];
+        foreach (PlanLimits::INT_LIMIT_FEATURES as $feature) {
+            $base = $plan !== null ? $plan->resolveFeature($feature) : null;
+            $baseInt = is_numeric($base) ? (int) $base : null;
+            $override = isset($overrides[$feature]) && is_numeric($overrides[$feature])
+                ? (int) $overrides[$feature]
+                : null;
+
+            $features[] = [
+                'feature' => $feature,
+                'base' => $baseInt !== null && $baseInt < 0 ? null : $baseInt,
+                'extra' => 0,
+                'precio_mensual' => null,
+                'override' => $override,
+                'motivo' => null,
+                'expires_at' => null,
+                'effective' => $override ?? ($baseInt !== null && $baseInt < 0 ? null : $baseInt),
+                'unlimited_base' => $baseInt !== null && $baseInt < 0,
+            ];
+        }
+
+        return Inertia::render('plataforma/tenants/limites', [
+            'tenant' => [
+                'id' => $tenant->id,
+                'slug' => $tenant->slug,
+                'razon_social' => $tenant->razon_social,
+                'nombre_comercial' => $tenant->nombre_comercial,
+                'estado' => $tenant->estado,
+            ],
+            'plan' => $plan !== null ? [
+                'id' => $plan->id,
+                'codigo' => $plan->codigo,
+                'nombre' => $plan->nombre,
+            ] : null,
+            'features' => $features,
+        ]);
+    }
+
+    public function updateLimites(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $data = $request->validate([
+            'overrides' => ['required', 'array'],
+            'overrides.*.feature' => ['required', 'string'],
+            'overrides.*.override' => ['nullable', 'integer'],
+            'overrides.*.extra' => ['nullable', 'integer'],
+            'overrides.*.precio_mensual' => ['nullable', 'numeric'],
+            'overrides.*.motivo' => ['nullable', 'string', 'max:255'],
+            'overrides.*.expires_at' => ['nullable', 'date'],
+        ]);
+
+        $overrides = [];
+        foreach ($data['overrides'] as $row) {
+            $feature = (string) ($row['feature'] ?? '');
+            if (! in_array($feature, PlanLimits::INT_LIMIT_FEATURES, true)) {
+                continue;
+            }
+            if (! array_key_exists('override', $row) || $row['override'] === null || $row['override'] === '') {
+                continue;
+            }
+            $overrides[$feature] = (int) $row['override'];
+        }
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('tenants', 'limites_overrides')) {
+            $tenant->setAttribute('limites_overrides', $overrides === [] ? null : $overrides);
+            $tenant->save();
+        }
+
+        return redirect()
+            ->route('plataforma.tenants.limites', $tenant)
+            ->with('success', 'Límites actualizados para este tenant.');
     }
 }

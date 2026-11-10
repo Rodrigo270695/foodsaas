@@ -20,11 +20,11 @@ Reglas actuales:
 - Si una mesa ya pertenece a un grupo, unir con otra **absorbe / fusiona** grupos (misma zona).
 - En el plano: un card de grupo (`col-span-2`) en lugar de N cards + líneas.
 - Separar grupo: Unlink en el card (disuelve vía API `separar` en cadena). Menú ⋯: editar / sacar una mesa / borrar.
-- Tras cobro (futuro): separación automática (ver abajo).
+- Tras cobro: **aún no** auto-separa (POS ya existe; falta el hook — ver abajo).
 
-## Futuro: separación automática al cobrar / liberar
+## Pendiente mercado: cobro de grupo + separación automática
 
-Aún **no** existe el módulo de ventas, comandas ni pagos. Cuando exista, la unión debe vivir el ciclo de una ocupación:
+Ya existen pedidos, caja y ventas. Lo que falta es que la **unión** sea la unidad de cobro: una cuenta del grupo y, al cerrar, limpiar `union_id`.
 
 ```
 Disponible ──(unir)──► Grupo unido ──(abrir cuenta)──► Ocupado (grupo)
@@ -37,7 +37,7 @@ Disponible ──(unir)──► Grupo unido ──(abrir cuenta)──► Ocupa
                                               (mesas de nuevo individuales)
 ```
 
-### Comportamiento esperado (cuando exista POS)
+### Comportamiento esperado (cerrar el gap POS ↔ unión)
 
 1. **Abrir cuenta en un grupo**  
    Una sola cuenta / ticket para todas las mesas con el mismo `union_id`. La capacidad mostrada es la suma.

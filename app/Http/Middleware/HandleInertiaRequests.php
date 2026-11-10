@@ -8,6 +8,7 @@ use App\Support\Operacion\ServicioRealtimeFeed;
 use App\Support\Plan\PlanLimits;
 use App\Support\Restaurante\RestaurantBrandingUrls;
 use App\Support\Sedes\ActiveSedeContext;
+use App\Support\Tenancy\TenantModuleRegistry;
 use App\Support\Tenancy\TenantSubdomainUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -174,6 +175,19 @@ class HandleInertiaRequests extends Middleware
                 }
             },
             'plan_limits' => static fn () => PlanLimits::snapshot(),
+            'tenant_modules' => static function () {
+                if (tenant() === null) {
+                    return null;
+                }
+
+                try {
+                    return TenantModuleRegistry::snapshot(tenant()?->tenant);
+                } catch (Throwable $e) {
+                    report($e);
+
+                    return null;
+                }
+            },
             'tenant_plan' => static function () {
                 if (tenant() === null) {
                     return null;

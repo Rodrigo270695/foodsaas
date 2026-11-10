@@ -30,6 +30,14 @@ import cajaEn from '@/lang/en/caja.json';
 import cajaEs from '@/lang/es/caja.json';
 import ventasEn from '@/lang/en/ventas.json';
 import ventasEs from '@/lang/es/ventas.json';
+import reportesEn from '@/lang/en/reportes.json';
+import reportesEs from '@/lang/es/reportes.json';
+import clientesEn from '@/lang/en/clientes.json';
+import clientesEs from '@/lang/es/clientes.json';
+import deliveryEn from '@/lang/en/delivery.json';
+import deliveryEs from '@/lang/es/delivery.json';
+import reservasEn from '@/lang/en/reservas.json';
+import reservasEs from '@/lang/es/reservas.json';
 import facturacionDocumentosEn from '@/lang/en/facturacion-documentos.json';
 import facturacionDocumentosEs from '@/lang/es/facturacion-documentos.json';
 import demoEn from '@/lang/en/demo.json';
@@ -77,6 +85,10 @@ const resources = {
         cocina: cocinaEs,
         caja: cajaEs,
         ventas: ventasEs,
+        reportes: reportesEs,
+        clientes: clientesEs,
+        delivery: deliveryEs,
+        reservas: reservasEs,
         'facturacion-documentos': facturacionDocumentosEs,
         usuarios: usuariosEs,
         forms: formsEs,
@@ -103,6 +115,10 @@ const resources = {
         cocina: cocinaEn,
         caja: cajaEn,
         ventas: ventasEn,
+        reportes: reportesEn,
+        clientes: clientesEn,
+        delivery: deliveryEn,
+        reservas: reservasEn,
         'facturacion-documentos': facturacionDocumentosEn,
         usuarios: usuariosEn,
         forms: formsEn,
@@ -122,7 +138,7 @@ void i18n
         fallbackLng: DEFAULT_LOCALE,
         supportedLngs: SUPPORTED_LOCALES as unknown as string[],
         defaultNS: 'common',
-        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'facturacion-documentos', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
+        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'reportes', 'clientes', 'delivery', 'reservas', 'facturacion-documentos', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
         interpolation: {
             escapeValue: false,
         },

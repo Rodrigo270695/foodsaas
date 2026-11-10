@@ -1,0 +1,31 @@
+{
+    "title": "Reports",
+    "description": "Operational summary for the selected shift or date range.",
+    "actions": {
+        "export": "Export Excel"
+    },
+    "stats": {
+        "monto_total": "Total amount",
+        "ventas": "Sales",
+        "ticket_promedio": "Average ticket",
+        "anuladas": "Voided"
+    },
+    "sections": {
+        "medios": "Payment methods",
+        "comprobantes": "By document type",
+        "top_productos": "Top products"
+    },
+    "columns": {
+        "medio": "Method",
+        "cantidad": "Qty",
+        "monto": "Amount",
+        "producto": "Product",
+        "importe": "Amount"
+    },
+    "empty": {
+        "medios": "No payments in range",
+        "comprobantes": "No documents in range",
+        "productos": "No products sold",
+        "hint": "Try another date range or record sales."
+    }
+}

@@ -70,6 +70,15 @@ final class PlanLimits
      */
     public static function intLimit(?Tenant $tenant, string $feature): ?int
     {
+        $tenant ??= self::tenant();
+
+        $overrides = is_array($tenant?->limites_overrides) ? $tenant->limites_overrides : [];
+        if (array_key_exists($feature, $overrides) && is_numeric($overrides[$feature])) {
+            $override = (int) $overrides[$feature];
+
+            return $override < 0 ? null : $override;
+        }
+
         $plan = self::activePlan($tenant);
 
         if ($plan === null) {

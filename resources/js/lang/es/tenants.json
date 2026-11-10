@@ -218,9 +218,9 @@
     },
     "modules": {
         "page_title": "Módulos — {{name}}",
-        "page_description": "Activa u oculta vistas del sidebar, tarifas, dashboard y caja para esta clínica.",
+        "page_description": "Activa u oculta vistas del sidebar y operación para este restaurante.",
         "back": "Volver a tenants",
-        "hint": "Desmarca un módulo para ocultarlo en el subdominio del tenant. Los datos existentes no se borran; solo deja de mostrarse en menú, KPIs y cobros relacionados.",
+        "hint": "Desmarca un módulo para ocultarlo en el subdominio del tenant. Los datos existentes no se borran; solo deja de mostrarse en menú y pantallas relacionadas.",
         "toggle_group": "Todo el grupo",
         "hidden_count": "{{count}} oculto(s)",
         "all_visible": "Todos los módulos visibles para esta clínica.",
@@ -257,9 +257,9 @@
         "features": {
             "max_sedes": "Sedes",
             "max_usuarios": "Usuarios",
-            "max_pacientes": "Pacientes",
-            "max_propietarios": "Propietarios",
             "max_productos": "Productos",
+            "max_mesas": "Mesas",
+            "max_pedidos_mes": "Pedidos / mes",
             "max_comprobantes_mes": "Comprobantes / mes"
         },
         "features_hint": {

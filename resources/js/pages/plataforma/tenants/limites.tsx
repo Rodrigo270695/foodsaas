@@ -3,11 +3,11 @@ import {
     ArrowLeft,
     Boxes,
     Building2,
+    ClipboardList,
     Gauge,
-    PawPrint,
     ReceiptText,
     Save,
-    UserRound,
+    Table2,
     Users,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -67,9 +67,9 @@ const FEATURE_ICONS: Record<
 > = {
     max_sedes: Building2,
     max_usuarios: Users,
-    max_pacientes: PawPrint,
-    max_propietarios: UserRound,
     max_productos: Boxes,
+    max_mesas: Table2,
+    max_pedidos_mes: ClipboardList,
     max_comprobantes_mes: ReceiptText,
 };
 

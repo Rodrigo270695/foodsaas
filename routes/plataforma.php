@@ -40,6 +40,18 @@ Route::middleware(['auth', 'verified', 'tenant.none'])->prefix('plataforma')->na
     Route::middleware('permission:plataforma-tenants.impersonate')
         ->post('tenants/{tenant}/impersonate', [TenantImpersonationController::class, 'start'])
         ->name('tenants.impersonate');
+    Route::middleware('permission:plataforma-tenants.update')
+        ->get('tenants/{tenant}/modulos', [TenantController::class, 'modulos'])
+        ->name('tenants.modulos');
+    Route::middleware('permission:plataforma-tenants.update')
+        ->put('tenants/{tenant}/modulos', [TenantController::class, 'updateModulos'])
+        ->name('tenants.modulos.update');
+    Route::middleware('permission:plataforma-tenants.update')
+        ->get('tenants/{tenant}/limites', [TenantController::class, 'limites'])
+        ->name('tenants.limites');
+    Route::middleware('permission:plataforma-tenants.update')
+        ->put('tenants/{tenant}/limites', [TenantController::class, 'updateLimites'])
+        ->name('tenants.limites.update');
 
     Route::middleware('permission:plataforma-planes.view')
         ->get('planes', [PlanController::class, 'index'])

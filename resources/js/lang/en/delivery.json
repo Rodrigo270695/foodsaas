@@ -1,0 +1,40 @@
+{
+    "title": "Delivery",
+    "description": "Active and recent delivery orders.",
+    "actions": {
+        "new": "New delivery",
+        "create_first": "Open first delivery",
+        "open": "Open"
+    },
+    "stats": {
+        "activos": "Active",
+        "hoy": "Today"
+    },
+    "filters": {
+        "label": "Status",
+        "activos": "Active",
+        "historico": "History",
+        "todos": "All"
+    },
+    "columns": {
+        "pedido": "Order",
+        "detalle": "Details",
+        "cocina": "Kitchen",
+        "total": "Total",
+        "hora": "Time"
+    },
+    "empty": {
+        "title": "No delivery orders",
+        "description": "Open a delivery order to start taking items."
+    },
+    "form": {
+        "title": "New delivery order",
+        "description": "Opens a delivery-channel order ready to build.",
+        "cliente": "Customer / address",
+        "cliente_placeholder": "Name or delivery reference",
+        "comensales": "Guests",
+        "notas": "Notes",
+        "notas_placeholder": "Address, landmark, phone…",
+        "submit": "Open order"
+    }
+}

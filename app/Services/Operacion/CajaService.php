@@ -4,6 +4,7 @@ namespace App\Services\Operacion;
 
 use App\Models\CajaEgreso;
 use App\Models\CajaSesion;
+use App\Models\Mesa;
 use App\Models\MovimientoInventario;
 use App\Models\Pago;
 use App\Models\Pedido;
@@ -387,8 +388,52 @@ class CajaService
             $locked->cerrado_at = now();
             $locked->save();
 
+            // Unión de mesas: al cobrar la cuenta única, separar el grupo si
+            // no quedan pedidos activos en otras mesas del mismo union_id.
+            $this->autoSepararUnionTrasCobro($locked);
+
             return $venta->load('pagos');
         });
+    }
+
+    /**
+     * Si la mesa cobrada pertenecía a un grupo unido y ya no hay pedidos
+     * activos en el resto, limpia union_id de todas las mesas del grupo.
+     */
+    private function autoSepararUnionTrasCobro(Pedido $pedido): void
+    {
+        if ($pedido->mesa_id === null) {
+            return;
+        }
+
+        /** @var Mesa|null $mesa */
+        $mesa = Mesa::query()->whereKey($pedido->mesa_id)->first();
+        if ($mesa === null || ! $mesa->isJoined()) {
+            return;
+        }
+
+        $unionId = (string) $mesa->union_id;
+        $mesaIds = Mesa::query()
+            ->where('union_id', $unionId)
+            ->pluck('id')
+            ->all();
+
+        if ($mesaIds === []) {
+            return;
+        }
+
+        $quedanActivos = Pedido::query()
+            ->whereIn('mesa_id', $mesaIds)
+            ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+            ->exists();
+
+        if ($quedanActivos) {
+            return;
+        }
+
+        Mesa::query()
+            ->where('union_id', $unionId)
+            ->update(['union_id' => null]);
     }
 
     /**

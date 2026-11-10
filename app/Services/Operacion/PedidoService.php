@@ -40,6 +40,25 @@ class PedidoService
                     ]);
                 }
 
+                // Cuenta única: si la mesa está unida, reutilizar pedido activo
+                // de cualquier mesa del mismo grupo en lugar de abrir otro.
+                if ($mesa->isJoined()) {
+                    $unionMesaIds = Mesa::query()
+                        ->where('union_id', $mesa->union_id)
+                        ->pluck('id')
+                        ->all();
+
+                    $pedidoUnion = Pedido::query()
+                        ->whereIn('mesa_id', $unionMesaIds)
+                        ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+                        ->orderBy('created_at')
+                        ->first();
+
+                    if ($pedidoUnion !== null) {
+                        return $pedidoUnion;
+                    }
+                }
+
                 $activo = Pedido::query()
                     ->where('mesa_id', $mesa->id)
                     ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)

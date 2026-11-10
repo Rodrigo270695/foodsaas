@@ -1,0 +1,31 @@
+{
+    "title": "Reportes",
+    "description": "Resumen operativo del turno o del rango seleccionado.",
+    "actions": {
+        "export": "Exportar Excel"
+    },
+    "stats": {
+        "monto_total": "Monto total",
+        "ventas": "Ventas",
+        "ticket_promedio": "Ticket promedio",
+        "anuladas": "Anuladas"
+    },
+    "sections": {
+        "medios": "Medios de pago",
+        "comprobantes": "Por comprobante",
+        "top_productos": "Top productos"
+    },
+    "columns": {
+        "medio": "Medio",
+        "cantidad": "Cantidad",
+        "monto": "Monto",
+        "producto": "Producto",
+        "importe": "Importe"
+    },
+    "empty": {
+        "medios": "Sin pagos en el rango",
+        "comprobantes": "Sin comprobantes en el rango",
+        "productos": "Sin productos vendidos",
+        "hint": "Prueba otro rango de fechas o registra ventas."
+    }
+}

@@ -1,11 +1,11 @@
 {
   "document": "FOODSAAS-SAAS-VISION.md",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "locale": "es-PE",
   "product": "FoodSaaS",
   "parent_org": "Orvae",
   "reference_implementation": "VetSaaS",
-  "generated_at": "2026-10-28",
+  "generated_at": "2026-11-10",
   "scope": "product-architecture-vision",
   "not_design_system": true,
   "ground_truth_repos": [
@@ -19,21 +19,46 @@
     "tenant_pattern": "{slug}.foodsaas.orvae.pe",
     "tenancy": "postgresql-schema-per-tenant"
   },
-  "plans_codigos": ["lite", "basic", "regular", "pro"],
+  "plans_codigos": ["free", "starter", "pro", "restaurante", "multi_sede"],
+  "market_priorities": [
+    "pos-sala-cocina-caja",
+    "sunat-apisunat-boleta-factura",
+    "reportes-turno",
+    "delivery",
+    "reservas",
+    "multi-sede",
+    "foodcost-recetas-compras"
+  ],
   "implemented_in_repo": [
+    "tenancy-schema-per-tenant",
+    "platform-panel-tenants-plans-subscriptions",
+    "orvae-provision-api",
+    "impersonation",
+    "salon-mesas-union",
+    "carta-public-menu",
+    "pedidos-cocina-caja-ventas",
+    "fel-apisunat-series-emit-sync-anular",
+    "almacen-kardex-productos",
     "rbac-seeders",
-    "spatie-teams-tenant_id",
-    "set-permissions-team-middleware",
     "i18n-es-en",
     "pwa",
     "fortify-auth-passkeys-2fa"
   ],
-  "pending_from_vetsaas": [
-    "resolve-tenant",
-    "tenant-routes",
-    "platform-panel",
-    "saas-provision-api",
-    "subscription-gates",
-    "impersonation"
+  "pending_market_critical": [
+    "modulo-reportes-operativos",
+    "modulo-delivery",
+    "modulo-reservas",
+    "tenant-module-middleware-gates",
+    "clientes-maestro",
+    "salon-union-cobro-cuenta-unica"
+  ],
+  "pending_next_wave": [
+    "recetas-bom-foodcost",
+    "compras-recepcion",
+    "reverb-realtime-kds",
+    "carta-pdf-horarios",
+    "franquicia-consolidado",
+    "backups-schema",
+    "e2e-pedido-caja-stock-sunat"
   ]
 }

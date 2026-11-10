@@ -34,6 +34,7 @@ class Tenant extends Model
         'locale',
         'canal_adquisicion',
         'modulos_deshabilitados',
+        'limites_overrides',
     ];
 
     protected function casts(): array
@@ -44,6 +45,7 @@ class Tenant extends Model
             'cancelled_at' => 'datetime',
             'onboarding_completado' => 'boolean',
             'modulos_deshabilitados' => 'array',
+            'limites_overrides' => 'array',
         ];
     }
 

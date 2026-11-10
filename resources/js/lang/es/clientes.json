@@ -1,0 +1,35 @@
+{
+    "title": "Clientes",
+    "description": "Maestro de clientes del restaurante.",
+    "search_placeholder": "Buscar por nombre, documento o teléfono…",
+    "actions": {
+        "new": "Nuevo cliente",
+        "create_first": "Registrar primer cliente"
+    },
+    "columns": {
+        "nombre": "Cliente",
+        "contacto": "Contacto",
+        "compras": "Compras",
+        "ultima_venta": "Última venta"
+    },
+    "empty": {
+        "title": "Sin clientes",
+        "description": "Registra clientes para reutilizarlos en ventas y reservas."
+    },
+    "form": {
+        "create": "Nuevo cliente",
+        "edit": "Editar cliente",
+        "description": "Datos de contacto y documento.",
+        "nombre": "Nombre",
+        "documento": "Documento",
+        "telefono": "Teléfono",
+        "email": "Email",
+        "notas": "Notas",
+        "submit_create": "Guardar",
+        "submit_edit": "Actualizar"
+    },
+    "delete": {
+        "title": "Eliminar cliente",
+        "description": "¿Eliminar a «{{name}}»? No borra ventas históricas."
+    }
+}

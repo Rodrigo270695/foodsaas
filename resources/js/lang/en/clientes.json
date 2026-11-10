@@ -1,0 +1,35 @@
+{
+    "title": "Customers",
+    "description": "Restaurant customer directory.",
+    "search_placeholder": "Search by name, document or phone…",
+    "actions": {
+        "new": "New customer",
+        "create_first": "Add first customer"
+    },
+    "columns": {
+        "nombre": "Customer",
+        "contacto": "Contact",
+        "compras": "Purchases",
+        "ultima_venta": "Last sale"
+    },
+    "empty": {
+        "title": "No customers",
+        "description": "Add customers to reuse them in sales and reservations."
+    },
+    "form": {
+        "create": "New customer",
+        "edit": "Edit customer",
+        "description": "Contact and document details.",
+        "nombre": "Name",
+        "documento": "Document",
+        "telefono": "Phone",
+        "email": "Email",
+        "notas": "Notes",
+        "submit_create": "Save",
+        "submit_edit": "Update"
+    },
+    "delete": {
+        "title": "Delete customer",
+        "description": "Delete «{{name}}»? Historical sales are kept."
+    }
+}

@@ -5,9 +5,13 @@ use App\Http\Controllers\AlmacenController;
 use App\Http\Controllers\CajaController;
 use App\Http\Controllers\CartaController;
 use App\Http\Controllers\CartaMenuController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CocinaController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\ReporteOperacionController;
+use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\SalonController;
 use App\Http\Controllers\VentaController;
 use Illuminate\Support\Facades\Route;
@@ -226,6 +230,66 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:caja.egreso')
                     ->post('egresos', [CajaController::class, 'egreso'])
                     ->name('egresos.store');
+            });
+
+        Route::prefix('reportes')
+            ->name('reportes.')
+            ->middleware('tenant.module:reportes')
+            ->group(function (): void {
+                Route::middleware('permission:reportes.view')
+                    ->get('/', [ReporteOperacionController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:reportes.export')
+                    ->get('export', [ReporteOperacionController::class, 'export'])
+                    ->name('export');
+            });
+
+        Route::prefix('clientes')
+            ->name('clientes.')
+            ->middleware('tenant.module:clientes')
+            ->group(function (): void {
+                Route::middleware('permission:clientes.view')
+                    ->get('/', [ClienteController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:clientes.create')
+                    ->post('/', [ClienteController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:clientes.update')
+                    ->match(['put', 'patch'], '{cliente}', [ClienteController::class, 'update'])
+                    ->name('update');
+                Route::middleware('permission:clientes.delete')
+                    ->delete('{cliente}', [ClienteController::class, 'destroy'])
+                    ->name('destroy');
+            });
+
+        Route::prefix('reservas')
+            ->name('reservas.')
+            ->middleware('tenant.module:reservas')
+            ->group(function (): void {
+                Route::middleware('permission:reservas.view')
+                    ->get('/', [ReservaController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:reservas.create')
+                    ->post('/', [ReservaController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:reservas.update')
+                    ->match(['put', 'patch'], '{reserva}', [ReservaController::class, 'update'])
+                    ->name('update');
+                Route::middleware('permission:reservas.delete')
+                    ->delete('{reserva}', [ReservaController::class, 'destroy'])
+                    ->name('destroy');
+            });
+
+        Route::prefix('delivery')
+            ->name('delivery.')
+            ->middleware('tenant.module:delivery')
+            ->group(function (): void {
+                Route::middleware('permission:delivery.view')
+                    ->get('/', [DeliveryController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:delivery.create')
+                    ->post('/', [DeliveryController::class, 'store'])
+                    ->name('store');
             });
 
         Route::prefix('ventas')

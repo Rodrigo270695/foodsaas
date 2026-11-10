@@ -1,0 +1,40 @@
+{
+    "title": "Delivery",
+    "description": "Pedidos a domicilio activos y recientes.",
+    "actions": {
+        "new": "Nuevo delivery",
+        "create_first": "Abrir primer delivery",
+        "open": "Abrir"
+    },
+    "stats": {
+        "activos": "Activos",
+        "hoy": "Hoy"
+    },
+    "filters": {
+        "label": "Estado",
+        "activos": "Activos",
+        "historico": "Histórico",
+        "todos": "Todos"
+    },
+    "columns": {
+        "pedido": "Pedido",
+        "detalle": "Detalle",
+        "cocina": "Cocina",
+        "total": "Total",
+        "hora": "Hora"
+    },
+    "empty": {
+        "title": "Sin pedidos delivery",
+        "description": "Abre un pedido delivery para tomar la comanda."
+    },
+    "form": {
+        "title": "Nuevo pedido delivery",
+        "description": "Se abre un pedido canal delivery listo para armar.",
+        "cliente": "Cliente / dirección",
+        "cliente_placeholder": "Nombre o referencia de entrega",
+        "comensales": "Personas",
+        "notas": "Notas",
+        "notas_placeholder": "Dirección, referencia, teléfono…",
+        "submit": "Abrir pedido"
+    }
+}

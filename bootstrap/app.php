@@ -4,6 +4,7 @@ use App\Http\Middleware\BlockPublicDemoMutations;
 use App\Http\Middleware\EnsureNoTenant;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureTenant;
+use App\Http\Middleware\EnsureTenantModuleEnabled;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\MatchUserTenant;
@@ -58,6 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.required' => EnsureTenant::class,
             'tenant.none' => EnsureNoTenant::class,
             'tenant.match-user' => MatchUserTenant::class,
+            'tenant.module' => EnsureTenantModuleEnabled::class,
             'force-password-change' => EnsurePasswordIsChanged::class,
         ]);
 

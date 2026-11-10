@@ -4,19 +4,29 @@ Documento maestro para alinear desarrollo, comercialización e integración con 
 
 **Audiencia:** equipo de producto, backend, frontend e integraciones Orvae.  
 **Idioma operativo de la app:** español (Perú) e inglés (i18n ya iniciado).  
-**Marca producto:** primario `#660033` (implementado en `resources/css/app.css` y PWA).
+**Marca producto:** primario `#660033` (implementado en `resources/css/app.css` y PWA).  
+**Sistema visual shipped:** ver `DESIGN.md` (North Star «La Consola de Piso»).
 
 ---
 
 ## 1. Resumen ejecutivo
 
-**FoodSaaS** es el vertical de restaurante del ecosistema **Orvae**: un SaaS multi-restaurante para ventas en sala, cocina, caja, inventario/recetas y (en planes superiores) logística, delivery y franquicias. La plataforma central vive en `foodsaas.orvae.pe`; cada cliente opera en `{slug}.foodsaas.orvae.pe` con **aislamiento por schema PostgreSQL** (un schema por tenant), el mismo modelo probado en VetSaaS.
+**FoodSaaS** es el vertical de restaurante del ecosistema **Orvae**: un SaaS multi-restaurante para **sala → cocina → caja → SUNAT**, con carta digital, almacén básico y (en planes superiores) delivery, reservas, reportes y multi-sede. La plataforma central vive en `foodsaas.orvae.pe`; cada cliente opera en `{slug}.foodsaas.orvae.pe` con **aislamiento por schema PostgreSQL** (un schema por tenant), el mismo modelo probado en VetSaaS.
 
-**Estado actual del código (octubre 2026):** starter Laravel 12 + Inertia React con autenticación Fortify (2FA, passkeys), **RBAC Spatie con equipos (`tenant_id`)**, seeders de permisos y roles operativos, migración `users.tenant_id`, middleware `SetPermissionsTeam` (con `tenant_id()` aún stub), i18n ES/EN, PWA y shell de dashboard. **Aún no** hay resolución de tenant, tablas `tenants`/suscripciones, rutas `/plataforma/*`, API de provisioning Orvae ni módulos de negocio (pedidos, cocina, caja).
+**Estado actual del código (noviembre 2026):** el **núcleo operativo ya está en producción usable**:
+tenancy (subdominio + schema), panel `/plataforma/*`, API de provisioning Orvae, salón/mesas (con unión), carta + menú público, pedidos, cocina/KDS (polling), caja/arqueo, ventas rápidas y cobro de pedidos, **facturación electrónica APISUNAT/Lucode** (boleta/factura, series, sync, anulación), stock/kardex de productos, PWA, i18n ES/EN y RBAC por tenant.
 
-**Diferenciador frente a Restaurant.pe:** planes claros con herencia Lite→Pro, permisos granulares (`modulo.accion`), gates por plan y por módulo deshabilitado, integración nativa con checkout Orvae, KDS/cocina en tiempo real, trazabilidad pedido→inventario→foodcost, multi-sede y franquicia en Pro, y experiencia PWA para meseros/móvil.
+**Qué pide el mercado peruano hoy (prioridad comercial):**
+1. Que el local **abra, tome pedidos, cocine y cobre** sin fricción (ya cubierto).
+2. **Boleta/factura SUNAT** confiable y anulación (ya cubierto; endurecer UX y límites de plan).
+3. **Reportes del día/turno** y exportes (vendido en planes; aún débil en producto).
+4. **Delivery** (apps + propio) y **reservas** (vendidos en Pro/Restaurante; **aún no construidos**).
+5. **Multi-sede / cadena** con consolidado (plan Restaurante/Multi-sede; parcial).
+6. Foodcost/recetas y compras (diferenciador vs Restaurant.pe; **siguiente ola**, no bloqueante para vender Starter).
 
-**Próximo hito arquitectónico:** portar el stack de tenancy de VetSaaS (`ResolveTenant`, `TenantManager`, migraciones `public` + `database/migrations/tenant`, API `POST /api/internal/saas/provision`) y conectar `config/services.php` en Orvae PE (patrón ya usado para VetSaaS/TallerSaaS/SendSaaS).
+**Diferenciador frente a Restaurant.pe:** Orvae checkout nativo, permisos granulares, FEL Lucode integrado al cobro, PWA mesero/cocina, multi-tenant schema, overrides de módulos por tenant (UI parcial; falta middleware duro).
+
+**Próximo hito de producto (mercado, no arquitectura):** cerrar lo que **ya se vende en planes** — reportes operativos, delivery, reservas — y cablear `tenant.module` / límites; luego foodcost y franquicia.
 
 ---
 
@@ -54,7 +64,7 @@ flowchart TB
 
 **Flujo de alta (objetivo, alineado a VetSaaS):**
 
-1. Cliente compra plan en Orvae (producto `foodsaas`, plan `lite|basic|regular|pro`).
+1. Cliente compra plan en Orvae (producto `foodsaas`, plan `starter|pro|restaurante|multi_sede` — o `free` trial).
 2. Orvae llama `POST https://foodsaas.orvae.pe/api/internal/saas/provision` con payload firmado e idempotency key.
 3. FoodSaaS crea fila en `public.tenants`, schema `rest_*`, suscripción, usuario admin del restaurante, roles por defecto y URL de login `{slug}.foodsaas.orvae.pe/login`.
 4. Orvae muestra en “Mis productos” el enlace resuelto (ver `SaasTenantAccessResolver` en Orvae — hoy VetSaaS/SendSaaS/TallerSaaS; FoodSaaS previsto en tests de `SaasKnowledgeTest`).
@@ -380,70 +390,62 @@ stateDiagram-v2
 | Delivery | Integración apps | Menú online + zonas propias (Regular); API integraciones (Basic) |
 | Franquicia | Plan Pro | Consolidado multi-sede, requerimientos abastecimiento, guías referencia |
 | Plataforma | N/A en competidor | Orvae checkout, impersonation soporte, overrides módulo/plan |
-| Compliance | Ajustes | SUNAT vía NubeFact/ similar (feature flags por plan), audit-trail |
+| Compliance | Ajustes | SUNAT vía **APISUNAT/Lucode** (boleta/factura, sync, baja/resumen; feature flags por plan), audit-trail |
 | Idioma | ES | ES + EN nativo (ya en stack) |
 | Adopción | Web | PWA instalable, marca `#660033` consistente |
 
 ---
 
-## 9. Roadmap de implementación por fases
+## 9. Roadmap por fases (actualizado nov 2026 — mercado primero)
 
-Alineado a lo **ya hecho** y al orden validado en VetSaaS.
+Planes en código/Orvae: **`free` → `starter` → `pro` → `restaurante` → `multi_sede`** (no usar ya la nomenclatura antigua lite/basic/regular del borrador).
 
-### Fase 0 — Fundación ✅ (actual)
+### Fase 0–3 — Fundación + operación + FEL ✅ (hecho)
 
-- [x] Laravel + Inertia React + Fortify (2FA, passkeys)
-- [x] Spatie teams + `PermissionsSeeder` + roles operativos + superadmin
-- [x] `SetPermissionsTeam`, `users.tenant_id`, páginas forbidden i18n
-- [x] i18n ES/EN, PWA, identidad `#660033`
-- [x] Shell dashboard / settings
+- [x] Tenancy schema-per-tenant, `ResolveTenant` / `TenantManager`, rutas tenant
+- [x] Panel plataforma (tenants, planes, suscripciones) + impersonation
+- [x] API Orvae provision / renew / knowledge
+- [x] Salón/mesas (unión), carta, menú público QR, pedidos, cocina, caja, ventas
+- [x] FEL APISUNAT: series, emisión al cobrar, comprobantes, sync, pasar a prod, anulación venta/CPE
+- [x] Almacén/kardex de productos (no BOM aún)
+- [x] PWA, i18n, RBAC roles operativos
 
-### Fase 1 — Tenancy y plataforma (4–6 semanas)
+### Fase A — Cerrar lo que ya se vende (4–6 semanas) 🎯 **PRIORIDAD MERCADO**
 
-- [ ] Portar: `ResolveTenant`, `TenantManager`, `SubdomainResolver`, excepciones tenant
-- [ ] Migraciones `tenants`, planes, suscripciones (public)
-- [ ] `config/tenant.php`, rutas `routes/tenant.php` + dominio wildcard
-- [ ] Middleware: `tenant.required`, `tenant.none`, `MatchUserTenant`
-- [ ] Panel `/plataforma/*` (CRUD tenants, planes, suscripciones)
-- [ ] `TenantSchemaMigrator` + carpeta `database/migrations/tenant`
-- [ ] Implementar `tenant_id()` real; roles seed por tenant en provisioning
+Lo que el cliente **paga hoy** en Starter/Pro y aún no ve completo:
 
-### Fase 2 — Integración Orvae (2–3 semanas)
+- [ ] **Reportes operativos** (turno/día, top platos, medios de pago, export) — feature `modulo_reportes`
+- [ ] **Delivery**: recepción de pedidos apps + estados; luego menú/zonas propias — `modulo_delivery`
+- [ ] **Reservas** de mesa — `modulo_reservas`
+- [ ] **Gates duros:** middleware `tenant.module` + límites `plan_features` + persistir `modulos_deshabilitados` / límites desde plataforma
+- [ ] **Clientes** maestro (historial, búsqueda) — base para CRM y marketing
+- [ ] **Salón + cobro en unión:** cuenta única del grupo y auto-separar al cobrar (`SALON-MESAS-UNION.md`)
 
-- [ ] `routes/api.php`: `SaasProvisionController` (provision, renew, lookup, status)
-- [ ] HMAC middleware (`orvae.provision.hmac_secret`)
-- [ ] Config Orvae `services.foodsaas`
-- [ ] Knowledge export endpoint (`/custom/knowledge`) para Sales Hub
+### Fase B — Diferenciación operativa (6 semanas)
 
-### Fase 3 — Lite operativo (6–8 semanas)
+- [ ] Recetas / BOM + consumo al cobrar → foodcost
+- [ ] Compras (OC → recepción → stock)
+- [ ] Descuentos/créditos/ofertas con permiso gerente
+- [ ] Realtime cocina/mesero (Reverb) en lugar de solo polling
+- [ ] Carta avanzada: PDF server-side, horarios vigentes, deep link mesero
 
-- [ ] Módulos: mesas, menú, pedidos, cocina/KDS básico, ventas, caja-sesiones, clientes
-- [ ] Permisos `cocina.*`, `comandas.*`; gates plan Lite
-- [ ] Eventos pedido + broadcasting “listo”
-- [ ] Reportes ventas básicos
+### Fase C — Cadenas / franquicia (6–8 semanas)
 
-### Fase 4 — Basic logística (6 semanas)
+- [ ] Consolidado multi-sede, transferencias entre almacenes
+- [ ] Guías / requerimientos de abastecimiento
+- [ ] Completar panel plataforma (operaciones, cobros, reportes centrales)
+- [ ] Notas de crédito/débito y guías de remisión (features ya en plan Restaurante)
 
-- [ ] Insumos, compras, almacenes, ofertas, créditos, descuentos
-- [ ] Integraciones delivery (webhooks)
-- [ ] `TenantModuleRegistry` + UI superadmin módulos deshabilitados
+### Fase D — Endurecimiento
 
-### Fase 5 — Regular (6 semanas)
+- [ ] Backups PostgreSQL por schema
+- [ ] Audit-trail operativo + E2E pedido→caja→stock→SUNAT
+- [ ] Roles `contador`, `delivery_rider`, `chef_produccion`
+- [ ] Docs soporte Orvae / runbooks
 
-- [ ] Reservas, delivery propio, recetas, producción, foodcost, informes producción
-- [ ] Suscripción gates avanzados, límites `plan_features`
+### Criterio de “listo para vender Starter”
 
-### Fase 6 — Pro franquicia (8 semanas)
-
-- [ ] Requerimientos, guías, ventas insumos, consolidado franquicia
-- [ ] Impersonation (`TenantImpersonationController`, permiso `plataforma-tenants.impersonate`)
-- [ ] Multi-sede activa (`EnsureTenantHasActiveSede`)
-
-### Fase 7 — Endurecimiento
-
-- [ ] Backups PostgreSQL por schema (ver `vetsaas/config/backup.php`)
-- [ ] Auditoría operativa, pruebas E2E pedido→caja→stock
-- [ ] Documentación operativa para soporte Orvae
+Sala + cocina + caja + boleta SUNAT + anulación + arqueo + al menos **reporte del turno**. Delivery/reservas no bloquean Starter; sí bloquean vender Pro con honestidad.
 
 ---
 
