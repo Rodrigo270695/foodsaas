@@ -3,6 +3,7 @@ import {
     Bike,
     CheckCircle2,
     ClipboardList,
+    ExternalLink,
     Filter,
     Plus,
     ScreenShare,
@@ -184,16 +185,27 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                 id: 'acciones',
                 header: '',
                 cell: (row) => (
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        className="cursor-pointer"
-                        asChild
-                    >
-                        <Link href={`/pedidos/${row.id}`}>
-                            {t('delivery:actions.open')}
-                        </Link>
-                    </Button>
+                    <div className="flex justify-end gap-0.5">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-violet-600 shadow-none hover:bg-violet-500/10 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-300"
+                            asChild
+                        >
+                            <Link
+                                href={`/pedidos/${row.id}`}
+                                aria-label={t('delivery:actions.open')}
+                                title={t('delivery:actions.open')}
+                            >
+                                <ExternalLink
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                />
+                            </Link>
+                        </Button>
+                    </div>
                 ),
                 className: 'text-right',
             },

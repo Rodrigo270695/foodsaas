@@ -139,18 +139,24 @@ export default function ClientesIndex({ clientes, filters, stats }: Props) {
                 id: 'acciones',
                 header: '',
                 cell: (row) => (
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-0.5">
                         {canUpdate ? (
                             <Button
                                 type="button"
                                 size="icon"
                                 variant="ghost"
-                                className="cursor-pointer"
+                                className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-sky-600 shadow-none hover:bg-sky-500/10 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
                                 onClick={() =>
                                     setModal({ type: 'edit', cliente: row })
                                 }
+                                aria-label={t('common:actions.edit')}
+                                title={t('common:actions.edit')}
                             >
-                                <Pencil className="size-4" />
+                                <Pencil
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                />
                             </Button>
                         ) : null}
                         {canDelete ? (
@@ -158,12 +164,18 @@ export default function ClientesIndex({ clientes, filters, stats }: Props) {
                                 type="button"
                                 size="icon"
                                 variant="ghost"
-                                className="cursor-pointer text-destructive"
+                                className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-rose-600 shadow-none hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
                                 onClick={() =>
                                     setModal({ type: 'delete', cliente: row })
                                 }
+                                aria-label={t('common:actions.delete')}
+                                title={t('common:actions.delete')}
                             >
-                                <Trash2 className="size-4" />
+                                <Trash2
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                />
                             </Button>
                         ) : null}
                     </div>
