@@ -280,6 +280,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:reservas.update')
                     ->match(['put', 'patch'], '{reserva}', [ReservaController::class, 'update'])
                     ->name('update');
+                Route::middleware('permission:reservas.update')
+                    ->patch('{reserva}/estado', [ReservaController::class, 'updateEstado'])
+                    ->name('estado');
                 Route::middleware('permission:reservas.delete')
                     ->delete('{reserva}', [ReservaController::class, 'destroy'])
                     ->name('destroy');

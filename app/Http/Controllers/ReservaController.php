@@ -161,10 +161,24 @@ class ReservaController extends Controller
     public function update(Request $request, Reserva $reserva): RedirectResponse
     {
         $this->tenantIdOrAbort();
-        $data = $this->validated($request, (string) $reserva->sede_id, true);
+        // El estado se cambia desde el listado (updateEstado); el modal edita el resto.
+        $data = $this->validated($request, (string) $reserva->sede_id, false);
         $reserva->update($data);
 
         return back()->with('success', 'Reserva actualizada.');
+    }
+
+    public function updateEstado(Request $request, Reserva $reserva): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+
+        $data = $request->validate([
+            'estado' => ['required', Rule::in(Reserva::ESTADOS)],
+        ]);
+
+        $reserva->update(['estado' => $data['estado']]);
+
+        return back()->with('success', 'Estado de reserva actualizado.');
     }
 
     public function destroy(Reserva $reserva): RedirectResponse

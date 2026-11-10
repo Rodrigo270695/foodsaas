@@ -206,11 +206,15 @@ function DefaultIcon({ value, className }: { value: string; className?: string }
         return <Clock3 className={cls} strokeWidth={2.25} />;
     }
 
+    if (v === 'sentada' || v === 'sentado') {
+        return <CheckCircle2 className={cls} strokeWidth={2.25} />;
+    }
+
     if (v === 'en_proceso' || v === 'en_curso') {
         return <LoaderCircle className={cls} strokeWidth={2.25} />;
     }
 
-    if (v === 'bajo') {
+    if (v === 'bajo' || v === 'no_show') {
         return <AlertTriangle className={cls} strokeWidth={2.25} />;
     }
 

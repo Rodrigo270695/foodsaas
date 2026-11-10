@@ -50,7 +50,6 @@ type ReservaFormModalProps = {
     reserva: ReservaFormRow | null;
     mesas: MesaOption[];
     clientes: ReservaClienteOption[];
-    estados: string[];
     defaultDate: string;
 };
 
@@ -60,7 +59,6 @@ type FormData = {
     cliente_telefono: string;
     personas: number;
     reserved_at: string;
-    estado: string;
     notas: string;
 };
 
@@ -97,7 +95,6 @@ export function ReservaFormModal({
     reserva,
     mesas,
     clientes = [],
-    estados,
     defaultDate,
 }: ReservaFormModalProps) {
     const { t } = useTranslation(['reservas', 'common', 'clientes']);
@@ -114,7 +111,6 @@ export function ReservaFormModal({
             cliente_telefono: '',
             personas: 2,
             reserved_at: `${defaultDate}T19:00`,
-            estado: 'pendiente',
             notas: '',
         });
 
@@ -132,7 +128,6 @@ export function ReservaFormModal({
             cliente_telefono: telefono,
             personas: reserva?.personas ?? 2,
             reserved_at: toLocalInput(reserva?.reserved_at, defaultDate),
-            estado: reserva?.estado ?? 'pendiente',
             notas: reserva?.notas ?? '',
         });
         setClienteId(matchClienteId(clientes, nombre, telefono));
@@ -189,17 +184,6 @@ export function ReservaFormModal({
         [mesas, t],
     );
 
-    const estadoOptions = useMemo<FilterSelectOption[]>(
-        () =>
-            estados.map((estado) => ({
-                value: estado,
-                label: t(`reservas:estados.${estado}`, {
-                    defaultValue: estado,
-                }),
-            })),
-        [estados, t],
-    );
-
     const canSubmit = useMemo(() => {
         if (processing || clienteQuickOpen) {
             return false;
@@ -213,11 +197,8 @@ export function ReservaFormModal({
         if (data.personas < 1 || data.personas > 99) {
             return false;
         }
-        if (isEdit && !data.estado) {
-            return false;
-        }
         return true;
-    }, [processing, clienteQuickOpen, data, isEdit]);
+    }, [processing, clienteQuickOpen, data]);
 
     const openClienteQuick = (nombreHint = '') => {
         setClienteDraftNombre(nombreHint.trim());
@@ -457,25 +438,6 @@ export function ReservaFormModal({
                             className="w-full min-w-0 sm:w-full"
                         />
                     </FormField>
-
-                    {isEdit ? (
-                        <FormField
-                            id="reserva-estado"
-                            label={t('reservas:form.estado')}
-                            error={errors.estado}
-                            required
-                            className="sm:col-span-2"
-                        >
-                            <FilterSelect
-                                ariaLabel={t('reservas:form.estado')}
-                                value={data.estado}
-                                onChange={(value) => setData('estado', value)}
-                                options={estadoOptions}
-                                disabled={processing || clienteQuickOpen}
-                                className="w-full min-w-0 sm:w-full"
-                            />
-                        </FormField>
-                    ) : null}
 
                     <FormField
                         id="reserva-notas"

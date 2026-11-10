@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     CalendarDays,
     Filter,
@@ -19,18 +19,17 @@ import {
     type DataTableColumn,
 } from '@/components/data-page';
 import { DateRangeFilter } from '@/components/date-range-filter';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
 import {
     FilterSelect,
     type FilterSelectOption,
+    type FilterSelectTone,
 } from '@/components/ui/filter-select';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
-import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 import { todayIso } from '../pedidos/types';
 import {
@@ -72,20 +71,20 @@ type ModalState =
     | { type: 'edit'; reserva: ReservaRow }
     | { type: 'delete'; reserva: ReservaRow };
 
-function estadoBadgeClass(estado: string): string {
+function estadoSelectTone(estado: string): FilterSelectTone {
     switch (estado) {
         case 'pendiente':
-            return 'border-sky-500/25 bg-sky-500/15 text-sky-800 dark:text-sky-300';
+            return 'info';
         case 'confirmada':
-            return 'border-violet-500/25 bg-violet-500/15 text-violet-800 dark:text-violet-300';
+            return 'success';
         case 'sentada':
-            return 'border-emerald-500/25 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300';
+            return 'default';
         case 'cancelada':
-            return 'border-rose-500/25 bg-rose-500/15 text-rose-800 dark:text-rose-300';
+            return 'danger';
         case 'no_show':
-            return 'border-amber-500/25 bg-amber-500/15 text-amber-900 dark:text-amber-300';
+            return 'warning';
         default:
-            return 'border-border/60 bg-muted/60 text-muted-foreground';
+            return 'muted';
     }
 }
 
@@ -102,6 +101,9 @@ export default function ReservasIndex({
     const canUpdate = usePermission('reservas.update');
     const canDelete = usePermission('reservas.delete');
     const [modal, setModal] = useState<ModalState>({ type: 'idle' });
+    const [updatingEstadoId, setUpdatingEstadoId] = useState<string | null>(
+        null,
+    );
 
     const { search, setSearch, isLoading, setPerPage, applyFilter } =
         useDataTablePage<{
@@ -119,7 +121,20 @@ export default function ReservasIndex({
 
     const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
 
-    const estadoOptions = useMemo<FilterSelectOption[]>(
+    const changeEstado = useCallback((reservaId: string, estado: string) => {
+        setUpdatingEstadoId(reservaId);
+        router.patch(
+            `/reservas/${reservaId}/estado`,
+            { estado },
+            {
+                preserveScroll: true,
+                only: ['reservas', 'filters', 'stats'],
+                onFinish: () => setUpdatingEstadoId(null),
+            },
+        );
+    }, []);
+
+    const estadoFilterOptions = useMemo<FilterSelectOption[]>(
         () => [
             { value: 'todas', label: t('reservas:filters.todas') },
             ...estados.map((estado) => ({
@@ -127,8 +142,21 @@ export default function ReservasIndex({
                 label: t(`reservas:estados.${estado}`, {
                     defaultValue: estado,
                 }),
+                tone: estadoSelectTone(estado),
             })),
         ],
+        [t, estados],
+    );
+
+    const estadoRowOptions = useMemo<FilterSelectOption[]>(
+        () =>
+            estados.map((estado) => ({
+                value: estado,
+                label: t(`reservas:estados.${estado}`, {
+                    defaultValue: estado,
+                }),
+                tone: estadoSelectTone(estado),
+            })),
         [t, estados],
     );
 
@@ -174,19 +202,29 @@ export default function ReservasIndex({
             {
                 id: 'estado',
                 header: t('reservas:columns.estado'),
-                cell: (row) => (
-                    <Badge
-                        variant="outline"
-                        className={cn(
-                            'capitalize',
-                            estadoBadgeClass(row.estado),
-                        )}
-                    >
-                        {t(`reservas:estados.${row.estado}`, {
-                            defaultValue: row.estado,
-                        })}
-                    </Badge>
-                ),
+                cell: (row) =>
+                    canUpdate ? (
+                        <FilterSelect
+                            ariaLabel={t('reservas:columns.estado')}
+                            value={row.estado}
+                            onChange={(estado) => {
+                                if (estado === row.estado) {
+                                    return;
+                                }
+                                changeEstado(row.id, estado);
+                            }}
+                            options={estadoRowOptions}
+                            disabled={updatingEstadoId === row.id}
+                            className="w-[11.5rem] min-w-0"
+                            triggerClassName="h-8"
+                        />
+                    ) : (
+                        <span className="text-sm text-muted-foreground">
+                            {t(`reservas:estados.${row.estado}`, {
+                                defaultValue: row.estado,
+                            })}
+                        </span>
+                    ),
             },
             {
                 id: 'acciones',
@@ -236,7 +274,14 @@ export default function ReservasIndex({
                 className: 'w-20',
             },
         ],
-        [t, canUpdate, canDelete],
+        [
+            t,
+            canUpdate,
+            canDelete,
+            estadoRowOptions,
+            changeEstado,
+            updatingEstadoId,
+        ],
     );
 
     return (
@@ -313,7 +358,7 @@ export default function ReservasIndex({
                                 ariaLabel={t('reservas:filters.label')}
                                 value={filters.estado}
                                 onChange={(estado) => applyFilter({ estado })}
-                                options={estadoOptions}
+                                options={estadoFilterOptions}
                                 disabled={isLoading}
                             />
                             <DateRangeFilter
@@ -379,7 +424,6 @@ export default function ReservasIndex({
                 reserva={modal.type === 'edit' ? modal.reserva : null}
                 mesas={mesas}
                 clientes={clientes}
-                estados={estados}
                 defaultDate={filters.desde || todayIso()}
             />
 

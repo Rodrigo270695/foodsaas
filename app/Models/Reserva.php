@@ -31,6 +31,7 @@ class Reserva extends Model
 
     public const ESTADO_CANCELADA = 'cancelada';
 
+    /** Cliente no se presentó (UI: «No asistió»). */
     public const ESTADO_NO_SHOW = 'no_show';
 
     public const ESTADOS = [
