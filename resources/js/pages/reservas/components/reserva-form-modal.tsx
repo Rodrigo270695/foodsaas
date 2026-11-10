@@ -290,7 +290,7 @@ export function ReservaFormModal({
                 className={cn(
                     'transition-[left,transform,opacity,width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
                     paired &&
-                        'max-md:pointer-events-none max-md:opacity-40 md:left-[calc(50%-min(22vw,13.5rem))] md:sm:max-w-md',
+                        'max-md:pointer-events-none max-md:opacity-40 md:left-[calc(50%-min(28vw,17.5rem))] md:sm:max-w-md',
                 )}
                 footer={
                     <>
@@ -505,8 +505,8 @@ export function ReservaFormModal({
                     'z-[60] transition-[left,transform,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
                     // Móvil: modal completo centrado encima
                     'max-md:left-1/2 max-md:translate-x-[-50%]',
-                    // Desktop: panel a la derecha del de reserva
-                    'md:left-[calc(50%+min(22vw,13.5rem))] md:sm:max-w-md',
+                    // Desktop: panel a la derecha, con gutter ~1.5–2rem entre ambos
+                    'md:left-[calc(50%+min(28vw,17.5rem))] md:sm:max-w-md',
                 )}
             />
 
