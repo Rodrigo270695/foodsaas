@@ -254,7 +254,7 @@ export default function ReservasIndex({
     const modalOpen = modal.type === 'create' || modal.type === 'edit';
 
     return (
-        <AppLayout>
+        <>
             <Head title={t('reservas:title')} />
             <div className="flex flex-col gap-4 p-4 md:p-6">
                 <PageHeader
@@ -535,6 +535,17 @@ export default function ReservasIndex({
                 }
                 onSuccess={() => setModal({ type: 'idle' })}
             />
-        </AppLayout>
+        </>
     );
 }
+
+ReservasIndex.layout = (page: React.ReactNode) => (
+    <AppLayout
+        breadcrumbs={[
+            { title: 'Servicio' },
+            { title: 'Reservas', href: '/reservas' },
+        ]}
+    >
+        {page}
+    </AppLayout>
+);

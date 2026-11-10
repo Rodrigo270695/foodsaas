@@ -215,7 +215,7 @@ export default function ClientesIndex({ clientes, filters }: Props) {
     const processing = form.processing;
 
     return (
-        <AppLayout>
+        <>
             <Head title={t('clientes:title')} />
             <div className="flex flex-col gap-4 p-4 md:p-6">
                 <PageHeader
@@ -400,6 +400,17 @@ export default function ClientesIndex({ clientes, filters }: Props) {
                 }
                 onSuccess={() => setModal({ type: 'idle' })}
             />
-        </AppLayout>
+        </>
     );
 }
+
+ClientesIndex.layout = (page: React.ReactNode) => (
+    <AppLayout
+        breadcrumbs={[
+            { title: 'Cobros' },
+            { title: 'Clientes', href: '/clientes' },
+        ]}
+    >
+        {page}
+    </AppLayout>
+);

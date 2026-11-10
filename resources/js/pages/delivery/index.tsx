@@ -167,7 +167,7 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
     };
 
     return (
-        <AppLayout>
+        <>
             <Head title={t('delivery:title')} />
             <div className="flex flex-col gap-4 p-4 md:p-6">
                 <PageHeader
@@ -323,6 +323,17 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                     </FormField>
                 </FormSection>
             </FormModal>
-        </AppLayout>
+        </>
     );
 }
+
+DeliveryIndex.layout = (page: React.ReactNode) => (
+    <AppLayout
+        breadcrumbs={[
+            { title: 'Servicio' },
+            { title: 'Delivery', href: '/delivery' },
+        ]}
+    >
+        {page}
+    </AppLayout>
+);

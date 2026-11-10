@@ -120,7 +120,7 @@ export default function ReportesIndex({
     );
 
     return (
-        <AppLayout>
+        <>
             <Head title={t('reportes:title')} />
             <div className="flex flex-col gap-4 p-4 md:p-6">
                 <PageHeader
@@ -245,6 +245,17 @@ export default function ReportesIndex({
                     )}
                 </section>
             </div>
-        </AppLayout>
+        </>
     );
 }
+
+ReportesIndex.layout = (page: React.ReactNode) => (
+    <AppLayout
+        breadcrumbs={[
+            { title: 'Cobros' },
+            { title: 'Reportes', href: '/reportes' },
+        ]}
+    >
+        {page}
+    </AppLayout>
+);
