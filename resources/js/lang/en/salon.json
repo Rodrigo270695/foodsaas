@@ -87,6 +87,8 @@
         "refresh": "Refresh floor",
         "available": "Available",
         "occupied": "Occupied",
+        "reserved": "Reserved",
+        "reservation_pending": "Pending",
         "inactive": "Inactive",
         "new_order": "Take order",
         "open_order": "Open order",
@@ -156,5 +158,14 @@
             "activa": "Active table",
             "activa_hint": "Inactive tables are hidden from orders and reservations."
         }
+    },
+    "stats_badges": {
+        "total": "Total",
+        "available": "Available",
+        "occupied": "Occupied",
+        "reserved": "Reserved",
+        "inactive": "Inactive",
+        "zones": "Zones",
+        "capacity": "Capacity"
     }
 }

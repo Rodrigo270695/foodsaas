@@ -65,4 +65,12 @@ class Mesa extends Model
     {
         return $this->hasMany(Pedido::class, 'mesa_id');
     }
+
+    /**
+     * @return HasMany<Reserva, $this>
+     */
+    public function reservas(): HasMany
+    {
+        return $this->hasMany(Reserva::class, 'mesa_id');
+    }
 }

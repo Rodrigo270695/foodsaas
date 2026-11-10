@@ -28,6 +28,16 @@ export type MesaPedidoActivo = {
     opened_by?: number | string | null;
 };
 
+/** Reserva vigente del día (pendiente o confirmada) para el piso. */
+export type MesaReservaHoy = {
+    id: string;
+    mesa_id: string;
+    estado: 'pendiente' | 'confirmada' | string;
+    cliente_nombre: string;
+    personas: number;
+    reserved_at: string;
+};
+
 export type MesaSalon = {
     id: string;
     sede_id: string;
@@ -41,6 +51,8 @@ export type MesaSalon = {
     zona?: MesaZonaRef | null;
     /** Pedido activo cargado desde el backend (máx. 1). */
     pedidos?: MesaPedidoActivo[];
+    /** Reserva del día (máx. 1) pendiente/confirmada. */
+    reservas?: MesaReservaHoy[];
 };
 
 export type SalonStats = {

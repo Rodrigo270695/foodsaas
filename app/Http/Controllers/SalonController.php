@@ -8,6 +8,7 @@ use App\Http\Requests\MesaRequest;
 use App\Http\Requests\ZonaRequest;
 use App\Models\Mesa;
 use App\Models\Pedido;
+use App\Models\Reserva;
 use App\Models\Sede;
 use App\Models\Zona;
 use App\Services\Sedes\CopySalonToSedeService;
@@ -51,6 +52,8 @@ class SalonController extends Controller
             $estado = 'todos';
         }
 
+        $hoy = now()->toDateString();
+
         $mesasQuery = Mesa::query()
             ->with([
                 'zona:id,nombre',
@@ -59,6 +62,21 @@ class SalonController extends Controller
                     ->select(['id', 'mesa_id', 'numero', 'estado', 'total', 'comensales', 'opened_by'])
                     ->latest('created_at')
                     ->limit(1),
+                // Reserva del día (pendiente/confirmada) → estado visual en el piso.
+                // Sin limit(): en eager load HasMany el LIMIT es global y deja
+                // otras mesas sin su reserva aunque sí exista una hoy.
+                'reservas' => fn ($q) => $q
+                    ->whereIn('estado', [Reserva::ESTADO_PENDIENTE, Reserva::ESTADO_CONFIRMADA])
+                    ->whereDate('reserved_at', $hoy)
+                    ->select([
+                        'id',
+                        'mesa_id',
+                        'estado',
+                        'cliente_nombre',
+                        'personas',
+                        'reserved_at',
+                    ])
+                    ->orderBy('reserved_at'),
             ])
             ->orderBy('codigo');
 

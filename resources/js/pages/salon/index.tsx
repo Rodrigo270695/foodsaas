@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import {
     Armchair,
+    CalendarDays,
     CheckCircle2,
     LayoutGrid,
     Plus,
@@ -120,6 +121,13 @@ export default function Index({
 
     const occupiedCount = useMemo(
         () => mesas.filter((m) => Boolean(m.pedidos?.[0])).length,
+        [mesas],
+    );
+    const reservedCount = useMemo(
+        () =>
+            mesas.filter(
+                (m) => !m.pedidos?.[0] && Boolean(m.reservas?.[0]),
+            ).length,
         [mesas],
     );
 
@@ -262,7 +270,9 @@ export default function Index({
                             }),
                             value: Math.max(
                                 0,
-                                stats.mesas_activas - occupiedCount,
+                                stats.mesas_activas -
+                                    occupiedCount -
+                                    reservedCount,
                             ),
                             variant: 'success',
                             icon: CheckCircle2,
@@ -276,13 +286,12 @@ export default function Index({
                             icon: Users,
                         },
                         {
-                            label: t('stats_badges.zones', {
-                                defaultValue: 'Zonas',
+                            label: t('stats_badges.reserved', {
+                                defaultValue: 'Reservadas',
                             }),
-                            value: stats.zonas,
-                            variant: 'muted',
-                            icon: LayoutGrid,
-                            hideOnMobile: true,
+                            value: reservedCount,
+                            variant: 'primary',
+                            icon: CalendarDays,
                         },
                     ]}
                     action={

@@ -181,6 +181,10 @@ export function MesaUnionCard({
     const showManageChrome = isGestionar && (canUpdate || canDelete);
     const allActive = mesas.every((m) => m.activa);
     const occupied = mesas.some((m) => Boolean(m.pedidos?.[0]));
+    const reservaHoy =
+        mesas.map((m) => m.reservas?.[0]).find(Boolean) ?? null;
+    const reserved = !occupied && Boolean(reservaHoy);
+    const reservaPendiente = reserved && reservaHoy?.estado === 'pendiente';
     const canPedido =
         can('pedidos.view') || can('pedidos.create');
     const pedidoAccess = {
@@ -204,7 +208,11 @@ export function MesaUnionCard({
                 !joinHighlight &&
                     (occupied
                         ? 'border-amber-500/45 hover:border-amber-500/65'
-                        : 'border-[#660033]/45 hover:border-[#660033]/70'),
+                        : reserved
+                          ? reservaPendiente
+                              ? 'border-sky-500/45 hover:border-sky-500/65'
+                              : 'border-violet-500/45 hover:border-violet-500/65'
+                          : 'border-[#660033]/45 hover:border-[#660033]/70'),
             )}
         >
             <div className="mb-1 flex items-start justify-between gap-2">
@@ -214,12 +222,24 @@ export function MesaUnionCard({
                             'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
                             occupied
                                 ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
-                                : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+                                : reserved
+                                  ? reservaPendiente
+                                      ? 'bg-sky-500/15 text-sky-800 dark:text-sky-300'
+                                      : 'bg-violet-500/15 text-violet-800 dark:text-violet-300'
+                                  : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
                         )}
                     >
                         {occupied
                             ? t('floor.occupied', { defaultValue: 'Ocupada' })
-                            : t('floor.available')}
+                            : reserved
+                              ? reservaPendiente
+                                  ? t('floor.reservation_pending', {
+                                        defaultValue: 'Pendiente',
+                                    })
+                                  : t('floor.reserved', {
+                                        defaultValue: 'Reservada',
+                                    })
+                              : t('floor.available')}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-md bg-[#660033]/12 px-2 py-0.5 text-[10px] font-semibold text-[#660033]">
                         <Link2 className="size-3" aria-hidden />
@@ -447,9 +467,18 @@ export function MesaUnionCard({
                         </span>
                     </p>
                     {!isGestionar && allActive ? (
-                        <p className="inline-flex items-center justify-center gap-1 pt-0.5 text-[11px] font-medium text-[#660033]">
+                        <p
+                            className={cn(
+                                'inline-flex items-center justify-center gap-1 pt-0.5 text-[11px] font-medium',
+                                reserved
+                                    ? reservaPendiente
+                                        ? 'text-sky-700 dark:text-sky-300'
+                                        : 'text-violet-700 dark:text-violet-300'
+                                    : 'text-[#660033]',
+                            )}
+                        >
                             <ClipboardList
-                                className="size-3"
+                                className="size-3.5"
                                 strokeWidth={2.25}
                                 aria-hidden
                             />
@@ -457,9 +486,17 @@ export function MesaUnionCard({
                                 ? t('floor.open_order', {
                                       defaultValue: 'Abrir pedido',
                                   })
-                                : t('floor.new_order', {
-                                      defaultValue: 'Tomar pedido',
-                                  })}
+                                : reserved
+                                  ? reservaPendiente
+                                      ? t('floor.reservation_pending', {
+                                            defaultValue: 'Pendiente',
+                                        })
+                                      : t('floor.reserved', {
+                                            defaultValue: 'Reservada',
+                                        })
+                                  : t('floor.new_order', {
+                                        defaultValue: 'Tomar pedido',
+                                    })}
                         </p>
                     ) : null}
                 </div>

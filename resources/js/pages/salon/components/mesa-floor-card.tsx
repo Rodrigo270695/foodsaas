@@ -61,17 +61,54 @@ function TableDiagram({
     capacidad,
     available,
     occupied,
+    reserved,
+    reservationPending,
     joined,
 }: {
     codigo: string;
     capacidad: number;
     available: boolean;
     occupied?: boolean;
+    reserved?: boolean;
+    reservationPending?: boolean;
     joined?: boolean;
 }) {
     const seats = Math.max(1, Math.min(capacidad, MAX_VISIBLE_CHAIRS));
     const overflow = Math.max(0, capacidad - MAX_VISIBLE_CHAIRS);
     const radius = 38;
+    const boardTone = joined
+        ? 'border-[#660033]/70 bg-[#660033]/10'
+        : occupied
+          ? 'border-amber-500/60 bg-amber-500/15'
+          : reserved
+            ? reservationPending
+                ? 'border-sky-500/60 bg-sky-500/15'
+                : 'border-violet-500/60 bg-violet-500/15'
+            : available
+              ? 'border-emerald-500/55 bg-emerald-500/12'
+              : 'border-border bg-muted/50';
+    const chairTone = joined
+        ? 'text-[#660033]'
+        : occupied
+          ? 'text-amber-600 dark:text-amber-400'
+          : reserved
+            ? reservationPending
+                ? 'text-sky-600 dark:text-sky-400'
+                : 'text-violet-600 dark:text-violet-400'
+            : available
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-muted-foreground';
+    const overflowTone = joined
+        ? 'bg-[#660033] text-white'
+        : occupied
+          ? 'bg-amber-600 text-white'
+          : reserved
+            ? reservationPending
+                ? 'bg-sky-600 text-white'
+                : 'bg-violet-600 text-white'
+            : available
+              ? 'bg-emerald-600 text-white'
+              : 'bg-muted-foreground text-background';
 
     return (
         <div
@@ -81,13 +118,7 @@ function TableDiagram({
             <div
                 className={cn(
                     'absolute top-1/2 left-1/2 flex size-[3.25rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 shadow-sm sm:size-[3.75rem]',
-                    joined
-                        ? 'border-[#660033]/70 bg-[#660033]/10'
-                        : occupied
-                          ? 'border-amber-500/60 bg-amber-500/15'
-                          : available
-                            ? 'border-emerald-500/55 bg-emerald-500/12'
-                            : 'border-border bg-muted/50',
+                    boardTone,
                 )}
             >
                 <span className="font-mono text-sm font-bold tracking-tight text-foreground sm:text-base">
@@ -110,15 +141,7 @@ function TableDiagram({
                             transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${faceCenter}deg)`,
                         }}
                     >
-                        <Chair
-                            className={cn(
-                                joined
-                                    ? 'text-[#660033]'
-                                    : available
-                                      ? 'text-emerald-600 dark:text-emerald-400'
-                                      : 'text-muted-foreground',
-                            )}
-                        />
+                        <Chair className={chairTone} />
                     </span>
                 );
             })}
@@ -127,9 +150,7 @@ function TableDiagram({
                 <span
                     className={cn(
                         'absolute -right-0.5 -bottom-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold tabular-nums',
-                        available
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-muted-foreground text-background',
+                        overflowTone,
                     )}
                 >
                     +{overflow}
@@ -157,14 +178,18 @@ export function MesaFloorCard({
     const page = usePage<{ auth?: { user?: { id?: number | string } } }>();
     const isGestionar = mode === 'gestionar';
     const pedidoActivo = mesa.pedidos?.[0] ?? null;
+    const reservaHoy = mesa.reservas?.[0] ?? null;
     const pedidoAccess = {
         userId: page.props.auth?.user?.id,
         canViewAll: can('pedidos.view-all'),
         ajenoMessage: t('salon.pedido_ajeno', { ns: 'pedidos' }),
     };
     const occupied = Boolean(pedidoActivo);
+    const reserved = !occupied && Boolean(reservaHoy);
     const available = mesa.activa && !occupied;
+    const freeForJoin = available && !reserved;
     const joined = Boolean(mesa.union_id);
+    const reservaPendiente = reserved && reservaHoy?.estado === 'pendiente';
     const showManageChrome = isGestionar && (canUpdate || canDelete);
     const displayName = mesa.nombre?.trim() || mesa.codigo;
     const primaryEnabled = isGestionar
@@ -190,9 +215,13 @@ export function MesaFloorCard({
                         ? 'border-[#660033]/45 hover:border-[#660033]/70'
                         : occupied
                           ? 'border-amber-500/45 hover:border-amber-500/65'
-                          : available
-                            ? 'border-emerald-500/35 hover:border-emerald-500/55'
-                            : 'border-border/70 opacity-90 hover:border-border'),
+                          : reserved
+                            ? reservaPendiente
+                                ? 'border-sky-500/45 hover:border-sky-500/65'
+                                : 'border-violet-500/45 hover:border-violet-500/65'
+                            : available
+                              ? 'border-emerald-500/35 hover:border-emerald-500/55'
+                              : 'border-border/70 opacity-90 hover:border-border'),
             )}
         >
             <div className="mb-1 flex items-start justify-between gap-2">
@@ -202,22 +231,47 @@ export function MesaFloorCard({
                             'inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
                             occupied
                                 ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
-                                : available
-                                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                                  : 'bg-muted text-muted-foreground',
+                                : reserved
+                                  ? reservaPendiente
+                                      ? 'bg-sky-500/15 text-sky-800 dark:text-sky-300'
+                                      : 'bg-violet-500/15 text-violet-800 dark:text-violet-300'
+                                  : available
+                                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-muted text-muted-foreground',
                         )}
                     >
                         {occupied
                             ? t('floor.occupied', {
                                   defaultValue: 'Ocupada',
                               })
-                            : available
-                              ? t('floor.available')
-                              : t('floor.inactive')}
+                            : reserved
+                              ? reservaPendiente
+                                  ? t('floor.reservation_pending', {
+                                        defaultValue: 'Pendiente',
+                                    })
+                                  : t('floor.reserved', {
+                                        defaultValue: 'Reservada',
+                                    })
+                              : available
+                                ? t('floor.available')
+                                : t('floor.inactive')}
                     </span>
                     {occupied && pedidoActivo ? (
                         <span className="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-200">
                             #{pedidoActivo.numero}
+                        </span>
+                    ) : null}
+                    {reserved && reservaHoy ? (
+                        <span
+                            className={cn(
+                                'inline-flex max-w-[9rem] truncate items-center rounded-md px-2 py-0.5 text-[10px] font-semibold',
+                                reservaPendiente
+                                    ? 'bg-sky-500/10 text-sky-800 dark:text-sky-200'
+                                    : 'bg-violet-500/10 text-violet-800 dark:text-violet-200',
+                            )}
+                            title={reservaHoy.cliente_nombre}
+                        >
+                            {reservaHoy.cliente_nombre}
                         </span>
                     ) : null}
                     {joined ? (
@@ -255,7 +309,7 @@ export function MesaFloorCard({
                     ) : null}
                     {showManageChrome &&
                     canUpdate &&
-                    available &&
+                    freeForJoin &&
                     onJoinDragStart ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -347,9 +401,17 @@ export function MesaFloorCard({
                           ? t('floor.open_order', {
                                 defaultValue: 'Abrir pedido',
                             })
-                          : t('floor.new_order', {
-                                defaultValue: 'Tomar pedido',
-                            })
+                          : reserved
+                            ? reservaPendiente
+                                ? t('floor.reservation_pending', {
+                                      defaultValue: 'Pendiente',
+                                  })
+                                : t('floor.reserved', {
+                                      defaultValue: 'Reservada',
+                                  })
+                            : t('floor.new_order', {
+                                  defaultValue: 'Tomar pedido',
+                              })
                 }
                 onClick={() => {
                     if (onJoinTap) {
@@ -377,8 +439,10 @@ export function MesaFloorCard({
                 <TableDiagram
                     codigo={mesa.codigo}
                     capacidad={mesa.capacidad}
-                    available={available}
+                    available={available && !reserved}
                     occupied={occupied}
+                    reserved={reserved}
+                    reservationPending={reservaPendiente}
                     joined={joined}
                 />
 
@@ -407,9 +471,18 @@ export function MesaFloorCard({
                         </span>
                     </p>
                     {!isGestionar && mesa.activa ? (
-                        <p className="inline-flex items-center justify-center gap-1 pt-0.5 text-[11px] font-medium text-[#660033]">
+                        <p
+                            className={cn(
+                                'inline-flex items-center justify-center gap-1 pt-0.5 text-[11px] font-medium',
+                                reserved
+                                    ? reservaPendiente
+                                        ? 'text-sky-700 dark:text-sky-300'
+                                        : 'text-violet-700 dark:text-violet-300'
+                                    : 'text-[#660033]',
+                            )}
+                        >
                             <ClipboardList
-                                className="size-3"
+                                className="size-3.5"
                                 strokeWidth={2.25}
                                 aria-hidden
                             />
@@ -417,9 +490,17 @@ export function MesaFloorCard({
                                 ? t('floor.open_order', {
                                       defaultValue: 'Abrir pedido',
                                   })
-                                : t('floor.new_order', {
-                                      defaultValue: 'Tomar pedido',
-                                  })}
+                                : reserved
+                                  ? reservaPendiente
+                                      ? t('floor.reservation_pending', {
+                                            defaultValue: 'Pendiente',
+                                        })
+                                      : t('floor.reserved', {
+                                            defaultValue: 'Reservada',
+                                        })
+                                  : t('floor.new_order', {
+                                        defaultValue: 'Tomar pedido',
+                                    })}
                         </p>
                     ) : null}
                 </div>

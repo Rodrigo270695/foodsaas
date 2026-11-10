@@ -86,6 +86,8 @@
         "refresh": "Actualizar salón",
         "available": "Disponible",
         "occupied": "Ocupada",
+        "reserved": "Reservada",
+        "reservation_pending": "Pendiente",
         "inactive": "Inactiva",
         "new_order": "Tomar pedido",
         "open_order": "Abrir pedido",
@@ -117,6 +119,7 @@
         "total": "Total",
         "available": "Disponibles",
         "occupied": "Ocupadas",
+        "reserved": "Reservadas",
         "inactive": "Inactivas",
         "zones": "Zonas",
         "capacity": "Capacidad"
