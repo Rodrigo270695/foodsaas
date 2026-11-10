@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $id
  * @property string|null $sede_id
  * @property string $nombre
+ * @property string|null $documento_tipo
  * @property string|null $documento
  * @property string|null $telefono
  * @property string|null $email
@@ -25,6 +26,7 @@ class Cliente extends Model
     protected $fillable = [
         'sede_id',
         'nombre',
+        'documento_tipo',
         'documento',
         'telefono',
         'email',

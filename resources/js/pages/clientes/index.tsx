@@ -95,7 +95,9 @@ export default function ClientesIndex({ clientes, filters, stats }: Props) {
                             {row.nombre}
                         </p>
                         <p className="text-muted-foreground truncate text-xs">
-                            {row.documento || '—'}
+                            {row.documento
+                                ? `${row.documento_tipo ? `${row.documento_tipo} ` : ''}${row.documento}`
+                                : '—'}
                         </p>
                     </div>
                 ),
@@ -121,10 +123,17 @@ export default function ClientesIndex({ clientes, filters, stats }: Props) {
             {
                 id: 'ultima',
                 header: t('clientes:columns.ultima_venta'),
-                cell: (row) =>
-                    row.ultima_venta
-                        ? formatPeruDateTime(row.ultima_venta)
-                        : '—',
+                cell: (row) => {
+                    if (!row.ultima_venta) {
+                        return '—';
+                    }
+                    const dt = formatPeruDateTime(row.ultima_venta);
+                    return (
+                        <span className="tabular-nums text-sm text-muted-foreground">
+                            {dt.fecha}, {dt.hora}
+                        </span>
+                    );
+                },
             },
             {
                 id: 'acciones',

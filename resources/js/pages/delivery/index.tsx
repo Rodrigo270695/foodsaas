@@ -168,8 +168,17 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
             {
                 id: 'hora',
                 header: t('delivery:columns.hora'),
-                cell: (row) =>
-                    row.created_at ? formatPeruDateTime(row.created_at) : '—',
+                cell: (row) => {
+                    if (!row.created_at) {
+                        return '—';
+                    }
+                    const dt = formatPeruDateTime(row.created_at);
+                    return (
+                        <span className="tabular-nums text-sm text-muted-foreground">
+                            {dt.fecha}, {dt.hora}
+                        </span>
+                    );
+                },
             },
             {
                 id: 'acciones',

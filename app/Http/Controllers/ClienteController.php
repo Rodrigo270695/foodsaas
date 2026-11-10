@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Http\Controllers\Concerns\RespondsToApiPeruConsulta;
 use App\Models\Cliente;
 use App\Models\Venta;
+use App\Services\Integrations\ApiPeruDniService;
 use App\Support\Sedes\ActiveSedeContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,8 +20,11 @@ class ClienteController extends Controller
 {
     use ResolvesActiveSede;
     use ResolvesTenantId;
+    use RespondsToApiPeruConsulta;
 
     private const PER_PAGE_OPTIONS = [10, 15, 20, 25, 50];
+
+    private const DOCUMENT_TIPOS = ['DNI', 'CE', 'PAS', 'OTRO'];
 
     public function index(Request $request): Response
     {
@@ -66,6 +72,7 @@ class ClienteController extends Controller
                 return [
                     'id' => $cliente->id,
                     'nombre' => $cliente->nombre,
+                    'documento_tipo' => $cliente->documento_tipo,
                     'documento' => $cliente->documento,
                     'telefono' => $cliente->telefono,
                     'email' => $cliente->email,
@@ -90,6 +97,31 @@ class ClienteController extends Controller
                 'coincidencias' => $clientes->total(),
             ],
         ]);
+    }
+
+    /**
+     * Consulta DNI (RENIEC vía APIPerú) para autocompletar el nombre del cliente.
+     */
+    public function consultaDni(Request $request, ApiPeruDniService $apiPeru): JsonResponse
+    {
+        $this->tenantIdOrAbort();
+
+        abort_unless(
+            $request->user()?->can('clientes.create')
+            || $request->user()?->can('clientes.update'),
+            403,
+        );
+
+        $dni = preg_replace('/\D+/', '', (string) $request->query('dni', '')) ?? '';
+        $request->merge(['dni' => $dni]);
+
+        $validated = $request->validate([
+            'dni' => ['required', 'string', 'regex:/^[0-9]{8}$/'],
+        ]);
+
+        return $this->consultaApiPeruResponse(
+            fn () => $apiPeru->consultar($validated['dni']),
+        );
     }
 
     public function store(Request $request): RedirectResponse
@@ -122,11 +154,14 @@ class ClienteController extends Controller
     }
 
     /**
-     * @return array{nombre: string, documento: ?string, telefono: ?string, email: ?string, notas: ?string}
+     * @return array{nombre: string, documento_tipo: ?string, documento: ?string, telefono: ?string, email: ?string, notas: ?string}
      */
     private function validated(Request $request, ?string $ignoreId = null): array
     {
         $request->merge([
+            'documento_tipo' => $request->filled('documento_tipo')
+                ? strtoupper(trim((string) $request->input('documento_tipo')))
+                : null,
             'documento' => $request->filled('documento') ? trim((string) $request->input('documento')) : null,
             'telefono' => $request->filled('telefono') ? trim((string) $request->input('telefono')) : null,
             'email' => $request->filled('email') ? trim((string) $request->input('email')) : null,
@@ -135,6 +170,7 @@ class ClienteController extends Controller
 
         $data = $request->validate([
             'nombre' => ['required', 'string', 'max:180'],
+            'documento_tipo' => ['nullable', 'string', Rule::in(self::DOCUMENT_TIPOS)],
             'documento' => [
                 'nullable',
                 'string',
@@ -146,9 +182,16 @@ class ClienteController extends Controller
             'notas' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $tipo = $data['documento_tipo'] ?? null;
+        $doc = $data['documento'] ?? null;
+        if ($doc === null) {
+            $tipo = null;
+        }
+
         return [
             'nombre' => trim((string) $data['nombre']),
-            'documento' => $data['documento'] ?? null,
+            'documento_tipo' => $tipo,
+            'documento' => $doc,
             'telefono' => $data['telefono'] ?? null,
             'email' => $data['email'] ?? null,
             'notas' => $data['notas'] ?? null,

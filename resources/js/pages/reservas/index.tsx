@@ -116,10 +116,17 @@ export default function ReservasIndex({
             {
                 id: 'hora',
                 header: t('reservas:columns.hora'),
-                cell: (row) =>
-                    row.reserved_at
-                        ? formatPeruDateTime(row.reserved_at)
-                        : '—',
+                cell: (row) => {
+                    if (!row.reserved_at) {
+                        return '—';
+                    }
+                    const dt = formatPeruDateTime(row.reserved_at);
+                    return (
+                        <span className="tabular-nums text-sm text-muted-foreground">
+                            {dt.fecha}, {dt.hora}
+                        </span>
+                    );
+                },
             },
             {
                 id: 'cliente',
