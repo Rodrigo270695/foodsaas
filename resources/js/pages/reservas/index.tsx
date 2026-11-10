@@ -30,6 +30,7 @@ import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
+import { cn } from '@/lib/utils';
 import type { Paginated } from '@/types';
 import { todayIso } from '../pedidos/types';
 import {
@@ -70,6 +71,23 @@ type ModalState =
     | { type: 'create' }
     | { type: 'edit'; reserva: ReservaRow }
     | { type: 'delete'; reserva: ReservaRow };
+
+function estadoBadgeClass(estado: string): string {
+    switch (estado) {
+        case 'pendiente':
+            return 'border-sky-500/25 bg-sky-500/15 text-sky-800 dark:text-sky-300';
+        case 'confirmada':
+            return 'border-violet-500/25 bg-violet-500/15 text-violet-800 dark:text-violet-300';
+        case 'sentada':
+            return 'border-emerald-500/25 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300';
+        case 'cancelada':
+            return 'border-rose-500/25 bg-rose-500/15 text-rose-800 dark:text-rose-300';
+        case 'no_show':
+            return 'border-amber-500/25 bg-amber-500/15 text-amber-900 dark:text-amber-300';
+        default:
+            return 'border-border/60 bg-muted/60 text-muted-foreground';
+    }
+}
 
 export default function ReservasIndex({
     reservas,
@@ -157,7 +175,13 @@ export default function ReservasIndex({
                 id: 'estado',
                 header: t('reservas:columns.estado'),
                 cell: (row) => (
-                    <Badge variant="secondary" className="capitalize">
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            'capitalize',
+                            estadoBadgeClass(row.estado),
+                        )}
+                    >
                         {t(`reservas:estados.${row.estado}`, {
                             defaultValue: row.estado,
                         })}
