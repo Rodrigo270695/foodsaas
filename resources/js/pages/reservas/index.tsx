@@ -124,7 +124,7 @@ export default function ReservasIndex({
     const changeEstado = useCallback((reservaId: string, estado: string) => {
         setUpdatingEstadoId(reservaId);
         router.patch(
-            `/reservas/${reservaId}/estado`,
+            `/reservas/${reservaId}`,
             { estado },
             {
                 preserveScroll: true,

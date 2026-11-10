@@ -279,12 +279,11 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->name('store');
                 Route::middleware('permission:reservas.update')
                     ->match(['put', 'patch'], '{reserva}', [ReservaController::class, 'update'])
+                    ->whereUuid('reserva')
                     ->name('update');
-                Route::middleware('permission:reservas.update')
-                    ->patch('{reserva}/estado', [ReservaController::class, 'updateEstado'])
-                    ->name('estado');
                 Route::middleware('permission:reservas.delete')
                     ->delete('{reserva}', [ReservaController::class, 'destroy'])
+                    ->whereUuid('reserva')
                     ->name('destroy');
             });
 
