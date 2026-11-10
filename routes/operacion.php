@@ -244,32 +244,28 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->name('export');
             });
 
-        Route::prefix('clientes')
-            ->name('clientes.')
-            ->middleware('tenant.module:clientes')
-            ->group(function (): void {
-                Route::middleware('permission:clientes.view')
-                    ->get('/', [ClienteController::class, 'index'])
-                    ->name('index');
-                // Estáticas antes de {cliente}; whereUuid evita capturar "consulta-dni".
-                Route::middleware(['permission:clientes.create|clientes.update'])
-                    ->get('consulta-dni', [ClienteController::class, 'consultaDni'])
-                    ->name('consulta-dni');
-                Route::middleware(['permission:clientes.create|clientes.update'])
-                    ->get('consulta-ruc', [ClienteController::class, 'consultaRuc'])
-                    ->name('consulta-ruc');
-                Route::middleware('permission:clientes.create')
-                    ->post('/', [ClienteController::class, 'store'])
-                    ->name('store');
-                Route::middleware('permission:clientes.update')
-                    ->match(['put', 'patch'], '{cliente}', [ClienteController::class, 'update'])
-                    ->whereUuid('cliente')
-                    ->name('update');
-                Route::middleware('permission:clientes.delete')
-                    ->delete('{cliente}', [ClienteController::class, 'destroy'])
-                    ->whereUuid('cliente')
-                    ->name('destroy');
-            });
+        // CRUD clientes. Consultas DNI/RUC viven en routes/configuracion.php
+        // (mismo patrón que usuarios/consulta-dni) para no chocar con {cliente}.
+        Route::middleware('tenant.module:clientes')->group(function (): void {
+            Route::middleware('permission:clientes.view')
+                ->get('clientes', [ClienteController::class, 'index'])
+                ->name('clientes.index');
+            Route::middleware('permission:clientes.create')
+                ->post('clientes', [ClienteController::class, 'store'])
+                ->name('clientes.store');
+            Route::middleware('permission:clientes.update')
+                ->put('clientes/{cliente}', [ClienteController::class, 'update'])
+                ->whereUuid('cliente')
+                ->name('clientes.update');
+            Route::middleware('permission:clientes.update')
+                ->patch('clientes/{cliente}', [ClienteController::class, 'update'])
+                ->whereUuid('cliente')
+                ->name('clientes.update.patch');
+            Route::middleware('permission:clientes.delete')
+                ->delete('clientes/{cliente}', [ClienteController::class, 'destroy'])
+                ->whereUuid('cliente')
+                ->name('clientes.destroy');
+        });
 
         Route::prefix('reservas')
             ->name('reservas.')

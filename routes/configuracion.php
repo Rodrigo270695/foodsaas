@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\RestaurantSettingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SedeController;
@@ -75,6 +76,15 @@ Route::middleware([
     Route::middleware('permission:usuarios.create|usuarios.update')
         ->get('usuarios/consulta-dni', [UserController::class, 'consultaDni'])
         ->name('usuarios.consulta-dni');
+
+    // Misma forma que usuarios/consulta-dni (evita choque con clientes/{cliente}).
+    Route::middleware(['tenant.module:clientes', 'permission:clientes.create|clientes.update'])
+        ->get('clientes/consulta-dni', [ClienteController::class, 'consultaDni'])
+        ->name('clientes.consulta-dni');
+    Route::middleware(['tenant.module:clientes', 'permission:clientes.create|clientes.update'])
+        ->get('clientes/consulta-ruc', [ClienteController::class, 'consultaRuc'])
+        ->name('clientes.consulta-ruc');
+
     Route::middleware('permission:usuarios.create')
         ->post('usuarios', [UserController::class, 'store'])
         ->name('usuarios.store');

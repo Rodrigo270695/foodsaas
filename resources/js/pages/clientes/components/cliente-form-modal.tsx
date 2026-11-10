@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import clientes from '../clientes-routes';
 
 export type ClienteFormRow = {
     id: string;
@@ -117,10 +118,10 @@ export function ClienteFormModal({
             },
         };
         if (isEdit && cliente) {
-            put(`/clientes/${cliente.id}`, opts);
+            put(clientes.update(cliente.id).url, opts);
             return;
         }
-        post('/clientes', opts);
+        post(clientes.store().url, opts);
     };
 
     return (
@@ -183,10 +184,8 @@ export function ClienteFormModal({
                     }
                     codes={CLIENTE_DOCUMENT_TYPE_CODES}
                     endpoints={{
-                        dni: (dni) =>
-                            `/clientes/consulta-dni?dni=${encodeURIComponent(dni)}`,
-                        ruc: (ruc) =>
-                            `/clientes/consulta-ruc?ruc=${encodeURIComponent(ruc)}`,
+                        dni: (dni) => clientes.consultaDni(dni).url,
+                        ruc: (ruc) => clientes.consultaRuc(ruc).url,
                     }}
                     resetKey={cliente?.id ?? 'new'}
                     enabled={open}

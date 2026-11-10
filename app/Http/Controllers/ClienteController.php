@@ -110,11 +110,17 @@ class ClienteController extends Controller
     }
 
     /**
-     * Consulta DNI (RENIEC vía APIPerú) para autocompletar el nombre del cliente.
+     * Consulta DNI (RENIEC vía APIPerú) — mismo patrón que UserController::consultaDni.
      */
     public function consultaDni(Request $request, ApiPeruDniService $apiPeru): JsonResponse
     {
-        $this->assertCanConsultarDocumento($request);
+        $this->tenantIdOrAbort();
+
+        abort_unless(
+            $request->user()?->can('clientes.create')
+            || $request->user()?->can('clientes.update'),
+            403,
+        );
 
         $dni = preg_replace('/\D+/', '', (string) $request->query('dni', '')) ?? '';
         $request->merge(['dni' => $dni]);
@@ -133,7 +139,13 @@ class ClienteController extends Controller
      */
     public function consultaRuc(Request $request, ApiPeruRucService $apiPeru): JsonResponse
     {
-        $this->assertCanConsultarDocumento($request);
+        $this->tenantIdOrAbort();
+
+        abort_unless(
+            $request->user()?->can('clientes.create')
+            || $request->user()?->can('clientes.update'),
+            403,
+        );
 
         $ruc = preg_replace('/\D+/', '', (string) $request->query('ruc', '')) ?? '';
         $request->merge(['ruc' => $ruc]);
@@ -174,17 +186,6 @@ class ClienteController extends Controller
         $cliente->delete();
 
         return back()->with('success', 'Cliente eliminado.');
-    }
-
-    private function assertCanConsultarDocumento(Request $request): void
-    {
-        $this->tenantIdOrAbort();
-
-        abort_unless(
-            $request->user()?->can('clientes.create')
-            || $request->user()?->can('clientes.update'),
-            403,
-        );
     }
 
     /**
