@@ -1,22 +1,21 @@
 import { useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     CLIENTE_DOCUMENT_TYPE_CODES,
-    DocumentNumberLookupField,
-    DocumentTypeSelect,
+    DocumentLookupFields,
     FormField,
     FormModal,
     FormSection,
     documentNumberLengthFor,
     isClienteDocumentTypeCode,
+    isDocumentoNumeroValid,
     soloDigitosDocumento,
 } from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { toastManager } from '@/lib/toast';
 
 export type ClienteFormRow = {
     id: string;
@@ -56,10 +55,9 @@ export function ClienteFormModal({
     onOpenChange,
     cliente,
 }: ClienteFormModalProps) {
-    const { t } = useTranslation(['clientes', 'common']);
+    const { t } = useTranslation(['clientes', 'common', 'forms']);
     const isEdit = cliente !== null;
     const [consultandoDoc, setConsultandoDoc] = useState(false);
-    const lastConsultaKeyRef = useRef<string | null>(null);
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } =
         useForm<FormData>({
@@ -71,13 +69,6 @@ export function ClienteFormModal({
             notas: '',
         });
 
-    const tipoDoc = data.documento_tipo.trim().toUpperCase();
-    const docMaxLen = documentNumberLengthFor(tipoDoc);
-    const isLookupTipo = tipoDoc === 'DNI' || tipoDoc === 'RUC';
-    const docDigits = soloDigitosDocumento(data.documento, docMaxLen);
-    const docCompleto =
-        docMaxLen !== undefined && docDigits.length === docMaxLen;
-
     useEffect(() => {
         if (!open) {
             return;
@@ -86,160 +77,16 @@ export function ClienteFormModal({
         setConsultandoDoc(false);
         const tipo = normalizeDocumentoTipo(cliente?.documento_tipo);
         const max = documentNumberLengthFor(tipo);
-        const numero = soloDigitosDocumento(cliente?.documento ?? '', max);
         setData({
             nombre: cliente?.nombre ?? '',
             documento_tipo: tipo,
-            documento: numero,
+            documento: soloDigitosDocumento(cliente?.documento ?? '', max),
             telefono: cliente?.telefono ?? '',
             email: cliente?.email ?? '',
             notas: cliente?.notas ?? '',
         });
-        lastConsultaKeyRef.current =
-            max !== undefined &&
-            (tipo === 'DNI' || tipo === 'RUC') &&
-            numero.length === max
-                ? `${tipo}:${numero}`
-                : null;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, cliente?.id]);
-
-    const onConsultarDocumento = async (forcedNumero?: string) => {
-        if (!isLookupTipo || docMaxLen === undefined) {
-            return;
-        }
-        const digits = soloDigitosDocumento(
-            forcedNumero ?? data.documento,
-            docMaxLen,
-        );
-        if (digits.length !== docMaxLen) {
-            toastManager.error({
-                title:
-                    tipoDoc === 'RUC'
-                        ? t('clientes:form.consultar_invalid_ruc')
-                        : t('clientes:form.consultar_invalid_dni'),
-            });
-            return;
-        }
-        const key = `${tipoDoc}:${digits}`;
-        lastConsultaKeyRef.current = key;
-        setConsultandoDoc(true);
-        try {
-            const url =
-                tipoDoc === 'RUC'
-                    ? `/clientes/consulta-ruc?ruc=${encodeURIComponent(digits)}`
-                    : `/clientes/consulta-dni?dni=${encodeURIComponent(digits)}`;
-            const res = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    Accept: 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                credentials: 'same-origin',
-            });
-            const body = (await res.json()) as {
-                success?: boolean;
-                message?: string;
-                data?: {
-                    nombre_completo?: string;
-                    nombres?: string;
-                    apellidos?: string;
-                    dni?: string;
-                    razon_social?: string;
-                    ruc?: string;
-                };
-            };
-            if (!res.ok || !body.success || !body.data) {
-                toastManager.error({
-                    title:
-                        body.message ??
-                        (tipoDoc === 'RUC'
-                            ? t('clientes:form.consultar_ruc_error')
-                            : t('clientes:form.consultar_error')),
-                });
-                return;
-            }
-
-            if (tipoDoc === 'RUC') {
-                const razon = body.data.razon_social?.trim() ?? '';
-                setData((prev) => ({
-                    ...prev,
-                    documento_tipo: 'RUC',
-                    documento: body.data?.ruc ?? digits,
-                    nombre: razon || prev.nombre,
-                }));
-                if (razon) {
-                    toastManager.success({
-                        title: t('clientes:form.consultar_ruc_ok'),
-                    });
-                }
-            } else {
-                const completo =
-                    body.data.nombre_completo?.trim() ||
-                    [body.data.nombres, body.data.apellidos]
-                        .filter(Boolean)
-                        .join(' ')
-                        .trim();
-                setData((prev) => ({
-                    ...prev,
-                    documento_tipo: 'DNI',
-                    documento: body.data?.dni ?? digits,
-                    nombre: completo || prev.nombre,
-                }));
-                if (completo) {
-                    toastManager.success({
-                        title: t('clientes:form.consultar_ok'),
-                    });
-                }
-            }
-        } catch {
-            toastManager.error({
-                title:
-                    tipoDoc === 'RUC'
-                        ? t('clientes:form.consultar_ruc_error')
-                        : t('clientes:form.consultar_error'),
-            });
-        } finally {
-            setConsultandoDoc(false);
-        }
-    };
-
-    useEffect(() => {
-        if (
-            !open ||
-            !isLookupTipo ||
-            !docCompleto ||
-            consultandoDoc ||
-            processing
-        ) {
-            return;
-        }
-        const digits = soloDigitosDocumento(data.documento, docMaxLen);
-        const key = `${tipoDoc}:${digits}`;
-        if (lastConsultaKeyRef.current === key) {
-            return;
-        }
-        void onConsultarDocumento(digits);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        open,
-        data.documento,
-        tipoDoc,
-        docCompleto,
-        consultandoDoc,
-        processing,
-    ]);
-
-    const handleTipoChange = (value: string) => {
-        const next = value.trim().toUpperCase() || 'DNI';
-        const max = documentNumberLengthFor(next);
-        setData((prev) => ({
-            ...prev,
-            documento_tipo: next,
-            documento: soloDigitosDocumento(prev.documento, max),
-        }));
-        lastConsultaKeyRef.current = null;
-    };
 
     const canSubmit = useMemo(() => {
         if (processing || consultandoDoc) {
@@ -248,20 +95,13 @@ export function ClienteFormModal({
         if (data.nombre.trim().length < 2) {
             return false;
         }
-        const doc = data.documento.trim();
-        if (doc === '') {
-            return true;
-        }
-        if (docMaxLen === undefined) {
-            return false;
-        }
-        return soloDigitosDocumento(doc).length === docMaxLen;
+        return isDocumentoNumeroValid(data.documento_tipo, data.documento);
     }, [
         processing,
         consultandoDoc,
         data.nombre,
         data.documento,
-        docMaxLen,
+        data.documento_tipo,
     ]);
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -282,11 +122,6 @@ export function ClienteFormModal({
         }
         post('/clientes', opts);
     };
-
-    const consultAriaLabel =
-        tipoDoc === 'RUC'
-            ? t('clientes:form.consultar_ruc')
-            : t('clientes:form.consultar_dni');
 
     return (
         <FormModal
@@ -331,42 +166,41 @@ export function ClienteFormModal({
                 description={t('clientes:form.section_identity_hint')}
                 columns={2}
             >
-                <FormField
-                    id="cliente-documento-tipo"
-                    label={t('clientes:form.documento_tipo')}
-                    error={errors.documento_tipo}
-                >
-                    <DocumentTypeSelect
-                        id="cliente-documento-tipo"
-                        value={data.documento_tipo}
-                        onValueChange={handleTipoChange}
-                        codes={CLIENTE_DOCUMENT_TYPE_CODES}
-                        invalid={Boolean(errors.documento_tipo)}
-                        disabled={processing}
-                    />
-                </FormField>
-
-                <FormField
-                    id="cliente-documento"
-                    label={t('clientes:form.documento')}
-                    error={errors.documento}
-                >
-                    <DocumentNumberLookupField
-                        id="cliente-documento"
-                        value={data.documento}
-                        onChange={(next) => setData('documento', next)}
-                        maxLength={docMaxLen}
-                        consulting={consultandoDoc}
-                        disabled={processing}
-                        invalid={Boolean(errors.documento)}
-                        onConsult={
-                            isLookupTipo
-                                ? () => void onConsultarDocumento()
-                                : undefined
-                        }
-                        consultAriaLabel={consultAriaLabel}
-                    />
-                </FormField>
+                <DocumentLookupFields
+                    tipoId="cliente-documento-tipo"
+                    numeroId="cliente-documento"
+                    tipo={data.documento_tipo}
+                    numero={data.documento}
+                    onTipoChange={(tipo) => setData('documento_tipo', tipo)}
+                    onNumeroChange={(numero) => setData('documento', numero)}
+                    onResolved={({ tipo, numero, nombre }) =>
+                        setData((prev) => ({
+                            ...prev,
+                            documento_tipo: tipo,
+                            documento: numero,
+                            nombre,
+                        }))
+                    }
+                    codes={CLIENTE_DOCUMENT_TYPE_CODES}
+                    endpoints={{
+                        dni: (dni) =>
+                            `/clientes/consulta-dni?dni=${encodeURIComponent(dni)}`,
+                        ruc: (ruc) =>
+                            `/clientes/consulta-ruc?ruc=${encodeURIComponent(ruc)}`,
+                    }}
+                    resetKey={cliente?.id ?? 'new'}
+                    enabled={open}
+                    disabled={processing}
+                    errors={{
+                        tipo: errors.documento_tipo,
+                        numero: errors.documento,
+                    }}
+                    labels={{
+                        tipo: t('clientes:form.documento_tipo'),
+                        numero: t('clientes:form.documento'),
+                    }}
+                    onConsultingChange={setConsultandoDoc}
+                />
 
                 <FormField
                     id="cliente-nombre"

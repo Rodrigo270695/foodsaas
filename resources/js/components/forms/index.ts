@@ -11,6 +11,13 @@ export {
     type DocumentNumberLookupFieldProps,
 } from './document-number-lookup-field';
 export {
+    DocumentLookupFields,
+    isDocumentoNumeroValid,
+    type DocumentLookupFieldsProps,
+    type DocumentoConsultaResolved,
+    type DocumentoLookupEndpoints,
+} from './document-lookup-fields';
+export {
     CLIENTE_DOCUMENT_TYPE_CODES,
     DOCUMENT_NUMBER_LENGTH,
     documentNumberLengthFor,

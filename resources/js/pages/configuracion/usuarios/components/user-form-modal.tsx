@@ -3,12 +3,13 @@ import { Loader2, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    DocumentNumberLookupField,
-    DocumentTypeSelect,
+    DocumentLookupFields,
     FormField,
     FormModal,
     FormSection,
     STAFF_DOCUMENT_TYPE_CODES,
+    documentNumberLengthFor,
+    isDocumentoNumeroValid,
     isStaffDocumentTypeCode,
     soloDigitosDocumento,
 } from '@/components/forms';
@@ -23,7 +24,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { toastManager } from '@/lib/toast';
 import usuarios from '@/routes/configuracion/usuarios';
 import type { User, UserRoleOption, UserSedeRef } from '../types';
 
@@ -73,18 +73,23 @@ const normalizeDocumentoTipo = (raw: string | null | undefined): string => {
     return isStaffDocumentTypeCode(u) ? u : 'DNI';
 };
 
-const buildInitialData = (user: User | null): UserFormData => ({
-    name: user?.name ?? '',
-    email: user?.email ?? '',
-    phone: user?.phone ?? '',
-    password: '',
-    password_confirmation: '',
-    is_active: user?.is_active ?? true,
-    role: user?.roles[0]?.name ?? '',
-    documento_tipo: user ? normalizeDocumentoTipo(user.documento_tipo) : 'DNI',
-    documento_numero: user?.documento_numero ?? '',
-    sede_ids: user?.sedes?.map((sede) => sede.id) ?? [],
-});
+const buildInitialData = (user: User | null): UserFormData => {
+    const tipo = user ? normalizeDocumentoTipo(user.documento_tipo) : 'DNI';
+    const max = documentNumberLengthFor(tipo);
+
+    return {
+        name: user?.name ?? '',
+        email: user?.email ?? '',
+        phone: user?.phone ?? '',
+        password: '',
+        password_confirmation: '',
+        is_active: user?.is_active ?? true,
+        role: user?.roles[0]?.name ?? '',
+        documento_tipo: tipo,
+        documento_numero: soloDigitosDocumento(user?.documento_numero ?? '', max),
+        sede_ids: user?.sedes?.map((sede) => sede.id) ?? [],
+    };
+};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -112,8 +117,8 @@ const isFormValid = (
         if (data.password.length < 8) return false;
         if (data.password !== data.password_confirmation) return false;
     }
-    if (data.documento_tipo === 'DNI' && data.documento_numero !== '') {
-        if (!/^[0-9]{8}$/.test(data.documento_numero)) return false;
+    if (!isDocumentoNumeroValid(data.documento_tipo, data.documento_numero)) {
+        return false;
     }
     return true;
 };
@@ -131,24 +136,18 @@ export function UserFormModal({
     sedesCatalog = [],
     requiresSedeAssignment = false,
 }: UserFormModalProps) {
-    const { t } = useTranslation(['usuarios', 'propietarios', 'common']);
+    const { t } = useTranslation(['usuarios', 'common', 'forms']);
     const isEdit = user !== null;
     const [consultandoDoc, setConsultandoDoc] = useState(false);
-    const lastConsultaKeyRef = useRef<string | null>(null);
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } =
         useForm<UserFormData>(emptyForm);
 
     const canSubmit =
-        isFormValid(data, isEdit, requiresSedeAssignment) && !processing;
+        isFormValid(data, isEdit, requiresSedeAssignment) &&
+        !processing &&
+        !consultandoDoc;
     const initialSnapshotRef = useRef<UserFormData>(emptyForm);
-
-    const tipoDoc = data.documento_tipo.trim().toUpperCase();
-    const isDni = tipoDoc === 'DNI';
-    const docMaxLen = isDni ? 8 : undefined;
-    const docCompleto =
-        docMaxLen !== undefined &&
-        soloDigitosDocumento(data.documento_numero).length === docMaxLen;
 
     useEffect(() => {
         if (open) {
@@ -159,82 +158,9 @@ export function UserFormModal({
             });
             clearErrors();
             setConsultandoDoc(false);
-            const tipo = initial.documento_tipo.trim().toUpperCase();
-            const max = tipo === 'DNI' ? 8 : undefined;
-            const digits = soloDigitosDocumento(initial.documento_numero, max);
-            lastConsultaKeyRef.current =
-                max !== undefined && digits.length === max ? `${tipo}:${digits}` : null;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, user?.id]);
-
-    const onConsultarDni = async (forcedNumero?: string) => {
-        const dni = soloDigitosDocumento(forcedNumero ?? data.documento_numero, 8);
-        if (dni.length !== 8) {
-            toastManager.error({ title: t('usuarios:form.consultar_invalid_dni') });
-            return;
-        }
-        const key = `DNI:${dni}`;
-        lastConsultaKeyRef.current = key;
-        setConsultandoDoc(true);
-        try {
-            const res = await fetch(
-                `/configuracion/usuarios/consulta-dni?dni=${encodeURIComponent(dni)}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        Accept: 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    credentials: 'same-origin',
-                },
-            );
-            const body = (await res.json()) as {
-                success?: boolean;
-                message?: string;
-                data?: {
-                    nombre_completo?: string;
-                    nombres?: string;
-                    apellidos?: string;
-                    dni?: string;
-                };
-            };
-            if (!res.ok || !body.success || !body.data) {
-                toastManager.error({
-                    title: body.message ?? t('usuarios:form.consultar_error'),
-                });
-                return;
-            }
-            const completo =
-                body.data.nombre_completo?.trim() ||
-                [body.data.nombres, body.data.apellidos].filter(Boolean).join(' ').trim();
-            setData((prev) => ({
-                ...prev,
-                documento_numero: body.data?.dni ?? dni,
-                name: completo || prev.name,
-            }));
-            if (completo) {
-                toastManager.success({ title: t('usuarios:form.consultar_ok') });
-            }
-        } catch {
-            toastManager.error({ title: t('usuarios:form.consultar_error') });
-        } finally {
-            setConsultandoDoc(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!open || !isDni || !docCompleto || consultandoDoc || processing) {
-            return;
-        }
-        const digits = soloDigitosDocumento(data.documento_numero, 8);
-        const key = `DNI:${digits}`;
-        if (lastConsultaKeyRef.current === key) {
-            return;
-        }
-        void onConsultarDni(digits);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, data.documento_numero, tipoDoc, docCompleto, consultandoDoc, processing]);
 
     const isDirty = useMemo(() => {
         const initial = initialSnapshotRef.current;
@@ -262,20 +188,6 @@ export function UserFormModal({
             clearErrors();
         }
         onOpenChange(next);
-    };
-
-    const handleTipoChange = (value: string) => {
-        const upper = value.trim().toUpperCase();
-        let numero = data.documento_numero;
-        if (upper === 'DNI') {
-            numero = soloDigitosDocumento(numero, 8);
-        }
-        lastConsultaKeyRef.current = null;
-        setData({
-            ...data,
-            documento_tipo: value,
-            documento_numero: numero,
-        });
     };
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -348,37 +260,41 @@ export function UserFormModal({
                     columns={2}
                     className="gap-4"
                 >
-                    <FormField
-                        id="user-documento-tipo"
-                        label={t('usuarios:form.fields.documento_tipo')}
-                        error={errors.documento_tipo}
-                    >
-                        <DocumentTypeSelect
-                            id="user-documento-tipo"
-                            value={data.documento_tipo}
-                            onValueChange={handleTipoChange}
-                            codes={STAFF_DOCUMENT_TYPE_CODES}
-                            invalid={Boolean(errors.documento_tipo)}
-                        />
-                    </FormField>
-
-                    <FormField
-                        id="user-documento-numero"
-                        label={t('usuarios:form.fields.documento_numero')}
-                        error={errors.documento_numero}
-                    >
-                        <DocumentNumberLookupField
-                            id="user-documento-numero"
-                            value={data.documento_numero}
-                            onChange={(next) => setData('documento_numero', next)}
-                            maxLength={docMaxLen}
-                            consulting={consultandoDoc}
-                            disabled={processing}
-                            invalid={Boolean(errors.documento_numero)}
-                            onConsult={() => void onConsultarDni()}
-                            consultAriaLabel={t('propietarios:form.consultar_sunat')}
-                        />
-                    </FormField>
+                    <DocumentLookupFields
+                        tipoId="user-documento-tipo"
+                        numeroId="user-documento-numero"
+                        tipo={data.documento_tipo}
+                        numero={data.documento_numero}
+                        onTipoChange={(tipo) => setData('documento_tipo', tipo)}
+                        onNumeroChange={(numero) =>
+                            setData('documento_numero', numero)
+                        }
+                        onResolved={({ tipo, numero, nombre }) =>
+                            setData((prev) => ({
+                                ...prev,
+                                documento_tipo: tipo,
+                                documento_numero: numero,
+                                name: nombre,
+                            }))
+                        }
+                        codes={STAFF_DOCUMENT_TYPE_CODES}
+                        endpoints={{
+                            dni: (dni) =>
+                                `/configuracion/usuarios/consulta-dni?dni=${encodeURIComponent(dni)}`,
+                        }}
+                        resetKey={user?.id ?? 'new'}
+                        enabled={open}
+                        disabled={processing}
+                        errors={{
+                            tipo: errors.documento_tipo,
+                            numero: errors.documento_numero,
+                        }}
+                        labels={{
+                            tipo: t('usuarios:form.fields.documento_tipo'),
+                            numero: t('usuarios:form.fields.documento_numero'),
+                        }}
+                        onConsultingChange={setConsultandoDoc}
+                    />
 
                     <FormField
                         id="user-name"
