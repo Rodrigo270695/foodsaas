@@ -269,6 +269,7 @@ export function OfertaFormModal({ open, onOpenChange, oferta }: Props) {
                     <FormField
                         id="oferta-tipo"
                         label={t('ofertas:fields.tipo')}
+                        hint={t('ofertas:fields.tipo_hint')}
                         required
                     >
                         <Select
@@ -277,8 +278,13 @@ export function OfertaFormModal({ open, onOpenChange, oferta }: Props) {
                                 setData('tipo', v as OfertaTipo)
                             }
                         >
-                            <SelectTrigger id="oferta-tipo">
-                                <SelectValue />
+                            <SelectTrigger
+                                id="oferta-tipo"
+                                className="h-9 w-full"
+                            >
+                                <SelectValue
+                                    placeholder={t('ofertas:fields.tipo')}
+                                />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="porcentaje">
@@ -309,6 +315,7 @@ export function OfertaFormModal({ open, onOpenChange, oferta }: Props) {
                             step="0.01"
                             value={data.valor}
                             onChange={(e) => setData('valor', e.target.value)}
+                            className="h-9"
                         />
                     </FormField>
                 </FormSection>

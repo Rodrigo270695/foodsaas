@@ -43,6 +43,7 @@
         "nombre": "Name",
         "nombre_placeholder": "E.g. 10% lunch deal",
         "tipo": "Type",
+        "tipo_hint": "Percentage (%) or fixed amount (PEN).",
         "valor": "Value",
         "valor_hint_pct": "Percentage from 0.01 to 100.",
         "valor_hint_monto": "Fixed amount in PEN.",

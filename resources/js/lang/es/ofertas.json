@@ -43,6 +43,7 @@
         "nombre": "Nombre",
         "nombre_placeholder": "Ej. 10% en almuerzo",
         "tipo": "Tipo",
+        "tipo_hint": "Porcentaje (%) o monto fijo (S/).",
         "valor": "Valor",
         "valor_hint_pct": "Porcentaje de 0.01 a 100.",
         "valor_hint_monto": "Monto fijo en soles.",
