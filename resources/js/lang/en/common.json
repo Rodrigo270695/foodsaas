@@ -145,7 +145,7 @@
     "plataforma": {
         "operaciones": {
             "title": "Platform operations",
-            "description": "System overview: tenants, sessions and schemas.",
+            "description": "Live SaaS console: tenant health, sessions and PostgreSQL schemas.",
             "stats": {
                 "tenants": "Tenants",
                 "activos": "Active",
@@ -203,11 +203,13 @@
         },
         "reportes": {
             "title": "Platform reports",
-            "description": "Summary of plans and restaurant statuses.",
+            "description": "Commercial mix, estimated MRR and feature coverage by plan.",
             "totales": {
                 "tenants": "Restaurants",
                 "subs": "Subscriptions",
-                "sedes": "Locations"
+                "subs_vivas": "Live subscriptions",
+                "sedes": "Locations",
+                "mrr": "Estimated MRR"
             },
             "por_plan": "Active subscriptions by plan",
             "por_estado": "Restaurants by status",
@@ -242,7 +244,7 @@
         },
         "uso_planes": {
             "title": "Plan usage",
-            "description": "Locations and users consumed versus each plan limit.",
+            "description": "Quotas (locations, users, products, tables, orders, CPE) and modules/FEL included in each plan.",
             "search_placeholder": "Search restaurant…",
             "filters": {
                 "plan": "Plan",

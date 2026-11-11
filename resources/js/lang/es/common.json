@@ -145,7 +145,7 @@
     "plataforma": {
         "operaciones": {
             "title": "Operaciones de plataforma",
-            "description": "Estado general del sistema: tenants, sesiones y esquemas.",
+            "description": "Consola viva del SaaS: salud de tenants, sesiones y schemas PostgreSQL.",
             "stats": {
                 "tenants": "Tenants",
                 "activos": "Activos",
@@ -203,11 +203,13 @@
         },
         "reportes": {
             "title": "Reportes de plataforma",
-            "description": "Resumen de planes y estados de restaurantes.",
+            "description": "Distribución comercial, MRR estimado y cobertura de features por plan.",
             "totales": {
                 "tenants": "Restaurantes",
                 "subs": "Suscripciones",
-                "sedes": "Sedes"
+                "subs_vivas": "Suscripciones vivas",
+                "sedes": "Sedes",
+                "mrr": "MRR estimado"
             },
             "por_plan": "Suscripciones activas por plan",
             "por_estado": "Restaurantes por estado",
@@ -242,7 +244,7 @@
         },
         "uso_planes": {
             "title": "Uso de planes",
-            "description": "Consumo de sedes y usuarios frente al límite de cada plan.",
+            "description": "Cupos (sedes, usuarios, productos, mesas, pedidos, CPE) y módulos/FEL incluidos en cada plan.",
             "search_placeholder": "Buscar restaurante…",
             "filters": {
                 "plan": "Plan",
