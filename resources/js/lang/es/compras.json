@@ -1,0 +1,100 @@
+{
+    "title": "Compras",
+    "description": "Órdenes de compra de insumos y productos SKU.",
+    "search_placeholder": "Buscar por N°, proveedor…",
+    "toast": { "load_error": "No pudimos cargar las compras." },
+    "actions": {
+        "new": "Nueva OC",
+        "new_short": "Nueva",
+        "emitir": "Emitir",
+        "recibir": "Recibir",
+        "anular": "Anular",
+        "edit": "Editar",
+        "proveedores": "Proveedores",
+        "save": "Guardar",
+        "add_linea": "Agregar línea"
+    },
+    "stats": {
+        "total": "Total",
+        "borrador": "Borradores",
+        "abiertas": "Por recibir",
+        "coincidencias": "Coincidencias"
+    },
+    "filters": {
+        "estado": "Estado",
+        "todos": "Todos"
+    },
+    "estados": {
+        "borrador": "Borrador",
+        "enviada": "Enviada",
+        "parcial": "Parcial",
+        "recibida": "Recibida",
+        "anulada": "Anulada"
+    },
+    "columns": {
+        "numero": "N°",
+        "fecha": "Fecha",
+        "proveedor": "Proveedor",
+        "estado": "Estado",
+        "total": "Total",
+        "lineas": "Líneas"
+    },
+    "empty": {
+        "title": "Sin compras",
+        "description": "Crea una orden para abastecer insumos o gaseosas."
+    },
+    "form": {
+        "create": "Nueva orden de compra",
+        "edit": "Editar orden #{{numero}}",
+        "proveedor": "Proveedor",
+        "proveedor_placeholder": "Opcional…",
+        "fecha": "Fecha",
+        "notas": "Notas",
+        "lineas": "Líneas",
+        "tipo": "Tipo",
+        "tipo_insumo": "Insumo",
+        "tipo_producto": "Producto SKU",
+        "item": "Ítem",
+        "item_placeholder": "Selecciona…",
+        "cantidad": "Cantidad",
+        "costo": "Costo unit.",
+        "unidad": "Unidad",
+        "remove": "Quitar"
+    },
+    "show": {
+        "title": "OC #{{numero}}",
+        "recibir_title": "Recepción",
+        "recibir_hint": "Indica cuánto llega ahora (puede ser parcial).",
+        "pedida": "Pedida",
+        "recibida": "Recibida",
+        "pendiente": "Pendiente",
+        "a_recibir": "A recibir",
+        "submit_recibir": "Registrar recepción"
+    },
+    "proveedores": {
+        "title": "Proveedores",
+        "description": "Mayoristas y distribuidoras.",
+        "search_placeholder": "Buscar proveedor…",
+        "toast": { "load_error": "No pudimos cargar proveedores." },
+        "actions": { "new": "Nuevo proveedor", "new_short": "Nuevo", "back_compras": "Compras" },
+        "stats": { "total": "Total", "activos": "Activos", "coincidencias": "Coincidencias" },
+        "filters": { "estado": "Estado", "activos": "Activos", "inactivos": "Inactivos", "todos": "Todos" },
+        "columns": { "nombre": "Nombre", "ruc": "RUC", "telefono": "Teléfono", "estado": "Estado" },
+        "empty": { "title": "Sin proveedores", "description": "Registra mayoristas o distribuidoras." },
+        "form": {
+            "create": "Nuevo proveedor",
+            "edit": "Editar proveedor",
+            "nombre": "Nombre",
+            "ruc": "RUC",
+            "telefono": "Teléfono",
+            "email": "Email",
+            "notas": "Notas",
+            "activo": "Activo"
+        },
+        "delete": {
+            "title": "Eliminar proveedor",
+            "description": "¿Eliminar «{{name}}»? No debe tener compras."
+        },
+        "badge": { "activo": "Activo", "inactivo": "Inactivo" }
+    }
+}

@@ -12,6 +12,8 @@ export const NAV_HREF_MODULE_KEYS: Record<string, string> = {
     '/carta': 'carta',
     '/almacen': 'almacen',
     '/insumos': 'insumos',
+    '/compras': 'compras',
+    '/proveedores': 'compras',
     '/facturacion/documentos': 'documentos',
     '/facturacion/series': 'series',
     '/facturacion/notas-baja': 'notas_baja',

@@ -29,6 +29,7 @@ class Plan extends Model
         'modulo_reservas' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
         'modulo_reportes' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
         'modulo_recetas' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
+        'modulo_compras' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
         'modulo_whatsapp' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
 
         'boletas_electronicas' => ['type' => 'bool', 'group' => 'facturacion', 'default' => false],

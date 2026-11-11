@@ -37,6 +37,7 @@ import {
     Wallet,
     Warehouse,
     Wheat,
+    ShoppingCart,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -103,6 +104,14 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             permission: 'insumos.view',
                             context: 'tenant',
                             moduleKey: 'insumos',
+                        },
+                        {
+                            title: t('items.compras'),
+                            href: '/compras',
+                            icon: ShoppingCart,
+                            permission: 'compras.view',
+                            context: 'tenant',
+                            moduleKey: 'compras',
                         },
                     ],
                 },

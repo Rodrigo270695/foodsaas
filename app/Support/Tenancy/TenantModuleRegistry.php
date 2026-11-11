@@ -25,6 +25,7 @@ final class TenantModuleRegistry
         'carta',
         'almacen',
         'insumos',
+        'compras',
         'documentos',
         'series',
         'notas_baja',
@@ -56,7 +57,7 @@ final class TenantModuleRegistry
             ],
             [
                 'group' => 'catalogo',
-                'modules' => ['carta', 'almacen', 'insumos'],
+                'modules' => ['carta', 'almacen', 'insumos', 'compras'],
             ],
             [
                 'group' => 'facturacion',
@@ -84,6 +85,7 @@ final class TenantModuleRegistry
             'delivery' => 'modulo_delivery',
             'reservas' => 'modulo_reservas',
             'insumos' => 'modulo_recetas',
+            'compras' => 'modulo_compras',
             default => null,
         };
     }

@@ -12,6 +12,7 @@ export const MODULE_NAV_LABEL_KEYS: Record<string, string> = {
     carta: 'carta',
     almacen: 'almacen',
     insumos: 'insumos',
+    compras: 'compras',
     documentos: 'documentos',
     series: 'series',
     notas_baja: 'notas_baja',

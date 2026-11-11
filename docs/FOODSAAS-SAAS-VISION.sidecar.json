@@ -40,6 +40,7 @@
     "fel-apisunat-series-emit-sync-anular",
     "almacen-kardex-productos",
     "recetas-bom-foodcost-corte1",
+    "compras-oc-recepcion-corte2",
     "rbac-seeders",
     "i18n-es-en",
     "pwa",
@@ -54,7 +55,6 @@
     "salon-union-cobro-cuenta-unica"
   ],
   "pending_next_wave": [
-    "compras-recepcion",
     "descuentos-gerente",
     "reverb-realtime-kds",
     "carta-pdf-horarios",

@@ -11,7 +11,15 @@ use Illuminate\Validation\ValidationException;
 class KardexService
 {
     /**
-     * @param  array{tipo: string, cantidad?: float|string|null, stock_nuevo?: float|string|null, motivo?: string|null, referencia_tipo?: string|null, referencia_id?: string|null}  $data
+     * @param  array{
+     *     tipo: string,
+     *     cantidad?: float|string|null,
+     *     stock_nuevo?: float|string|null,
+     *     motivo?: string|null,
+     *     referencia_tipo?: string|null,
+     *     referencia_id?: string|null,
+     *     costo_unitario?: float|string|null
+     * }  $data
      */
     public function registrar(ProductoCarta $producto, array $data): MovimientoInventario
     {
@@ -42,15 +50,40 @@ class KardexService
                 ]);
             }
 
+            $costoUnitario = array_key_exists('costo_unitario', $data) && $data['costo_unitario'] !== null && $data['costo_unitario'] !== ''
+                ? round((float) $data['costo_unitario'], 4)
+                : round((float) ($locked->costo_unitario ?? 0), 4);
+
+            if ($tipo === MovimientoInventario::TIPO_ENTRADA
+                && array_key_exists('costo_unitario', $data)
+                && $data['costo_unitario'] !== null
+                && $data['costo_unitario'] !== ''
+            ) {
+                $locked->costo_unitario = $costoUnitario;
+            }
+
             $locked->stock = $despues;
             $locked->save();
 
+            $costoTotal = null;
+            if (in_array($tipo, [
+                MovimientoInventario::TIPO_VENTA,
+                MovimientoInventario::TIPO_SALIDA,
+                MovimientoInventario::TIPO_MERMA,
+                MovimientoInventario::TIPO_ENTRADA,
+            ], true)) {
+                $costoTotal = round($cantidad * $costoUnitario, 4);
+            }
+
             return MovimientoInventario::query()->create([
                 'producto_id' => $locked->id,
+                'insumo_id' => null,
                 'tipo' => $tipo,
                 'cantidad' => $cantidad,
                 'stock_anterior' => $anterior,
                 'stock_despues' => $despues,
+                'costo_unitario' => $costoUnitario,
+                'costo_total' => $costoTotal,
                 'motivo' => isset($data['motivo']) && trim((string) $data['motivo']) !== ''
                     ? trim((string) $data['motivo'])
                     : null,

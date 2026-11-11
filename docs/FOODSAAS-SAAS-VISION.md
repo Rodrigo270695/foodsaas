@@ -26,7 +26,7 @@ tenancy (subdominio + schema), panel `/plataforma/*`, API de provisioning Orvae,
 
 **Diferenciador frente a Restaurant.pe:** Orvae checkout nativo, permisos granulares, FEL Lucode integrado al cobro, PWA mesero/cocina, multi-tenant schema, overrides de módulos por tenant + middleware `tenant.module`.
 
-**Próximo hito de producto (mercado, no arquitectura):** Fase B restante — compras, descuentos gerente, realtime; Corte 1 (recetas/BOM + foodcost básico) ya entregado; luego cadenas / franquicia.
+**Próximo hito de producto (mercado, no arquitectura):** Fase B restante — descuentos gerente, realtime; Cortes 1–2 (recetas/BOM + compras) ya entregados; luego cadenas / franquicia.
 
 ---
 
@@ -425,7 +425,7 @@ Lo que el cliente paga en Starter/Pro ya tiene superficie usable:
 ### Fase B — Diferenciación operativa (6 semanas) 🎯 **EN CURSO**
 
 - [x] **Corte 1:** Recetas / BOM + consumo al cobrar → foodcost básico (`modulo_recetas` / módulo `insumos`: CRUD insumos, BOM en carta recipe, baja/reverso al cobrar/anular, sección foodcost en reportes)
-- [ ] Compras (OC → recepción → stock)
+- [x] **Corte 2:** Compras OC → recepción (parcial/total) → stock (`modulo_compras`: proveedores, OC de insumos + productos SKU, kardex entrada y costo)
 - [ ] Descuentos/créditos/ofertas con permiso gerente
 - [ ] Realtime cocina/mesero (Reverb) en lugar de solo polling
 - [ ] Carta avanzada: PDF server-side, horarios vigentes, deep link mesero
@@ -509,7 +509,7 @@ Entidades mínimas en schema `rest_*` para soportar el flujo §7:
 - `ope_comandas` / vistas KDS por estación
 - `fin_caja_sesiones`, `fin_ventas`, `fin_pagos`
 - `inv_insumos`, `inv_recetas`, `inv_receta_lineas`, `inv_movimientos`
-- `log_compras`, `log_compras_lineas`, `log_almacenes`
+- `log_proveedores`, `log_compras`, `log_compra_lineas` (Corte 2); `log_almacenes` (futuro)
 - `res_reservas` (Regular)
 - `del_zonas`, `del_pedidos` (Regular)
 

@@ -1,0 +1,100 @@
+{
+    "title": "Purchases",
+    "description": "Purchase orders for ingredients and SKU products.",
+    "search_placeholder": "Search by #, supplier…",
+    "toast": { "load_error": "We could not load purchases." },
+    "actions": {
+        "new": "New PO",
+        "new_short": "New",
+        "emitir": "Issue",
+        "recibir": "Receive",
+        "anular": "Void",
+        "edit": "Edit",
+        "proveedores": "Suppliers",
+        "save": "Save",
+        "add_linea": "Add line"
+    },
+    "stats": {
+        "total": "Total",
+        "borrador": "Drafts",
+        "abiertas": "Open",
+        "coincidencias": "Matches"
+    },
+    "filters": {
+        "estado": "Status",
+        "todos": "All"
+    },
+    "estados": {
+        "borrador": "Draft",
+        "enviada": "Issued",
+        "parcial": "Partial",
+        "recibida": "Received",
+        "anulada": "Voided"
+    },
+    "columns": {
+        "numero": "#",
+        "fecha": "Date",
+        "proveedor": "Supplier",
+        "estado": "Status",
+        "total": "Total",
+        "lineas": "Lines"
+    },
+    "empty": {
+        "title": "No purchases",
+        "description": "Create an order to restock ingredients or bottled drinks."
+    },
+    "form": {
+        "create": "New purchase order",
+        "edit": "Edit order #{{numero}}",
+        "proveedor": "Supplier",
+        "proveedor_placeholder": "Optional…",
+        "fecha": "Date",
+        "notas": "Notes",
+        "lineas": "Lines",
+        "tipo": "Type",
+        "tipo_insumo": "Ingredient",
+        "tipo_producto": "SKU product",
+        "item": "Item",
+        "item_placeholder": "Select…",
+        "cantidad": "Qty",
+        "costo": "Unit cost",
+        "unidad": "Unit",
+        "remove": "Remove"
+    },
+    "show": {
+        "title": "PO #{{numero}}",
+        "recibir_title": "Receiving",
+        "recibir_hint": "Enter how much arrives now (partial OK).",
+        "pedida": "Ordered",
+        "recibida": "Received",
+        "pendiente": "Pending",
+        "a_recibir": "Receive now",
+        "submit_recibir": "Save receipt"
+    },
+    "proveedores": {
+        "title": "Suppliers",
+        "description": "Wholesalers and distributors.",
+        "search_placeholder": "Search supplier…",
+        "toast": { "load_error": "We could not load suppliers." },
+        "actions": { "new": "New supplier", "new_short": "New", "back_compras": "Purchases" },
+        "stats": { "total": "Total", "activos": "Active", "coincidencias": "Matches" },
+        "filters": { "estado": "Status", "activos": "Active", "inactivos": "Inactive", "todos": "All" },
+        "columns": { "nombre": "Name", "ruc": "Tax ID", "telefono": "Phone", "estado": "Status" },
+        "empty": { "title": "No suppliers", "description": "Register wholesalers or distributors." },
+        "form": {
+            "create": "New supplier",
+            "edit": "Edit supplier",
+            "nombre": "Name",
+            "ruc": "Tax ID",
+            "telefono": "Phone",
+            "email": "Email",
+            "notas": "Notes",
+            "activo": "Active"
+        },
+        "delete": {
+            "title": "Delete supplier",
+            "description": "Delete «{{name}}»? It must have no purchases."
+        },
+        "badge": { "activo": "Active", "inactivo": "Inactive" }
+    }
+}

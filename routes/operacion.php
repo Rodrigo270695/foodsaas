@@ -7,8 +7,10 @@ use App\Http\Controllers\CartaController;
 use App\Http\Controllers\CartaMenuController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CocinaController;
+use App\Http\Controllers\CompraController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\InsumoController;
+use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReporteOperacionController;
@@ -146,6 +148,69 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->post('{insumo}/movimientos', [InsumoController::class, 'storeMovimiento'])
                     ->whereUuid('insumo')
                     ->name('movimientos.store');
+            });
+
+        Route::prefix('proveedores')
+            ->name('proveedores.')
+            ->middleware('tenant.module:compras')
+            ->group(function (): void {
+                Route::middleware('permission:proveedores.view')
+                    ->get('/', [ProveedorController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:proveedores.create')
+                    ->post('/', [ProveedorController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:proveedores.update')
+                    ->match(['put', 'patch'], '{proveedor}', [ProveedorController::class, 'update'])
+                    ->whereUuid('proveedor')
+                    ->name('update');
+                Route::middleware('permission:proveedores.delete')
+                    ->delete('{proveedor}', [ProveedorController::class, 'destroy'])
+                    ->whereUuid('proveedor')
+                    ->name('destroy');
+            });
+
+        Route::prefix('compras')
+            ->name('compras.')
+            ->middleware('tenant.module:compras')
+            ->group(function (): void {
+                Route::middleware('permission:compras.view')
+                    ->get('/', [CompraController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:compras.create')
+                    ->get('/nueva', [CompraController::class, 'create'])
+                    ->name('create');
+                Route::middleware('permission:compras.create')
+                    ->post('/', [CompraController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:compras.view')
+                    ->get('{compra}', [CompraController::class, 'show'])
+                    ->whereUuid('compra')
+                    ->name('show');
+                Route::middleware('permission:compras.update')
+                    ->get('{compra}/editar', [CompraController::class, 'edit'])
+                    ->whereUuid('compra')
+                    ->name('edit');
+                Route::middleware('permission:compras.update')
+                    ->match(['put', 'patch'], '{compra}', [CompraController::class, 'update'])
+                    ->whereUuid('compra')
+                    ->name('update');
+                Route::middleware('permission:compras.delete')
+                    ->delete('{compra}', [CompraController::class, 'destroy'])
+                    ->whereUuid('compra')
+                    ->name('destroy');
+                Route::middleware('permission:compras.update')
+                    ->post('{compra}/emitir', [CompraController::class, 'emitir'])
+                    ->whereUuid('compra')
+                    ->name('emitir');
+                Route::middleware('permission:compras.delete')
+                    ->post('{compra}/anular', [CompraController::class, 'anular'])
+                    ->whereUuid('compra')
+                    ->name('anular');
+                Route::middleware('permission:compras.receive')
+                    ->post('{compra}/recibir', [CompraController::class, 'recibir'])
+                    ->whereUuid('compra')
+                    ->name('recibir');
             });
 
         Route::prefix('salon')

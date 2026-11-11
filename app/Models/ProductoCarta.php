@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string $control_inventario
  * @property string|null $stock
  * @property string|null $stock_minimo
+ * @property string $costo_unitario
  */
 class ProductoCarta extends Model
 {
@@ -55,6 +56,7 @@ class ProductoCarta extends Model
         'control_inventario',
         'stock',
         'stock_minimo',
+        'costo_unitario',
     ];
 
     protected $appends = [
@@ -69,6 +71,7 @@ class ProductoCarta extends Model
             'activo' => 'boolean',
             'stock' => 'decimal:3',
             'stock_minimo' => 'decimal:3',
+            'costo_unitario' => 'decimal:4',
         ];
     }
 
