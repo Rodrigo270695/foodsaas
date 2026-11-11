@@ -1,6 +1,12 @@
 import { useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type FormEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     DocumentNumberLookupField,
@@ -55,6 +61,7 @@ export function ProveedorFormModal({
     const { t } = useTranslation(['compras', 'common', 'forms']);
     const isEdit = proveedor !== null;
     const [consultandoRuc, setConsultandoRuc] = useState(false);
+    const lastConsultaRucRef = useRef<string | null>(null);
     const { data, setData, post, put, processing, errors, reset, clearErrors } =
         useForm<FormData>({
             nombre: '',
@@ -65,13 +72,25 @@ export function ProveedorFormModal({
             activo: true,
         });
 
+    const rucDigits = soloDigitosDocumento(data.ruc, 11);
+    const rucCompleto = rucDigits.length === 11;
+
     useEffect(() => {
         if (!open) return;
         clearErrors();
         setConsultandoRuc(false);
+        const rucInicial = soloDigitosDocumento(
+            proveedor?.ruc ?? initialRuc,
+            11,
+        );
+        // En edición no reconsulta el RUC ya guardado; en alta sí (aunque venga precargado).
+        lastConsultaRucRef.current =
+            proveedor !== null && rucInicial.length === 11
+                ? rucInicial
+                : null;
         setData({
             nombre: proveedor?.nombre ?? initialNombre,
-            ruc: proveedor?.ruc ?? soloDigitosDocumento(initialRuc, 11),
+            ruc: rucInicial,
             telefono: proveedor?.telefono ?? '',
             email: proveedor?.email ?? '',
             notas: proveedor?.notas ?? '',
@@ -88,15 +107,18 @@ export function ProveedorFormModal({
         [processing, consultandoRuc, data.nombre],
     );
 
-    const consultarRuc = async () => {
-        const ruc = soloDigitosDocumento(data.ruc, 11);
+    const consultarRuc = async (forcedRuc?: string, silentInvalid = false) => {
+        const ruc = soloDigitosDocumento(forcedRuc ?? data.ruc, 11);
         if (ruc.length !== 11) {
-            toastManager.error({
-                title: t('forms:document_lookup.invalid_ruc'),
-            });
+            if (!silentInvalid) {
+                toastManager.error({
+                    title: t('forms:document_lookup.invalid_ruc'),
+                });
+            }
             return;
         }
 
+        lastConsultaRucRef.current = ruc;
         setConsultandoRuc(true);
         try {
             const res = await fetch(compras.proveedores.consultaRuc(ruc).url, {
@@ -138,6 +160,22 @@ export function ProveedorFormModal({
             setConsultandoRuc(false);
         }
     };
+
+    useEffect(() => {
+        if (
+            !open ||
+            !rucCompleto ||
+            consultandoRuc ||
+            processing
+        ) {
+            return;
+        }
+        if (lastConsultaRucRef.current === rucDigits) {
+            return;
+        }
+        void consultarRuc(rucDigits, true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, rucCompleto, rucDigits, consultandoRuc, processing]);
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -215,7 +253,7 @@ export function ProveedorFormModal({
                         consulting={consultandoRuc}
                         disabled={processing}
                         invalid={Boolean(errors.ruc)}
-                        onConsult={() => void consultarRuc()}
+                        onConsult={() => void consultarRuc(undefined, false)}
                         consultAriaLabel={t(
                             'forms:document_lookup.consultar_ruc',
                         )}
