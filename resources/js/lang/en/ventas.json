@@ -200,6 +200,8 @@
         "exacto": "Exact",
         "subtotal": "Subtotal",
         "descuento": "Discount",
+        "motivo_descuento": "Discount reason (optional)",
+        "descuento_gerente_only": "Only a manager or admin can apply discounts.",
         "total": "Total",
         "sin_caja": "Open the register to record the sale.",
         "sede_moneda": "{{sede}} · PEN",

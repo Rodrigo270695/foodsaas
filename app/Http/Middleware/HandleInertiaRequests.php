@@ -214,7 +214,15 @@ class HandleInertiaRequests extends Middleware
                 }
             },
             'active_sede' => static fn () => ActiveSedeContext::sharedPayload(),
-            // Feed mesero ↔ cocina (polling parcial, estilo Agrovision inbox).
+            'broadcast' => [
+                'enabled' => filled(config('broadcasting.connections.reverb.key'))
+                    && config('broadcasting.default') === 'reverb',
+                'key' => config('broadcasting.connections.reverb.key'),
+                'host' => config('broadcasting.connections.reverb.options.host') ?: 'localhost',
+                'port' => (int) (config('broadcasting.connections.reverb.options.port') ?: 8080),
+                'scheme' => (string) (config('broadcasting.connections.reverb.options.scheme') ?: 'http'),
+            ],
+            // Feed mesero ↔ cocina (Echo + polling de respaldo).
             'servicioFeed' => fn () => ServicioRealtimeFeed::forUser($user),
             // Web Push (avisos de sistema con app minimizada).
             'push' => static function () {

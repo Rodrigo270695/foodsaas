@@ -2,6 +2,7 @@
 
 namespace App\Services\Operacion;
 
+use App\Events\Operacion\ServicioOperacionUpdated;
 use App\Models\Mesa;
 use App\Models\Pedido;
 use App\Models\PedidoLinea;
@@ -235,6 +236,7 @@ class PedidoService
 
         $pedido->loadMissing('mesa');
         app(ServicioPushNotifier::class)->notificarCocinaNuevos($pedido, $enviadas);
+        $this->broadcastServicio($pedido, 'enviado_cocina');
 
         return $lineas->count();
     }
@@ -252,6 +254,14 @@ class PedidoService
         $linea->save();
 
         app(ServicioPushNotifier::class)->notificarMeseroListo($linea);
+        $linea->loadMissing('pedido');
+        if ($linea->pedido !== null) {
+            $this->broadcastServicio(
+                $linea->pedido,
+                'linea_lista',
+                $linea->id,
+            );
+        }
 
         return $linea;
     }
@@ -285,6 +295,15 @@ class PedidoService
 
         $linea->entregado_at = now();
         $linea->save();
+
+        $linea->loadMissing('pedido');
+        if ($linea->pedido !== null) {
+            $this->broadcastServicio(
+                $linea->pedido,
+                'linea_entregada',
+                $linea->id,
+            );
+        }
 
         return $linea;
     }
@@ -321,12 +340,13 @@ class PedidoService
             ->where('estado', '!=', PedidoLinea::ESTADO_ANULADO)
             ->sum('importe');
 
-        $descuento = round((float) $pedido->descuento, 2);
         $subtotal = round($subtotal, 2);
+        $descuento = DescuentoCobro::normalizar((float) $pedido->descuento, $subtotal);
         $total = max(0, round($subtotal - $descuento, 2));
 
         $pedido->forceFill([
             'subtotal' => $subtotal,
+            'descuento' => $descuento,
             'total' => $total,
         ])->save();
     }
@@ -337,6 +357,31 @@ class PedidoService
             throw ValidationException::withMessages([
                 'pedido' => 'Este pedido ya no está activo.',
             ]);
+        }
+    }
+
+    private function broadcastServicio(
+        Pedido $pedido,
+        string $action,
+        ?string $lineaId = null,
+    ): void {
+        $tenantId = tenant_id();
+        $sedeId = (string) $pedido->sede_id;
+        if ($tenantId === null || $tenantId === '' || $sedeId === '') {
+            return;
+        }
+
+        try {
+            ServicioOperacionUpdated::dispatch(
+                (string) $tenantId,
+                $sedeId,
+                $action,
+                (string) $pedido->id,
+                $lineaId,
+                Auth::id() !== null ? (int) Auth::id() : null,
+            );
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 }

@@ -200,6 +200,8 @@
         "exacto": "Exacto",
         "subtotal": "Subtotal",
         "descuento": "Descuento",
+        "motivo_descuento": "Motivo del descuento (opcional)",
+        "descuento_gerente_only": "Solo un gerente o administrador puede aplicar descuentos.",
         "total": "Total",
         "sin_caja": "Abre la caja para registrar la venta.",
         "sede_moneda": "{{sede}} · PEN",

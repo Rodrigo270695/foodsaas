@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Check, ChefHat, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import {
     type FilterSelectOption,
 } from '@/components/ui/filter-select';
 import { usePermission } from '@/hooks/use-permission';
+import { SERVICIO_CHANGED_EVENT } from '@/hooks/use-servicio-realtime';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { todayIso } from '../pedidos/types';
@@ -37,17 +38,29 @@ export default function Index({ tickets, areas, filters, stats }: Props) {
     const { can } = usePermission();
     const [markingId, setMarkingId] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const broadcast = usePage().props.broadcast as
+        | { enabled?: boolean; key?: string | null }
+        | undefined;
+    const realtimeOn = Boolean(broadcast?.enabled && broadcast.key);
 
     useEffect(() => {
-        const id = window.setInterval(() => {
+        const reloadBoard = () => {
             router.reload({
                 only: ['tickets', 'stats', 'filters', 'servicioFeed'],
                 preserveState: true,
                 preserveScroll: true,
             });
-        }, 5000);
-        return () => window.clearInterval(id);
-    }, []);
+        };
+
+        window.addEventListener(SERVICIO_CHANGED_EVENT, reloadBoard);
+        const interval = realtimeOn ? 45000 : 5000;
+        const id = window.setInterval(reloadBoard, interval);
+
+        return () => {
+            window.removeEventListener(SERVICIO_CHANGED_EVENT, reloadBoard);
+            window.clearInterval(id);
+        };
+    }, [realtimeOn]);
 
     const areaOptions = useMemo<readonly FilterSelectOption<string>[]>(
         () => [

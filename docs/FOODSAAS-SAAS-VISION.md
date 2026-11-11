@@ -26,7 +26,7 @@ tenancy (subdominio + schema), panel `/plataforma/*`, API de provisioning Orvae,
 
 **Diferenciador frente a Restaurant.pe:** Orvae checkout nativo, permisos granulares, FEL Lucode integrado al cobro, PWA mesero/cocina, multi-tenant schema, overrides de módulos por tenant + middleware `tenant.module`.
 
-**Próximo hito de producto (mercado, no arquitectura):** Fase B restante — descuentos gerente, realtime; Cortes 1–2 (recetas/BOM + compras) ya entregados; luego cadenas / franquicia.
+**Próximo hito de producto (mercado, no arquitectura):** Fase B restante — carta avanzada / delivery avanzado / créditos-ofertas; Cortes 1–2 + descuentos gerente + realtime Reverb ya entregados; luego cadenas / franquicia.
 
 ---
 
@@ -140,7 +140,7 @@ Rutas: VetSaaS registra `routes/tenant.php` en dominio `{tenant_subdomain}.{root
 - **Backend:** Laravel, Fortify, Spatie Permission, PostgreSQL obligatorio en producción multi-tenant.
 - **Frontend:** Inertia React, Tailwind, componentes UI (shadcn-style), react-i18next (`resources/js/lang/{es,en}`).
 - **PWA:** manifest, iconos, `pwa-install-banner`, theme-color `#660033`.
-- **Realtime (roadmap):** Laravel Reverb/Echo para KDS y “pedido listo” (VetSaaS usa broadcasting en varios módulos — reutilizar patrones de `routes/channels.php`).
+- **Realtime:** Laravel Reverb/Echo — canal `tenant.{id}.sede.{sede}.servicio` (`ServicioOperacionUpdated`); UI en `use-servicio-realtime` + tablero cocina/comanda; push WebPush sigue para app en background.
 
 ---
 
@@ -259,7 +259,7 @@ Alinear con VetSaaS: `trial`, `active`, `grace`, `suspended`, `cancelled`. `Reso
 | `clientes` | view, create, update, delete, export | Lite |
 | `ofertas` | view, create, update, delete | Basic |
 | `creditos` | view, create, update, cancel, cobrar | Basic |
-| `descuentos` | view, create, update, delete | Basic |
+| `descuentos` | **apply** (MVP cobro gerente); create/update/delete campañas = futuro | Basic |
 | `insumos` | view, create, update, delete, export | Basic |
 | `compras` | view, create, update, delete, approve, receive | Basic |
 | `almacenes` | view, create, update, delete, transfer | Basic |
@@ -426,8 +426,8 @@ Lo que el cliente paga en Starter/Pro ya tiene superficie usable:
 
 - [x] **Corte 1:** Recetas / BOM + consumo al cobrar → foodcost básico (`modulo_recetas` / módulo `insumos`: CRUD insumos, BOM en carta recipe, baja/reverso al cobrar/anular, sección foodcost en reportes)
 - [x] **Corte 2:** Compras OC → recepción (parcial/total) → stock (`modulo_compras`: proveedores, OC de insumos + productos SKU, kardex entrada y costo)
-- [ ] Descuentos/créditos/ofertas con permiso gerente
-- [ ] Realtime cocina/mesero (Reverb) en lugar de solo polling
+- [x] **Descuentos gerente (MVP):** permiso `descuentos.apply` (gerente/admin), tope ≤ subtotal, motivo opcional + auditoría `descuento_autorizado_por` en pedido/venta; cajero no edita descuento en cobro. Créditos a cuenta y catálogo de ofertas = pendiente.
+- [x] **Realtime cocina/mesero (Reverb):** canal privado `tenant.{id}.sede.{sede}.servicio`, evento `servicio.updated` al enviar/listo/entregar; Echo en feed + tablero cocina/comanda; polling lento (45s) como respaldo si Reverb no corre.
 - [ ] Carta avanzada: PDF server-side, horarios vigentes, deep link mesero
 - [ ] Delivery avanzado: zonas/tarifas e integraciones apps
 

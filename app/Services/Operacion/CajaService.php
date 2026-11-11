@@ -254,7 +254,12 @@ class CajaService
     /**
      * @param  list<array{medio: string, monto: float|string, referencia?: string|null}>  $pagos
      */
-    public function cobrarPedido(Pedido $pedido, array $pagos, ?float $descuento = null): Venta
+    public function cobrarPedido(
+        Pedido $pedido,
+        array $pagos,
+        ?float $descuento = null,
+        ?string $motivoDescuento = null,
+    ): Venta
     {
         if (! $pedido->isActivo()) {
             throw ValidationException::withMessages([
@@ -289,7 +294,7 @@ class CajaService
             ]);
         }
 
-        return DB::transaction(function () use ($pedido, $pagos, $descuento, $sesion, $lineasCobrables): Venta {
+        return DB::transaction(function () use ($pedido, $pagos, $descuento, $motivoDescuento, $sesion, $lineasCobrables): Venta {
             /** @var Pedido $locked */
             $locked = Pedido::query()->whereKey($pedido->id)->lockForUpdate()->firstOrFail();
 
@@ -304,6 +309,17 @@ class CajaService
             }
             $this->pedidos->recalcularTotales($locked);
             $locked->refresh();
+
+            $descuentoFinal = round((float) $locked->descuento, 2);
+            /** @var \App\Models\User|null $actor */
+            $actor = Auth::user();
+            DescuentoCobro::assertPuedeAplicar($actor, $descuentoFinal);
+
+            $motivo = DescuentoCobro::normalizarMotivo($motivoDescuento, $descuentoFinal);
+            $locked->forceFill([
+                'motivo_descuento' => $motivo,
+                'descuento_autorizado_por' => $descuentoFinal > 0 ? Auth::id() : null,
+            ])->save();
 
             $total = round((float) $locked->total, 2);
             $sumaPagos = round(collect($pagos)->sum(fn ($p) => (float) ($p['monto'] ?? 0)), 2);
@@ -347,6 +363,8 @@ class CajaService
                 'estado' => Venta::ESTADO_PAGADA,
                 'subtotal' => $locked->subtotal,
                 'descuento' => $locked->descuento,
+                'motivo_descuento' => $locked->motivo_descuento,
+                'descuento_autorizado_por' => $locked->descuento_autorizado_por,
                 'total' => $locked->total,
                 'created_by' => Auth::id(),
             ]);
@@ -447,6 +465,7 @@ class CajaService
      *     items: list<array{producto_id: string, cantidad: float|int|string}>,
      *     pagos: list<array{medio: string, monto: float|string, referencia?: string|null}>,
      *     descuento?: float|null,
+     *     motivo_descuento?: string|null,
      *     tipo_comprobante?: string,
      *     cliente_nombre?: string|null,
      *     cliente_documento?: string|null,
@@ -518,12 +537,16 @@ class CajaService
         }
 
         $descuento = isset($data['descuento']) ? round(max(0, (float) $data['descuento']), 2) : 0.0;
+        $motivoDescuento = isset($data['motivo_descuento']) && is_string($data['motivo_descuento'])
+            ? $data['motivo_descuento']
+            : null;
 
         return DB::transaction(function () use (
             $sedeId,
             $items,
             $pagos,
             $descuento,
+            $motivoDescuento,
             $tipo,
             $clienteNombre,
             $clienteDoc,
@@ -585,7 +608,7 @@ class CajaService
             $this->pedidos->recalcularTotales($pedido);
             $pedido->refresh();
 
-            $venta = $this->cobrarPedido($pedido, $pagos, $descuento);
+            $venta = $this->cobrarPedido($pedido, $pagos, $descuento, $motivoDescuento);
 
             $venta->forceFill([
                 'origen' => Venta::ORIGEN_RAPIDA,

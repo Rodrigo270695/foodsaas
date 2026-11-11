@@ -1,10 +1,12 @@
 import { router, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
+import { useServicioRealtime } from '@/hooks/use-servicio-realtime';
 import { playNotifyChime } from '@/lib/notification-sound';
 import { toastManager } from '@/lib/toast';
 import type { ServicioFeed, ServicioListoItem } from '@/types/servicio-feed';
 
 const POLL_MS = 6000;
+const POLL_MS_WITH_REALTIME = 45000;
 const SEEN_LISTOS_KEY = 'foodsaas.servicioFeed.seenListos';
 const SEEN_COLA_KEY = 'foodsaas.servicioFeed.seenCola';
 
@@ -50,22 +52,24 @@ export function useServicioFeedPoll(): void {
         .servicioFeed;
     const knownSig = useRef<string | null>(null);
     const bootstrapped = useRef(false);
+    const realtimeOn = useServicioRealtime(feed != null);
 
     useEffect(() => {
         if (feed == null) {
             return;
         }
 
+        const interval = realtimeOn ? POLL_MS_WITH_REALTIME : POLL_MS;
         const timer = window.setInterval(() => {
             router.reload({
                 only: ['servicioFeed'],
                 preserveState: true,
                 preserveScroll: true,
             });
-        }, POLL_MS);
+        }, interval);
 
         return () => window.clearInterval(timer);
-    }, [feed == null]);
+    }, [feed == null, realtimeOn]);
 
     useEffect(() => {
         if (feed == null) {

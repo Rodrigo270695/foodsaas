@@ -13,6 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import caja from '../caja/caja-routes';
 import ventas from './ventas-routes';
@@ -52,15 +53,27 @@ function money(value: string | number): string {
 
 export default function Cobrar({ pedido, sesion_abierta, medios }: Props) {
     const { t } = useTranslation(['ventas', 'caja', 'common']);
+    const { can } = usePermission();
+    const canApplyDescuento = can('descuentos.apply');
     const [medio, setMedio] = useState(medios[0] ?? 'efectivo');
-    const [descuento, setDescuento] = useState(String(pedido.descuento ?? 0));
+    const [descuento, setDescuento] = useState(
+        canApplyDescuento ? String(pedido.descuento ?? 0) : '0',
+    );
+    const [motivoDescuento, setMotivoDescuento] = useState('');
     const [monto, setMonto] = useState('');
     const [busy, setBusy] = useState(false);
 
+    const descuentoNum = canApplyDescuento
+        ? Math.min(
+              Number(pedido.subtotal) || 0,
+              Math.max(0, Number(descuento) || 0),
+          )
+        : 0;
+
     const totalAPagar = useMemo(() => {
-        const base = Number(pedido.subtotal) - (Number(descuento) || 0);
+        const base = Number(pedido.subtotal) - descuentoNum;
         return Math.max(0, round2(base));
-    }, [pedido.subtotal, descuento]);
+    }, [pedido.subtotal, descuentoNum]);
 
     const montoPago = monto === '' ? totalAPagar : Number(monto) || 0;
 
@@ -73,7 +86,9 @@ export default function Cobrar({ pedido, sesion_abierta, medios }: Props) {
         router.post(
             ventas.cobrar(pedido.id).url,
             {
-                descuento: Number(descuento) || 0,
+                descuento: descuentoNum,
+                motivo_descuento:
+                    descuentoNum > 0 ? motivoDescuento.trim() || null : null,
                 pagos: [{ medio, monto: montoPago }],
             },
             { onFinish: () => setBusy(false) },
@@ -155,13 +170,38 @@ export default function Cobrar({ pedido, sesion_abierta, medios }: Props) {
 
                         <div className="grid gap-2">
                             <Label>{t('cobrar.descuento')}</Label>
-                            <Input
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                value={descuento}
-                                onChange={(e) => setDescuento(e.target.value)}
-                            />
+                            {canApplyDescuento ? (
+                                <>
+                                    <Input
+                                        type="number"
+                                        min={0}
+                                        max={Number(pedido.subtotal) || undefined}
+                                        step="0.01"
+                                        value={descuento}
+                                        onChange={(e) =>
+                                            setDescuento(e.target.value)
+                                        }
+                                    />
+                                    {descuentoNum > 0 ? (
+                                        <Input
+                                            value={motivoDescuento}
+                                            onChange={(e) =>
+                                                setMotivoDescuento(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={t(
+                                                'nueva.motivo_descuento',
+                                            )}
+                                            maxLength={200}
+                                        />
+                                    ) : null}
+                                </>
+                            ) : (
+                                <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                                    {t('nueva.descuento_gerente_only')}
+                                </p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label>{t('cobrar.medio')}</Label>

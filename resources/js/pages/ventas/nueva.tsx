@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { PageHeader } from '@/components/data-page';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import caja from '../caja/caja-routes';
 import { CarritoPanel } from './components/carrito-panel';
@@ -53,6 +54,8 @@ export default function Nueva({
     sede,
 }: Props) {
     const { t } = useTranslation(['ventas', 'caja', 'common']);
+    const { can } = usePermission();
+    const canApplyDescuento = can('descuentos.apply');
     const [query, setQuery] = useState('');
     const deferredQuery = useDeferredValue(query);
     const [cart, setCart] = useState<CartLine[]>([]);
@@ -60,6 +63,7 @@ export default function Nueva({
     const [clienteNombre, setClienteNombre] = useState('');
     const [clienteDoc, setClienteDoc] = useState('');
     const [descuento, setDescuento] = useState('0');
+    const [motivoDescuento, setMotivoDescuento] = useState('');
     const [busy, setBusy] = useState(false);
     const [pedidosOpen, setPedidosOpen] = useState(false);
     const [pedidoActivo, setPedidoActivo] = useState<PedidoPendiente | null>(
@@ -105,11 +109,17 @@ export default function Nueva({
             ),
         [cart],
     );
-    const descuentoNum = Math.min(
-        subtotal,
-        Math.max(0, Number(descuento) || 0),
-    );
+    const descuentoNum = canApplyDescuento
+        ? Math.min(subtotal, Math.max(0, Number(descuento) || 0))
+        : 0;
     const total = round2(Math.max(0, subtotal - descuentoNum));
+
+    useEffect(() => {
+        if (!canApplyDescuento && descuento !== '0') {
+            setDescuento('0');
+            setMotivoDescuento('');
+        }
+    }, [canApplyDescuento, descuento]);
 
     function addProduct(p: Producto) {
         if (cobrandoPedido) {
@@ -212,6 +222,10 @@ export default function Nueva({
                 ventas.cobrar(pedidoActivo.id).url,
                 {
                     descuento: descuentoNum,
+                    motivo_descuento:
+                        descuentoNum > 0
+                            ? motivoDescuento.trim() || null
+                            : null,
                     pagos,
                 },
                 { onFinish: () => setBusy(false) },
@@ -226,6 +240,8 @@ export default function Nueva({
                 cliente_nombre: clienteNombre.trim() || 'Varios',
                 cliente_documento: clienteDoc.trim() || null,
                 descuento: descuentoNum,
+                motivo_descuento:
+                    descuentoNum > 0 ? motivoDescuento.trim() || null : null,
                 items: cart
                     .filter((l) => l.producto_id)
                     .map((l) => ({
@@ -410,6 +426,9 @@ export default function Nueva({
                         medios={medios}
                         descuento={descuento}
                         onDescuentoChange={setDescuento}
+                        motivoDescuento={motivoDescuento}
+                        onMotivoDescuentoChange={setMotivoDescuento}
+                        canApplyDescuento={canApplyDescuento}
                         subtotal={subtotal}
                         descuentoNum={descuentoNum}
                         total={total}

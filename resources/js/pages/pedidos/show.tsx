@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/data-page';
 import { Can } from '@/components/can';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/hooks/use-permission';
+import { SERVICIO_CHANGED_EVENT } from '@/hooks/use-servicio-realtime';
 import AppLayout from '@/layouts/app-layout';
 import { toastManager } from '@/lib/toast';
 import { cn } from '@/lib/utils';
@@ -97,20 +98,31 @@ export default function Show({ pedido, productos, categorias }: Props) {
     const enCocinaOListos = pedido.lineas.filter((l) =>
         ['en_cola', 'listo'].includes(l.estado),
     );
-    // Vista viva: la comanda se actualiza sola (el toast/sonido viene del feed del header)
+    // Vista viva: Echo (si hay Reverb) + polling de respaldo
+    const broadcast = usePage().props.broadcast as
+        | { enabled?: boolean; key?: string | null }
+        | undefined;
+    const realtimeOn = Boolean(broadcast?.enabled && broadcast.key);
+
     useEffect(() => {
         if (!activo) {
             return;
         }
-        const id = window.setInterval(() => {
+        const reloadPedido = () => {
             router.reload({
                 only: ['pedido'],
                 preserveState: true,
                 preserveScroll: true,
             });
-        }, 7000);
-        return () => window.clearInterval(id);
-    }, [activo]);
+        };
+        window.addEventListener(SERVICIO_CHANGED_EVENT, reloadPedido);
+        const interval = realtimeOn ? 45000 : 7000;
+        const id = window.setInterval(reloadPedido, interval);
+        return () => {
+            window.removeEventListener(SERVICIO_CHANGED_EVENT, reloadPedido);
+            window.clearInterval(id);
+        };
+    }, [activo, realtimeOn]);
 
     function addProducto(productoId: string) {
         if (!activo || !can('pedidos.update')) {

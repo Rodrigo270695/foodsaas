@@ -54,6 +54,8 @@ class Pedido extends Model
         'notas',
         'subtotal',
         'descuento',
+        'motivo_descuento',
+        'descuento_autorizado_por',
         'total',
         'opened_by',
         'enviado_at',
@@ -100,6 +102,14 @@ class Pedido extends Model
     public function openedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'opened_by');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function descuentoAutorizadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'descuento_autorizado_por');
     }
 
     /**

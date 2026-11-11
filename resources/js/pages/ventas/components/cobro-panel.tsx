@@ -30,6 +30,9 @@ type Props = {
     medios: string[];
     descuento: string;
     onDescuentoChange: (value: string) => void;
+    motivoDescuento?: string;
+    onMotivoDescuentoChange?: (value: string) => void;
+    canApplyDescuento?: boolean;
     subtotal: number;
     descuentoNum: number;
     total: number;
@@ -63,6 +66,9 @@ export function CobroPanel({
     medios,
     descuento,
     onDescuentoChange,
+    motivoDescuento = '',
+    onMotivoDescuentoChange,
+    canApplyDescuento = false,
     subtotal,
     descuentoNum,
     total,
@@ -362,15 +368,38 @@ export function CobroPanel({
                 <Label htmlFor="descuento" className="text-xs">
                     {t('nueva.descuento')}
                 </Label>
-                <Input
-                    id="descuento"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={descuento}
-                    onChange={(e) => onDescuentoChange(e.target.value)}
-                    className="h-9"
-                />
+                {canApplyDescuento ? (
+                    <>
+                        <Input
+                            id="descuento"
+                            type="number"
+                            min={0}
+                            max={subtotal}
+                            step="0.01"
+                            value={descuento}
+                            onChange={(e) =>
+                                onDescuentoChange(e.target.value)
+                            }
+                            className="h-9"
+                        />
+                        {descuentoNum > 0 && onMotivoDescuentoChange ? (
+                            <Input
+                                id="motivo-descuento"
+                                value={motivoDescuento}
+                                onChange={(e) =>
+                                    onMotivoDescuentoChange(e.target.value)
+                                }
+                                placeholder={t('nueva.motivo_descuento')}
+                                maxLength={200}
+                                className="h-9"
+                            />
+                        ) : null}
+                    </>
+                ) : (
+                    <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                        {t('nueva.descuento_gerente_only')}
+                    </p>
+                )}
             </div>
 
             {esMixto ? (

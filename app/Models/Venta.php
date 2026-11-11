@@ -72,6 +72,8 @@ class Venta extends Model
         'estado',
         'subtotal',
         'descuento',
+        'motivo_descuento',
+        'descuento_autorizado_por',
         'total',
         'created_by',
         'anulado_at',
@@ -127,6 +129,14 @@ class Venta extends Model
     public function anuladoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'anulado_por_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function descuentoAutorizadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'descuento_autorizado_por');
     }
 
     public function estaAnulada(): bool

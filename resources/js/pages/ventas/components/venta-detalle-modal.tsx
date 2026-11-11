@@ -39,6 +39,7 @@ type VentaDetalle = {
     estado: string;
     subtotal: string;
     descuento: string;
+    motivo_descuento?: string | null;
     total: string;
     created_at: string | null;
     sede: { id: string; nombre: string; codigo: string } | null;
@@ -422,6 +423,16 @@ export function VentaDetalleModal({
                                     −{money(venta.descuento)}
                                 </dd>
                             </div>
+                            {venta.motivo_descuento ? (
+                                <div className="flex justify-between gap-3 text-xs">
+                                    <dt className="text-muted-foreground">
+                                        {t('nueva.motivo_descuento')}
+                                    </dt>
+                                    <dd className="max-w-[14rem] text-right">
+                                        {venta.motivo_descuento}
+                                    </dd>
+                                </div>
+                            ) : null}
                             <div className="flex justify-between gap-3 text-base font-semibold text-brand-700">
                                 <dt>{t('nueva.total')}</dt>
                                 <dd className="tabular-nums">

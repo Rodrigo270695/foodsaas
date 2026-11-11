@@ -35,6 +35,8 @@ class PermissionsSeeder extends Seeder
         'cocina' => ['view', 'update'],
         'caja' => ['view', 'abrir', 'cerrar', 'egreso', 'cobrar'],
         'ventas' => ['view', 'create', 'export', 'delete'],
+        // Descuento en cobro: solo gerente/admin (no cajero).
+        'descuentos' => ['apply'],
         'reportes' => ['view', 'export'],
         'clientes' => ['view', 'create', 'update', 'delete'],
         'reservas' => ['view', 'create', 'update', 'delete'],

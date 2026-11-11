@@ -403,6 +403,7 @@ class VentaController extends Controller
             'cliente_nombre' => ['nullable', 'string', 'max:180'],
             'cliente_documento' => ['nullable', 'string', 'max:20'],
             'descuento' => ['nullable', 'numeric', 'min:0'],
+            'motivo_descuento' => ['nullable', 'string', 'max:200'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.producto_id' => ['required', 'uuid'],
             'items.*.cantidad' => ['required', 'numeric', 'min:0.001'],
@@ -528,6 +529,7 @@ class VentaController extends Controller
 
         $data = $request->validate([
             'descuento' => ['nullable', 'numeric', 'min:0'],
+            'motivo_descuento' => ['nullable', 'string', 'max:200'],
             'pagos' => ['required', 'array', 'min:1'],
             'pagos.*.medio' => ['required', Rule::in(Pago::MEDIOS)],
             'pagos.*.monto' => ['required', 'numeric', 'min:0.01'],
@@ -538,6 +540,7 @@ class VentaController extends Controller
             $pedido,
             $data['pagos'],
             isset($data['descuento']) ? (float) $data['descuento'] : null,
+            isset($data['motivo_descuento']) ? (string) $data['motivo_descuento'] : null,
         );
 
         return redirect()
@@ -605,6 +608,7 @@ class VentaController extends Controller
                 'estado' => $venta->estado,
                 'subtotal' => (string) $venta->subtotal,
                 'descuento' => (string) $venta->descuento,
+                'motivo_descuento' => $venta->motivo_descuento,
                 'total' => (string) $venta->total,
                 'created_at' => $venta->created_at?->toIso8601String(),
                 'sede' => $venta->sede
