@@ -57,6 +57,7 @@ export type PlatformDashboardData = {
 
 export type DashboardProps = {
     mode: 'tenant' | 'platform';
-    tenant: TenantDashboardData | null;
-    platform: PlatformDashboardData | null;
+    /** Métricas del dashboard tenant (no confundir con el share `tenant`). */
+    tenantMetrics: TenantDashboardData | null;
+    platformMetrics: PlatformDashboardData | null;
 };

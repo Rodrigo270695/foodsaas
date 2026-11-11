@@ -26,15 +26,17 @@ class DashboardController extends Controller
         if ($onPlatform) {
             return Inertia::render('dashboard', [
                 'mode' => 'platform',
-                'platform' => $platformMetrics->build(),
-                'tenant' => null,
+                // No usar la clave `tenant`: choca con el share de Inertia
+                // (contexto del restaurante: id/slug/schema).
+                'tenantMetrics' => null,
+                'platformMetrics' => $platformMetrics->build(),
             ]);
         }
 
         return Inertia::render('dashboard', [
             'mode' => 'tenant',
-            'tenant' => $tenantMetrics->build(),
-            'platform' => null,
+            'tenantMetrics' => $tenantMetrics->build(),
+            'platformMetrics' => null,
         ]);
     }
 }

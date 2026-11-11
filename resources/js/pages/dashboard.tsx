@@ -5,7 +5,11 @@ import { dashboard } from '@/routes';
 import { PlatformDashboard } from './dashboard/platform-dashboard';
 import { TenantDashboard } from './dashboard/tenant-dashboard';
 
-export default function Dashboard({ mode, tenant, platform }: DashboardProps) {
+export default function Dashboard({
+    mode,
+    tenantMetrics,
+    platformMetrics,
+}: DashboardProps) {
     const { t } = useTranslation('dashboard');
 
     return (
@@ -17,10 +21,10 @@ export default function Dashboard({ mode, tenant, platform }: DashboardProps) {
                         : t('tenant.title')
                 }
             />
-            {mode === 'platform' && platform ? (
-                <PlatformDashboard data={platform} />
-            ) : tenant ? (
-                <TenantDashboard data={tenant} />
+            {mode === 'platform' && platformMetrics ? (
+                <PlatformDashboard data={platformMetrics} />
+            ) : mode === 'tenant' && tenantMetrics?.kpis ? (
+                <TenantDashboard data={tenantMetrics} />
             ) : null}
         </>
     );
