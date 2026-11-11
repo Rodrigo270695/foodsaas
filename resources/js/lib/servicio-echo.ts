@@ -73,9 +73,19 @@ export async function getSharedServicioEcho(
         return null;
     }
 
-    const scheme = broadcast.scheme === 'http' ? 'http' : 'https';
-    const port = Number(broadcast.port ?? (scheme === 'https' ? 443 : 8080));
-    const host = broadcast.host || window.location.hostname;
+    // En tenants (pruebas.foodsaas...) el WS va al mismo host de la página,
+    // nunca a localhost del VPS.
+    const configuredHost = (broadcast.host ?? '').trim();
+    const hostIsLocal =
+        configuredHost === '' ||
+        configuredHost === 'localhost' ||
+        configuredHost === '127.0.0.1';
+    const host = hostIsLocal ? window.location.hostname : configuredHost;
+
+    const pageIsHttps = window.location.protocol === 'https:';
+    const scheme = pageIsHttps ? 'https' : 'http';
+    // Público: 443 vía Nginx. Local HTTP: puerto de Reverb (8082, etc.).
+    const port = pageIsHttps ? 443 : Number(broadcast.port ?? 8080);
     const cacheKey = `${broadcast.key}|${host}|${port}|${scheme}`;
 
     if (sharedEcho && sharedEchoKey === cacheKey) {

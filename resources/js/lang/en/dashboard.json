@@ -1,0 +1,96 @@
+{
+    "actions": {
+        "reportes": "View reports",
+        "tenants": "Manage tenants"
+    },
+    "empty": {
+        "chart": "No data to show yet",
+        "list": "No recent records yet"
+    },
+    "medios": {
+        "efectivo": "Cash",
+        "tarjeta": "Card",
+        "yape": "Yape",
+        "plin": "Plin",
+        "transferencia": "Transfer",
+        "agora": "Agora",
+        "sip": "SIP",
+        "otro": "Other"
+    },
+    "canales": {
+        "salon": "Dining room",
+        "mostrador": "Counter",
+        "delivery": "Delivery"
+    },
+    "estados": {
+        "trial": "Trial",
+        "active": "Active",
+        "suspended": "Suspended",
+        "cancelled": "Cancelled",
+        "pending": "Pending"
+    },
+    "tenant": {
+        "title": "Today's operations",
+        "description": "Sales, kitchen and cash drawer for the active branch.",
+        "no_sede": "Select an active branch to see operational metrics.",
+        "caja_abierta": "Cash open",
+        "caja_cerrada": "Cash closed",
+        "kpis": {
+            "ventas_hoy": "Sales today",
+            "vs_ayer": "vs. yesterday",
+            "ventas_count": "Tickets",
+            "tickets_hoy": "paid today",
+            "ticket_promedio": "Average ticket",
+            "pedidos_abiertos": "Open orders",
+            "cocina_hint": "{{count}} in kitchen queue"
+        },
+        "ops": {
+            "cocina": "Kitchen lines",
+            "mesas": "Occupied tables",
+            "caja": "Cash status"
+        },
+        "charts": {
+            "ventas_trend": "14-day sales",
+            "ventas_trend_hint": "Paid amount per day at the active branch",
+            "monto": "Amount",
+            "medios": "Payment methods",
+            "medios_hint": "Today's payment mix",
+            "canales": "Sales by channel",
+            "canales_hint": "Today's orders grouped by channel",
+            "top_productos": "Top products",
+            "top_productos_hint": "Highest paid amount today"
+        }
+    },
+    "platform": {
+        "title": "Platform dashboard",
+        "description": "Tenant health, plans and recent signups across FoodSaaS.",
+        "stats": {
+            "total": "Tenants",
+            "trial": "Trial",
+            "suspended": "Suspended"
+        },
+        "kpis": {
+            "active": "Active tenants",
+            "active_hint": "In production",
+            "mrr": "Contracted MRR",
+            "mrr_hint": "Sum of live precio_pactado",
+            "users": "Tenant users",
+            "users_hint": "Accounts with a tenant",
+            "planes": "Active plans",
+            "planes_hint": "Published catalog"
+        },
+        "charts": {
+            "altas": "Tenant signups",
+            "altas_hint": "New tenants over the last 30 days",
+            "altas_series": "Signups",
+            "estados": "By status",
+            "estados_hint": "Current fleet distribution",
+            "planes": "Subscriptions by plan",
+            "planes_hint": "Trial + active + grace"
+        },
+        "recientes": {
+            "title": "Recent tenants",
+            "hint": "Last 8 created"
+        }
+    }
+}

@@ -28,6 +28,19 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configurePlatformSuperadminGate();
+        $this->configureBroadcastChannels();
+    }
+
+    /**
+     * Autorización de canales privados (Echo/Reverb).
+     * La ruta HTTP /broadcasting/auth está en routes/web.php.
+     */
+    protected function configureBroadcastChannels(): void
+    {
+        $channels = base_path('routes/channels.php');
+        if (is_file($channels)) {
+            require $channels;
+        }
     }
 
     protected function configurePlatformSuperadminGate(): void

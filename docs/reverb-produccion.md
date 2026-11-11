@@ -35,6 +35,9 @@ Luego:
 cd /var/www/foodsaas
 php artisan config:clear
 php artisan config:cache
+php artisan route:clear
+php artisan route:cache
+# Importante: /broadcasting/auth vive en routes/web.php para sobrevivir route:cache.
 ```
 
 > Ajusta `REVERB_HOST` al dominio real del SaaS. `APP_ID/KEY/SECRET` deben coincidir con los del servidor.

@@ -1,0 +1,96 @@
+{
+    "actions": {
+        "reportes": "Ver reportes",
+        "tenants": "Gestionar tenants"
+    },
+    "empty": {
+        "chart": "Sin datos para mostrar todavía",
+        "list": "Aún no hay registros recientes"
+    },
+    "medios": {
+        "efectivo": "Efectivo",
+        "tarjeta": "Tarjeta",
+        "yape": "Yape",
+        "plin": "Plin",
+        "transferencia": "Transferencia",
+        "agora": "Agora",
+        "sip": "SIP",
+        "otro": "Otro"
+    },
+    "canales": {
+        "salon": "Salón",
+        "mostrador": "Mostrador",
+        "delivery": "Delivery"
+    },
+    "estados": {
+        "trial": "Trial",
+        "active": "Activo",
+        "suspended": "Suspendido",
+        "cancelled": "Cancelado",
+        "pending": "Pendiente"
+    },
+    "tenant": {
+        "title": "Operación del día",
+        "description": "Ventas, cocina y caja de la sede activa en tiempo real.",
+        "no_sede": "Selecciona una sede activa para ver métricas operativas.",
+        "caja_abierta": "Caja abierta",
+        "caja_cerrada": "Caja cerrada",
+        "kpis": {
+            "ventas_hoy": "Ventas hoy",
+            "vs_ayer": "vs. ayer",
+            "ventas_count": "Tickets",
+            "tickets_hoy": "cobrados hoy",
+            "ticket_promedio": "Ticket promedio",
+            "pedidos_abiertos": "Pedidos abiertos",
+            "cocina_hint": "{{count}} en cola de cocina"
+        },
+        "ops": {
+            "cocina": "Líneas en cocina",
+            "mesas": "Mesas ocupadas",
+            "caja": "Estado de caja"
+        },
+        "charts": {
+            "ventas_trend": "Ventas 14 días",
+            "ventas_trend_hint": "Monto cobrado por día en la sede activa",
+            "monto": "Monto",
+            "medios": "Medios de pago",
+            "medios_hint": "Distribución de cobros de hoy",
+            "canales": "Ventas por canal",
+            "canales_hint": "Pedidos del día agrupados por canal",
+            "top_productos": "Top productos",
+            "top_productos_hint": "Mayor importe cobrado hoy"
+        }
+    },
+    "platform": {
+        "title": "Panel de plataforma",
+        "description": "Salud de tenants, planes y altas recientes en FoodSaaS.",
+        "stats": {
+            "total": "Tenants",
+            "trial": "Trial",
+            "suspended": "Suspendidos"
+        },
+        "kpis": {
+            "active": "Tenants activos",
+            "active_hint": "En producción",
+            "mrr": "MRR pactado",
+            "mrr_hint": "Suma de precio_pactado vivo",
+            "users": "Usuarios tenant",
+            "users_hint": "Cuentas con tenant asignado",
+            "planes": "Planes activos",
+            "planes_hint": "Catálogo publicado"
+        },
+        "charts": {
+            "altas": "Altas de tenants",
+            "altas_hint": "Nuevos tenants en los últimos 30 días",
+            "altas_series": "Altas",
+            "estados": "Por estado",
+            "estados_hint": "Distribución actual del parque",
+            "planes": "Suscripciones por plan",
+            "planes_hint": "Trial + active + grace"
+        },
+        "recientes": {
+            "title": "Tenants recientes",
+            "hint": "Últimos 8 dados de alta"
+        }
+    }
+}

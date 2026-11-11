@@ -2,9 +2,19 @@
 
 use App\Http\Controllers\Auth\BootstrapLoginController;
 use App\Http\Controllers\Auth\ChangePasswordController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GeoController;
+use App\Http\Controllers\PublicMenuController;
 use App\Http\Controllers\TenantImpersonationController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+
+/*
+| Auth de canales privados (Echo/Reverb). Debe vivir en web.php para
+| entrar en `route:cache`; Broadcast::routes() en withBroadcasting se
+| salta cuando hay caché de rutas → 404 en /broadcasting/auth.
+*/
+Broadcast::routes(['middleware' => ['web', 'auth']]);
 
 Route::get('/', function () {
     return auth()->check()
@@ -49,7 +59,7 @@ Route::middleware(['auth', 'tenant.match-user'])->group(function (): void {
 });
 
 Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-change', 'permission:dashboard.view'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 });
 
 Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-change'])->group(function () {
@@ -62,7 +72,7 @@ Route::middleware(['auth', 'verified', 'tenant.match-user', 'force-password-chan
 });
 
 Route::middleware(['tenant.required', 'throttle:60,1'])
-    ->get('m/{slug}', [\App\Http\Controllers\PublicMenuController::class, 'show'])
+    ->get('m/{slug}', [PublicMenuController::class, 'show'])
     ->where('slug', '[A-Za-z0-9\-]+')
     ->name('public.menu');
 
