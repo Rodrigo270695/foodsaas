@@ -29,4 +29,46 @@ final class PlanCapabilities
 
         return $plan !== null && (bool) $plan->resolveFeature('facturas_electronicas');
     }
+
+    public static function notasCredito(?Tenant $tenant = null): bool
+    {
+        $plan = PlanLimits::activePlan($tenant);
+
+        return $plan !== null && (bool) $plan->resolveFeature('notas_credito');
+    }
+
+    public static function notasDebito(?Tenant $tenant = null): bool
+    {
+        $plan = PlanLimits::activePlan($tenant);
+
+        return $plan !== null && (bool) $plan->resolveFeature('notas_debito');
+    }
+
+    public static function guiasRemision(?Tenant $tenant = null): bool
+    {
+        $plan = PlanLimits::activePlan($tenant);
+
+        return $plan !== null && (bool) $plan->resolveFeature('guias_remision');
+    }
+
+    public static function multiAlmacen(?Tenant $tenant = null): bool
+    {
+        $plan = PlanLimits::activePlan($tenant);
+
+        return $plan !== null && (bool) $plan->resolveFeature('multi_almacen');
+    }
+
+    public static function franquiciaConsolidado(?Tenant $tenant = null): bool
+    {
+        $plan = PlanLimits::activePlan($tenant);
+
+        return $plan !== null && (bool) $plan->resolveFeature('franquicia_consolidado');
+    }
+
+    public static function abastecimientoCentral(?Tenant $tenant = null): bool
+    {
+        $plan = PlanLimits::activePlan($tenant);
+
+        return $plan !== null && (bool) $plan->resolveFeature('abastecimiento_central');
+    }
 }

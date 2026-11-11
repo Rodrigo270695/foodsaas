@@ -76,6 +76,12 @@ Route::middleware(['tenant.required', 'throttle:60,1'])
     ->where('slug', '[A-Za-z0-9\-]+')
     ->name('public.menu');
 
+Route::middleware(['tenant.required', 'throttle:120,1'])
+    ->post('webhooks/delivery/{proveedor}/{sede}', [\App\Http\Controllers\DeliveryIntegracionController::class, 'webhook'])
+    ->whereIn('proveedor', ['rappi', 'pedidosya'])
+    ->whereUuid('sede')
+    ->name('webhooks.delivery');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/configuracion.php';
 require __DIR__.'/facturacion.php';

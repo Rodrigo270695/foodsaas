@@ -29,6 +29,9 @@ class PermissionsSeeder extends Seeder
         'recetas' => ['view', 'update'],
         'proveedores' => ['view', 'create', 'update', 'delete'],
         'compras' => ['view', 'create', 'update', 'delete', 'receive'],
+        'transferencias' => ['view', 'create', 'update', 'send', 'receive'],
+        'abastecimiento' => ['view', 'create', 'update', 'approve'],
+        'consolidado' => ['view', 'export'],
         'salon' => ['view', 'create', 'update', 'delete'],
         // view = propios; view-all = todos los de la sede (admin/gerente/cajero o rol custom).
         'pedidos' => ['view', 'view-all', 'create', 'update', 'enviar', 'anular', 'cobrar'],
@@ -53,6 +56,9 @@ class PermissionsSeeder extends Seeder
         'plataforma-planes' => ['view', 'create', 'update', 'delete', 'export', 'bulk-delete'],
         'plataforma-tenants' => ['view', 'create', 'update', 'suspend', 'resume', 'delete', 'export', 'bulk-delete', 'impersonate'],
         'plataforma-suscripciones' => ['view', 'create', 'update', 'delete', 'export', 'bulk-delete', 'extend-trial', 'change-plan', 'cancel'],
+        'plataforma-operaciones' => ['view'],
+        'plataforma-reportes' => ['view', 'export'],
+        'plataforma-cobros' => ['view', 'export'],
     ];
 
     public function run(): void

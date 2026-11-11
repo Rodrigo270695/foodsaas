@@ -91,6 +91,12 @@ class PedidoService
                 'estado' => Pedido::ESTADO_BORRADOR,
                 'comensales' => max(1, (int) ($data['comensales'] ?? 1)),
                 'canal' => $canal,
+                'origen_externo' => isset($data['origen_externo'])
+                    ? (trim((string) $data['origen_externo']) ?: null)
+                    : null,
+                'external_order_id' => isset($data['external_order_id'])
+                    ? (trim((string) $data['external_order_id']) ?: null)
+                    : null,
                 'notas' => isset($data['notas']) ? trim((string) $data['notas']) ?: null : null,
                 'delivery_nombre' => isset($data['delivery_nombre'])
                     ? (trim((string) $data['delivery_nombre']) ?: null)

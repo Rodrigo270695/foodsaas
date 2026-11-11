@@ -26,6 +26,9 @@ final class TenantModuleRegistry
         'almacen',
         'insumos',
         'compras',
+        'transferencias',
+        'abastecimiento',
+        'consolidado',
         'documentos',
         'series',
         'notas_baja',
@@ -58,7 +61,7 @@ final class TenantModuleRegistry
             ],
             [
                 'group' => 'catalogo',
-                'modules' => ['carta', 'almacen', 'insumos', 'compras'],
+                'modules' => ['carta', 'almacen', 'insumos', 'compras', 'transferencias', 'abastecimiento', 'consolidado'],
             ],
             [
                 'group' => 'facturacion',
@@ -88,6 +91,9 @@ final class TenantModuleRegistry
             'insumos' => 'modulo_recetas',
             'compras' => 'modulo_compras',
             'ofertas' => 'modulo_ofertas',
+            'transferencias' => 'multi_almacen',
+            'abastecimiento' => 'abastecimiento_central',
+            'consolidado' => 'franquicia_consolidado',
             default => null,
         };
     }

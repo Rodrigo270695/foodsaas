@@ -70,6 +70,8 @@ class Pedido extends Model
         'estado',
         'comensales',
         'canal',
+        'origen_externo',
+        'external_order_id',
         'notas',
         'delivery_nombre',
         'delivery_telefono',

@@ -1,0 +1,30 @@
+{
+    "title": "Stock consolidado",
+    "description": "Existencias de todas las sedes agrupadas por ítem.",
+    "search_placeholder": "Buscar ítem…",
+    "stats": {
+        "skus": "Ítems",
+        "bajo_minimo": "Bajo mínimo",
+        "sedes": "Sedes"
+    },
+    "columns": {
+        "nombre": "Ítem",
+        "tipo": "Tipo",
+        "stock_total": "Stock total",
+        "sedes": "Detalle por sede",
+        "estado": "Estado"
+    },
+    "tipos": {
+        "insumo": "Insumo",
+        "producto": "Producto SKU"
+    },
+    "estado": {
+        "ok": "OK",
+        "bajo": "Bajo mínimo"
+    },
+    "minimo": "mín. {{min}}",
+    "empty": {
+        "title": "Sin existencias",
+        "description": "No hay ítems que coincidan con la búsqueda."
+    }
+}

@@ -51,6 +51,10 @@ class FelDocument extends Model
 
     protected $fillable = [
         'venta_id',
+        'documento_afectado_id',
+        'nota_motivo_codigo',
+        'nota_motivo_descripcion',
+        'guia_datos',
         'fel_serie_id',
         'tipo_comprobante',
         'serie',
@@ -88,12 +92,18 @@ class FelDocument extends Model
             'emitido_at' => 'datetime',
             'anulado_at' => 'datetime',
             'apisunat_payload' => 'array',
+            'guia_datos' => 'array',
         ];
     }
 
     public function venta(): BelongsTo
     {
         return $this->belongsTo(Venta::class, 'venta_id');
+    }
+
+    public function documentoAfectado(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'documento_afectado_id');
     }
 
     public function felSerie(): BelongsTo

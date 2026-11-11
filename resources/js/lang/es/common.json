@@ -141,5 +141,125 @@
         "android_step1": "En Chrome, toca el menú ⋮ arriba a la derecha.",
         "android_step2": "Elige Instalar aplicación o «Añadir a la pantalla de inicio».",
         "menu_install": "Instalar app en el celular"
+    },
+    "plataforma": {
+        "operaciones": {
+            "title": "Operaciones de plataforma",
+            "description": "Estado general del sistema: tenants, sesiones y esquemas.",
+            "stats": {
+                "tenants": "Tenants",
+                "activos": "Activos",
+                "suspendidos": "Suspendidos",
+                "subs_activas": "Suscripciones vigentes",
+                "usuarios": "Usuarios",
+                "sedes": "Sedes",
+                "schemas": "Esquemas"
+            },
+            "recientes": "Tenants recientes",
+            "sesiones": "Sesiones recientes",
+            "schemas": "Esquemas de base de datos",
+            "columns": {
+                "nombre": "Nombre",
+                "slug": "Slug",
+                "estado": "Estado",
+                "creado": "Creado",
+                "usuario": "Usuario",
+                "ip": "IP",
+                "navegador": "Navegador",
+                "actividad": "Última actividad"
+            },
+            "empty_sesiones": "Sin sesiones registradas.",
+            "empty_schemas": "Sin esquemas detectados.",
+            "empty_recientes": "Sin tenants."
+        },
+        "cobros": {
+            "title": "Cobros de suscripciones",
+            "description": "Pagos registrados por las pasarelas de pago.",
+            "stats": {
+                "total": "Pagos",
+                "pagados": "Pagados",
+                "monto": "Monto cobrado"
+            },
+            "filters": {
+                "estado": "Estado",
+                "todos": "Todos",
+                "pagado": "Pagado",
+                "pendiente": "Pendiente",
+                "fallido": "Fallido"
+            },
+            "columns": {
+                "tenant": "Restaurante",
+                "plan": "Plan",
+                "total": "Total",
+                "estado": "Estado",
+                "pasarela": "Pasarela",
+                "fecha": "Fecha"
+            },
+            "export": "Exportar Excel",
+            "empty": {
+                "title": "Sin cobros",
+                "description": "No hay pagos con el filtro actual."
+            }
+        },
+        "reportes": {
+            "title": "Reportes de plataforma",
+            "description": "Resumen de planes y estados de restaurantes.",
+            "totales": {
+                "tenants": "Restaurantes",
+                "subs": "Suscripciones",
+                "sedes": "Sedes"
+            },
+            "por_plan": "Suscripciones activas por plan",
+            "por_estado": "Restaurantes por estado",
+            "columns": {
+                "plan": "Plan",
+                "precio": "Precio mensual",
+                "activas": "Activas",
+                "estado": "Estado",
+                "total": "Total"
+            },
+            "ver_mapa": "Ver mapa",
+            "empty": "Sin datos."
+        },
+        "mapa": {
+            "title": "Mapa de restaurantes",
+            "description": "Restaurantes activos y su ubicación declarada.",
+            "columns": {
+                "nombre": "Restaurante",
+                "slug": "Slug",
+                "distrito": "Distrito",
+                "direccion": "Dirección"
+            },
+            "stats": {
+                "total": "Restaurantes activos"
+            },
+            "ver_en_mapa": "Abrir en Google Maps",
+            "volver": "Volver a reportes",
+            "empty": {
+                "title": "Sin restaurantes activos",
+                "description": "Aún no hay restaurantes con estado activo."
+            }
+        },
+        "uso_planes": {
+            "title": "Uso de planes",
+            "description": "Consumo de sedes y usuarios frente al límite de cada plan.",
+            "search_placeholder": "Buscar restaurante…",
+            "filters": {
+                "plan": "Plan",
+                "todos": "Todos"
+            },
+            "columns": {
+                "tenant": "Restaurante",
+                "plan": "Plan",
+                "estado": "Estado",
+                "sedes": "Sedes",
+                "usuarios": "Usuarios"
+            },
+            "ilimitado": "Ilimitado",
+            "empty": {
+                "title": "Sin suscripciones",
+                "description": "No hay suscripciones vigentes con el filtro actual."
+            }
+        }
     }
 }

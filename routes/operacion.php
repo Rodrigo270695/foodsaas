@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AbastecimientoController;
 use App\Http\Controllers\ActiveSedeController;
 use App\Http\Controllers\AlmacenController;
 use App\Http\Controllers\CajaController;
@@ -8,7 +9,9 @@ use App\Http\Controllers\CartaMenuController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CocinaController;
 use App\Http\Controllers\CompraController;
+use App\Http\Controllers\ConsolidadoController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\DeliveryIntegracionController;
 use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\OfertaController;
 use App\Http\Controllers\ProveedorController;
@@ -17,6 +20,7 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReporteOperacionController;
 use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\SalonController;
+use App\Http\Controllers\TransferenciaController;
 use App\Http\Controllers\VentaController;
 use Illuminate\Support\Facades\Route;
 
@@ -220,6 +224,79 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->name('recibir');
             });
 
+        Route::prefix('transferencias')
+            ->name('transferencias.')
+            ->middleware('tenant.module:transferencias')
+            ->group(function (): void {
+                Route::middleware('permission:transferencias.view')
+                    ->get('/', [TransferenciaController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:transferencias.view')
+                    ->get('items-sede', [TransferenciaController::class, 'itemsSede'])
+                    ->name('items-sede');
+                Route::middleware('permission:transferencias.create')
+                    ->get('/nueva', [TransferenciaController::class, 'create'])
+                    ->name('create');
+                Route::middleware('permission:transferencias.create')
+                    ->post('/', [TransferenciaController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:transferencias.view')
+                    ->get('{transferencia}', [TransferenciaController::class, 'show'])
+                    ->whereUuid('transferencia')
+                    ->name('show');
+                Route::middleware('permission:transferencias.send')
+                    ->post('{transferencia}/enviar', [TransferenciaController::class, 'enviar'])
+                    ->whereUuid('transferencia')
+                    ->name('enviar');
+                Route::middleware('permission:transferencias.receive')
+                    ->post('{transferencia}/recibir', [TransferenciaController::class, 'recibir'])
+                    ->whereUuid('transferencia')
+                    ->name('recibir');
+                Route::middleware('permission:transferencias.update')
+                    ->post('{transferencia}/anular', [TransferenciaController::class, 'anular'])
+                    ->whereUuid('transferencia')
+                    ->name('anular');
+            });
+
+        Route::prefix('abastecimiento')
+            ->name('abastecimiento.')
+            ->middleware('tenant.module:abastecimiento')
+            ->group(function (): void {
+                Route::middleware('permission:abastecimiento.view')
+                    ->get('/', [AbastecimientoController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:abastecimiento.create')
+                    ->get('/nuevo', [AbastecimientoController::class, 'create'])
+                    ->name('create');
+                Route::middleware('permission:abastecimiento.create')
+                    ->post('/', [AbastecimientoController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:abastecimiento.view')
+                    ->get('{requerimiento}', [AbastecimientoController::class, 'show'])
+                    ->whereUuid('requerimiento')
+                    ->name('show');
+                Route::middleware('permission:abastecimiento.update')
+                    ->post('{requerimiento}/solicitar', [AbastecimientoController::class, 'solicitar'])
+                    ->whereUuid('requerimiento')
+                    ->name('solicitar');
+                Route::middleware('permission:abastecimiento.approve')
+                    ->post('{requerimiento}/aprobar', [AbastecimientoController::class, 'aprobar'])
+                    ->whereUuid('requerimiento')
+                    ->name('aprobar');
+                Route::middleware('permission:abastecimiento.approve')
+                    ->post('{requerimiento}/rechazar', [AbastecimientoController::class, 'rechazar'])
+                    ->whereUuid('requerimiento')
+                    ->name('rechazar');
+                Route::middleware('permission:abastecimiento.approve')
+                    ->post('{requerimiento}/generar-transferencia', [AbastecimientoController::class, 'generarTransferencia'])
+                    ->whereUuid('requerimiento')
+                    ->name('generar-transferencia');
+            });
+
+        Route::middleware(['permission:consolidado.view', 'tenant.module:consolidado'])
+            ->get('consolidado', [ConsolidadoController::class, 'index'])
+            ->name('consolidado.index');
+
         Route::prefix('salon')
             ->name('salon.')
             ->group(function (): void {
@@ -409,6 +486,15 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->delete('zonas/{zona}', [DeliveryController::class, 'destroyZona'])
                     ->whereUuid('zona')
                     ->name('zonas.destroy');
+                Route::middleware('permission:delivery.update')
+                    ->get('integraciones', [DeliveryIntegracionController::class, 'index'])
+                    ->name('integraciones.index');
+                Route::middleware('permission:delivery.update')
+                    ->post('integraciones', [DeliveryIntegracionController::class, 'upsert'])
+                    ->name('integraciones.upsert');
+                Route::middleware('permission:delivery.create')
+                    ->post('integraciones/importar', [DeliveryIntegracionController::class, 'importManual'])
+                    ->name('integraciones.importar');
             });
 
         Route::prefix('ofertas')

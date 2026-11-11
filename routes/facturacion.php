@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\FelAnulacionHistorialController;
 use App\Http\Controllers\FelDocumentController;
+use App\Http\Controllers\FelNotaController;
 use App\Http\Controllers\FelSerieController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,4 +55,14 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
         Route::middleware('permission:resumenes.view')
             ->get('resumenes', [FelAnulacionHistorialController::class, 'resumenes'])
             ->name('resumenes');
+
+        Route::middleware('permission:documentos.view')
+            ->get('notas', [FelNotaController::class, 'index'])
+            ->name('notas.index');
+        Route::middleware('permission:documentos.create')
+            ->post('notas/nota', [FelNotaController::class, 'storeNota'])
+            ->name('notas.store');
+        Route::middleware('permission:documentos.create')
+            ->post('notas/guia', [FelNotaController::class, 'storeGuia'])
+            ->name('notas.guia');
     });

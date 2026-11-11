@@ -205,7 +205,10 @@ export function DeliveryFormModal({
                             setData('zona_id', v === '__none__' ? '' : v)
                         }
                     >
-                        <SelectTrigger id="delivery-zona">
+                        <SelectTrigger
+                            id="delivery-zona"
+                            className="h-9 w-full"
+                        >
                             <SelectValue
                                 placeholder={t('delivery:form.zona_placeholder')}
                             />

@@ -1,0 +1,85 @@
+{
+    "title": "Supply requests",
+    "description": "Stock requests between locations: request, approve and generate the transfer.",
+    "breadcrumb_group": "Operations",
+    "actions": {
+        "new": "New request",
+        "new_short": "New",
+        "solicitar": "Submit",
+        "aprobar": "Approve",
+        "rechazar": "Reject",
+        "generar": "Generate transfer",
+        "save": "Save draft",
+        "add_linea": "Add line",
+        "confirm_solicitar": "Send the request to the supplying location?",
+        "confirm_aprobar": "Approve this request?",
+        "confirm_rechazar": "Reject this request?",
+        "confirm_generar": "Generate a transfer from this request?"
+    },
+    "stats": {
+        "total": "Total",
+        "pendientes": "Pending"
+    },
+    "filters": {
+        "estado": "Status",
+        "todos": "All"
+    },
+    "estados": {
+        "borrador": "Draft",
+        "solicitado": "Requested",
+        "aprobado": "Approved",
+        "atendido": "Fulfilled",
+        "rechazado": "Rejected",
+        "anulado": "Cancelled"
+    },
+    "prioridades": {
+        "baja": "Low",
+        "normal": "Normal",
+        "alta": "High"
+    },
+    "columns": {
+        "numero": "No.",
+        "solicitante": "Requester",
+        "abastecedora": "Supplier",
+        "estado": "Status",
+        "prioridad": "Priority",
+        "lineas": "Lines",
+        "fecha_necesaria": "Needed by"
+    },
+    "empty": {
+        "title": "No requests",
+        "description": "Create a request to ask another location for stock."
+    },
+    "form": {
+        "create": "New supply request",
+        "subtitle": "Describe what you need; the supplying location approves it and generates the transfer.",
+        "section_datos": "Details",
+        "solicitante": "Requesting location",
+        "abastecedora": "Supplying location",
+        "sede_placeholder": "Choose location",
+        "prioridad": "Priority",
+        "fecha_necesaria": "Needed by",
+        "notas": "Notes",
+        "notas_placeholder": "Reason, urgency…",
+        "lineas": "Lines",
+        "lineas_hint": "Type the item name as you need it.",
+        "tipo": "Type",
+        "tipo_insumo": "Supply",
+        "tipo_producto": "SKU product",
+        "nombre": "Item",
+        "nombre_placeholder": "E.g. Whole chicken",
+        "cantidad": "Quantity",
+        "unidad": "Unit",
+        "remove": "Remove"
+    },
+    "show": {
+        "title": "Request #{{numero}}",
+        "ruta": "{{solicitante}} ← {{abastecedora}}",
+        "transferencia": "Generated transfer",
+        "ver_transferencia": "View transfer #{{numero}}",
+        "fecha_necesaria": "Needed by",
+        "tipo": "Type",
+        "nombre": "Item",
+        "cantidad": "Quantity"
+    }
+}

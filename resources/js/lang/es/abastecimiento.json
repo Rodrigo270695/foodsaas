@@ -1,0 +1,85 @@
+{
+    "title": "Abastecimiento",
+    "description": "Requerimientos de stock entre sedes: solicita, aprueba y genera la transferencia.",
+    "breadcrumb_group": "Operación",
+    "actions": {
+        "new": "Nuevo requerimiento",
+        "new_short": "Nuevo",
+        "solicitar": "Solicitar",
+        "aprobar": "Aprobar",
+        "rechazar": "Rechazar",
+        "generar": "Generar transferencia",
+        "save": "Guardar borrador",
+        "add_linea": "Agregar línea",
+        "confirm_solicitar": "¿Enviar el requerimiento a la sede abastecedora?",
+        "confirm_aprobar": "¿Aprobar el requerimiento?",
+        "confirm_rechazar": "¿Rechazar el requerimiento?",
+        "confirm_generar": "¿Generar la transferencia desde este requerimiento?"
+    },
+    "stats": {
+        "total": "Total",
+        "pendientes": "Pendientes"
+    },
+    "filters": {
+        "estado": "Estado",
+        "todos": "Todos"
+    },
+    "estados": {
+        "borrador": "Borrador",
+        "solicitado": "Solicitado",
+        "aprobado": "Aprobado",
+        "atendido": "Atendido",
+        "rechazado": "Rechazado",
+        "anulado": "Anulado"
+    },
+    "prioridades": {
+        "baja": "Baja",
+        "normal": "Normal",
+        "alta": "Alta"
+    },
+    "columns": {
+        "numero": "N°",
+        "solicitante": "Solicitante",
+        "abastecedora": "Abastecedora",
+        "estado": "Estado",
+        "prioridad": "Prioridad",
+        "lineas": "Líneas",
+        "fecha_necesaria": "Fecha necesaria"
+    },
+    "empty": {
+        "title": "Sin requerimientos",
+        "description": "Crea un requerimiento para pedir stock a otra sede."
+    },
+    "form": {
+        "create": "Nuevo requerimiento",
+        "subtitle": "Describe lo que necesitas; la sede abastecedora lo aprueba y genera la transferencia.",
+        "section_datos": "Datos",
+        "solicitante": "Sede solicitante",
+        "abastecedora": "Sede abastecedora",
+        "sede_placeholder": "Elige sede",
+        "prioridad": "Prioridad",
+        "fecha_necesaria": "Fecha necesaria",
+        "notas": "Notas",
+        "notas_placeholder": "Motivo, urgencia…",
+        "lineas": "Líneas",
+        "lineas_hint": "Escribe el nombre del ítem tal como lo necesitas.",
+        "tipo": "Tipo",
+        "tipo_insumo": "Insumo",
+        "tipo_producto": "Producto SKU",
+        "nombre": "Ítem",
+        "nombre_placeholder": "Ej. Pollo entero",
+        "cantidad": "Cantidad",
+        "unidad": "Unidad",
+        "remove": "Quitar"
+    },
+    "show": {
+        "title": "Requerimiento #{{numero}}",
+        "ruta": "{{solicitante}} ← {{abastecedora}}",
+        "transferencia": "Transferencia generada",
+        "ver_transferencia": "Ver transferencia #{{numero}}",
+        "fecha_necesaria": "Necesario para",
+        "tipo": "Tipo",
+        "nombre": "Ítem",
+        "cantidad": "Cantidad"
+    }
+}

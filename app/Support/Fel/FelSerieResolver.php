@@ -4,6 +4,7 @@ namespace App\Support\Fel;
 
 use App\Models\FelSerie;
 use App\Models\Venta;
+use App\Support\Sedes\ActiveSedeContext;
 use RuntimeException;
 
 /**
@@ -11,6 +12,33 @@ use RuntimeException;
  */
 final class FelSerieResolver
 {
+    public function resolverParaTipo(int $tipoComprobante, bool $forUpdate = false, ?string $sedeId = null): FelSerie
+    {
+        $sedeId = $sedeId ?: ActiveSedeContext::id();
+        if (! is_string($sedeId) || $sedeId === '') {
+            throw new RuntimeException('Selecciona una sede activa para emitir el documento.');
+        }
+
+        $query = FelSerie::query()
+            ->where('tipo_comprobante', $tipoComprobante)
+            ->where('activo', true)
+            ->where('sede_id', $sedeId)
+            ->orderBy('serie');
+
+        if ($forUpdate) {
+            $query->lockForUpdate();
+        }
+
+        $serie = $query->first();
+        if ($serie === null) {
+            throw new RuntimeException(
+                'No hay serie activa de '.FelSerie::labelTipo($tipoComprobante).' para esta sede. Configúrala en Facturación › Series.',
+            );
+        }
+
+        return $serie;
+    }
+
     /**
      * Código de serie que se usaría al emitir (sin bloquear filas).
      */

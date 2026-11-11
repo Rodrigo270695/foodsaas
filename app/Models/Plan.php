@@ -32,6 +32,10 @@ class Plan extends Model
         'modulo_compras' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
         'modulo_ofertas' => ['type' => 'bool', 'group' => 'modulos', 'default' => true],
         'modulo_whatsapp' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
+        'multi_almacen' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
+        'franquicia_consolidado' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
+        'abastecimiento_central' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
+        'integraciones_delivery' => ['type' => 'bool', 'group' => 'modulos', 'default' => false],
 
         'boletas_electronicas' => ['type' => 'bool', 'group' => 'facturacion', 'default' => false],
         'facturas_electronicas' => ['type' => 'bool', 'group' => 'facturacion', 'default' => false],

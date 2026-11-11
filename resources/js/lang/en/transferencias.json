@@ -1,0 +1,76 @@
+{
+    "title": "Transfers",
+    "description": "Move supplies and SKU products between locations.",
+    "breadcrumb_group": "Operations",
+    "actions": {
+        "new": "New transfer",
+        "new_short": "New",
+        "enviar": "Send",
+        "recibir": "Receive",
+        "anular": "Cancel",
+        "save": "Save draft",
+        "add_linea": "Add line",
+        "confirm_enviar": "Send the transfer? Stock will be deducted at the origin location.",
+        "confirm_recibir": "Confirm receipt? Stock will be added at the destination location.",
+        "confirm_anular": "Cancel this transfer?"
+    },
+    "stats": {
+        "total": "Total",
+        "enviadas": "In transit",
+        "recibidas": "Received"
+    },
+    "filters": {
+        "estado": "Status",
+        "todos": "All"
+    },
+    "estados": {
+        "borrador": "Draft",
+        "enviada": "Sent",
+        "recibida": "Received",
+        "anulada": "Cancelled"
+    },
+    "columns": {
+        "numero": "No.",
+        "origen": "Origin",
+        "destino": "Destination",
+        "estado": "Status",
+        "lineas": "Lines",
+        "enviada": "Sent",
+        "recibida": "Received"
+    },
+    "empty": {
+        "title": "No transfers",
+        "description": "Create a transfer to move stock between locations."
+    },
+    "form": {
+        "create": "New transfer",
+        "subtitle": "The origin location deducts stock on send; the destination adds it on receipt.",
+        "section_datos": "Details",
+        "origen": "Origin location",
+        "destino": "Destination location",
+        "sede_placeholder": "Choose location",
+        "notas": "Notes",
+        "notas_placeholder": "Reference, reason, carrier…",
+        "lineas": "Lines",
+        "lineas_hint": "Pick the item at the origin and its equivalent at the destination.",
+        "tipo": "Type",
+        "tipo_insumo": "Supply",
+        "tipo_producto": "SKU product",
+        "item_origen": "Origin item",
+        "item_destino": "Destination item",
+        "item_placeholder": "Select…",
+        "cantidad": "Quantity",
+        "stock": "Stock: {{stock}}",
+        "loading_destino": "Loading destination items…",
+        "pick_destino": "Choose the destination location first.",
+        "remove": "Remove"
+    },
+    "show": {
+        "title": "Transfer #{{numero}}",
+        "ruta": "{{origen}} → {{destino}}",
+        "tipo": "Type",
+        "origen": "Origin",
+        "destino": "Destination",
+        "cantidad": "Quantity"
+    }
+}

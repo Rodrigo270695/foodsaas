@@ -26,7 +26,7 @@ tenancy (subdominio + schema), panel `/plataforma/*`, API de provisioning Orvae,
 
 **Diferenciador frente a Restaurant.pe:** Orvae checkout nativo, permisos granulares, FEL Lucode integrado al cobro, PWA mesero/cocina, multi-tenant schema, overrides de módulos por tenant + middleware `tenant.module`.
 
-**Próximo hito de producto (mercado, no arquitectura):** Fase B operativa cerrada en MVP (carta avanzada, delivery zonas/estados, ofertas + crédito cliente); siguiente: Fase C cadenas / franquicia.
+**Próximo hito de producto (mercado, no arquitectura):** Fase C cadenas/franquicia en MVP (transferencias, consolidado, abastecimiento, NC/ND/guías, panel plataforma, apps delivery); siguiente: Fase D endurecimiento.
 
 ---
 
@@ -431,14 +431,14 @@ Lo que el cliente paga en Starter/Pro ya tiene superficie usable:
 - [x] **Carta avanzada (MVP):** vigencia `vigente_desde/hasta` + `dias_semana`, PDF Dompdf (`/carta/armar/{id}/pdf`), deep link público `/m/{slug}?mesa={uuid}` con CTA mesero.
 - [x] **Delivery avanzado (MVP):** zonas/tarifas (`cfg_delivery_zonas`), estados de reparto (`recibido→entregado`), UI listado + alta con zona.
 - [x] **Ofertas + crédito cliente (MVP):** catálogo `mkt_ofertas` + preview/aplicar en cobro; `saldo_credito` + abono en clientes; medio de pago `credito` en cobro de pedido vinculado.
-- [ ] Integraciones apps delivery (Rappi/PedidosYa) — post-MVP
+- [x] **Integraciones apps delivery (MVP):** Rappi/PedidosYa config + webhook `/webhooks/delivery/{proveedor}/{sede}` + import manual → pedido delivery (`cfg_delivery_integraciones`, `log_delivery_externo`).
 
 ### Fase C — Cadenas / franquicia (6–8 semanas)
 
-- [ ] Consolidado multi-sede, transferencias entre almacenes
-- [ ] Guías / requerimientos de abastecimiento
-- [ ] Completar panel plataforma (operaciones, cobros, reportes centrales)
-- [ ] Notas de crédito/débito y guías de remisión (features ya en plan Restaurante)
+- [x] **Consolidado multi-sede + transferencias:** `/consolidado` stock agregado; `/transferencias` entre sedes (salida/entrada kardex). Features plan `franquicia_consolidado` / `multi_almacen`.
+- [x] **Abastecimiento:** `/abastecimiento` requerimientos sede→central con aprobación y generación de transferencia. Feature `abastecimiento_central`.
+- [x] **Panel plataforma:** `/plataforma/operaciones`, `/cobros`, `/reportes`, `/reportes/mapa`, `/uso-planes` (tenants/planes/subs ya existían).
+- [x] **Notas crédito/débito + guías:** `/facturacion/notas` emite NC/ND referenciando CPE y guías via `FelNotaService` + series existentes.
 
 ### Fase D — Endurecimiento
 

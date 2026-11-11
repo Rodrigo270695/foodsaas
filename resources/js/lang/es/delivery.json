@@ -46,8 +46,16 @@
     },
     "zonas": {
         "create": "Nueva zona",
+        "description": "Define el nombre y la tarifa de envío para esta cobertura.",
+        "section_basic": "Datos de la zona",
+        "section_basic_hint": "La tarifa se suma al total del pedido delivery.",
+        "section_status": "Estado",
         "nombre": "Nombre de zona",
-        "tarifa": "Tarifa (S/)"
+        "nombre_placeholder": "Ej. Miraflores, Centro, Zona norte",
+        "tarifa": "Tarifa (S/)",
+        "tarifa_hint": "Monto fijo de envío. Usa 0 si no cobras delivery.",
+        "activa": "Activa",
+        "activa_hint": "Si está desactivada no aparece al crear un delivery."
     },
     "form": {
         "title": "Nuevo pedido delivery",
@@ -69,5 +77,47 @@
         "notas_hint": "Opcional: timbre, piso, color de fachada…",
         "notas_placeholder": "Indicaciones para el repartidor…",
         "submit": "Abrir pedido"
+    },
+    "integraciones": {
+        "title": "Integraciones de delivery",
+        "description": "Conecta Rappi y PedidosYa para recibir pedidos externos en esta sede.",
+        "proveedores": {
+            "rappi": "Rappi",
+            "pedidosya": "PedidosYa"
+        },
+        "activo": "Integración activa",
+        "store_id": "ID de tienda",
+        "api_key": "API key",
+        "api_secret": "API secret",
+        "webhook_secret": "Secreto del webhook",
+        "secret_set": "Configurado",
+        "secret_hint": "Déjalo vacío para conservar el valor actual.",
+        "webhook_url": "URL del webhook",
+        "copy": "Copiar",
+        "copied": "Copiado",
+        "save": "Guardar",
+        "badge_on": "Activa",
+        "badge_off": "Inactiva",
+        "import": {
+            "title": "Importar pedido manual",
+            "description": "Registra un pedido externo que no llegó por webhook.",
+            "proveedor": "Proveedor",
+            "external_id": "ID externo",
+            "cliente": "Cliente",
+            "telefono": "Teléfono",
+            "direccion": "Dirección",
+            "notas": "Notas",
+            "submit": "Importar pedido"
+        },
+        "logs": {
+            "title": "Últimos eventos",
+            "proveedor": "Proveedor",
+            "external_id": "ID externo",
+            "estado": "Estado",
+            "pedido": "Pedido",
+            "error": "Error",
+            "fecha": "Fecha",
+            "empty": "Aún no hay eventos de integración."
+        }
     }
 }

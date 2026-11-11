@@ -23,5 +23,61 @@
         "pasar_produccion_confirm": "{{numero}} will be re-sent to SUNAT production with the same series and number. Convert in order (1, then 2…). Continue?",
         "esperar_orden": "Convert {{numero}} first",
         "hint": "Test receipts are not valid for SUNAT. Convert them to production in correlative order."
+    },
+    "notas": {
+        "title": "Notes & dispatch guides",
+        "description": "Electronic credit notes, debit notes and dispatch guides.",
+        "filters": {
+            "3": "Credit note",
+            "4": "Debit note",
+            "5": "Dispatch guide",
+            "todos": "All"
+        },
+        "columns": {
+            "tipo": "Type",
+            "numero": "Number",
+            "afectado": "Affected document",
+            "motivo": "Reason",
+            "total": "Total",
+            "estado": "Status",
+            "fecha": "Issued"
+        },
+        "empty": {
+            "title": "No documents",
+            "description": "Issue a note or guide using the buttons above."
+        },
+        "actions": {
+            "nota": "Issue note",
+            "guia": "Issue guide",
+            "pdf": "PDF"
+        },
+        "nota": {
+            "title": "Issue credit / debit note",
+            "afectado": "Affected receipt",
+            "afectado_placeholder": "Choose receipt or invoice…",
+            "tipo": "Note type",
+            "credito": "Credit note",
+            "debito": "Debit note",
+            "motivo_codigo": "Reason code",
+            "motivo_descripcion": "Reason description",
+            "monto": "Amount",
+            "monto_hint": "Optional for credit (full document total). Required for partial debit.",
+            "submit": "Issue note"
+        },
+        "guia": {
+            "title": "Issue dispatch guide",
+            "destinatario": "Recipient",
+            "direccion_partida": "Origin address",
+            "direccion_llegada": "Destination address",
+            "transportista": "Carrier",
+            "placa": "Plate",
+            "peso": "Weight (kg)",
+            "items": "Items",
+            "descripcion": "Description",
+            "cantidad": "Quantity",
+            "unidad": "Unit",
+            "add_item": "Add item",
+            "submit": "Issue guide"
+        }
     }
 }

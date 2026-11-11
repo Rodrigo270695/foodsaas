@@ -46,8 +46,16 @@
     },
     "zonas": {
         "create": "New zone",
+        "description": "Set the name and delivery fee for this coverage area.",
+        "section_basic": "Zone details",
+        "section_basic_hint": "The fee is added to the delivery order total.",
+        "section_status": "Status",
         "nombre": "Zone name",
-        "tarifa": "Fee (PEN)"
+        "nombre_placeholder": "E.g. Miraflores, Downtown, North zone",
+        "tarifa": "Fee (PEN)",
+        "tarifa_hint": "Fixed delivery fee. Use 0 if shipping is free.",
+        "activa": "Active",
+        "activa_hint": "If disabled, it will not appear when creating a delivery."
     },
     "form": {
         "title": "New delivery order",
@@ -69,5 +77,47 @@
         "notas_hint": "Optional: doorbell, floor, building color…",
         "notas_placeholder": "Notes for the rider…",
         "submit": "Open order"
+    },
+    "integraciones": {
+        "title": "Delivery integrations",
+        "description": "Connect Rappi and PedidosYa to receive external orders at this location.",
+        "proveedores": {
+            "rappi": "Rappi",
+            "pedidosya": "PedidosYa"
+        },
+        "activo": "Integration enabled",
+        "store_id": "Store ID",
+        "api_key": "API key",
+        "api_secret": "API secret",
+        "webhook_secret": "Webhook secret",
+        "secret_set": "Configured",
+        "secret_hint": "Leave empty to keep the current value.",
+        "webhook_url": "Webhook URL",
+        "copy": "Copy",
+        "copied": "Copied",
+        "save": "Save",
+        "badge_on": "Active",
+        "badge_off": "Inactive",
+        "import": {
+            "title": "Manual order import",
+            "description": "Register an external order that did not arrive via webhook.",
+            "proveedor": "Provider",
+            "external_id": "External ID",
+            "cliente": "Customer",
+            "telefono": "Phone",
+            "direccion": "Address",
+            "notas": "Notes",
+            "submit": "Import order"
+        },
+        "logs": {
+            "title": "Latest events",
+            "proveedor": "Provider",
+            "external_id": "External ID",
+            "estado": "Status",
+            "pedido": "Order",
+            "error": "Error",
+            "fecha": "Date",
+            "empty": "No integration events yet."
+        }
     }
 }

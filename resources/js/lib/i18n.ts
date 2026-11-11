@@ -44,6 +44,12 @@ import deliveryEn from '@/lang/en/delivery.json';
 import deliveryEs from '@/lang/es/delivery.json';
 import ofertasEn from '@/lang/en/ofertas.json';
 import ofertasEs from '@/lang/es/ofertas.json';
+import transferenciasEn from '@/lang/en/transferencias.json';
+import transferenciasEs from '@/lang/es/transferencias.json';
+import abastecimientoEn from '@/lang/en/abastecimiento.json';
+import abastecimientoEs from '@/lang/es/abastecimiento.json';
+import consolidadoEn from '@/lang/en/consolidado.json';
+import consolidadoEs from '@/lang/es/consolidado.json';
 import reservasEn from '@/lang/en/reservas.json';
 import reservasEs from '@/lang/es/reservas.json';
 import facturacionDocumentosEn from '@/lang/en/facturacion-documentos.json';
@@ -100,6 +106,9 @@ const resources = {
         clientes: clientesEs,
         delivery: deliveryEs,
         ofertas: ofertasEs,
+        transferencias: transferenciasEs,
+        abastecimiento: abastecimientoEs,
+        consolidado: consolidadoEs,
         reservas: reservasEs,
         'facturacion-documentos': facturacionDocumentosEs,
         usuarios: usuariosEs,
@@ -134,6 +143,9 @@ const resources = {
         clientes: clientesEn,
         delivery: deliveryEn,
         ofertas: ofertasEn,
+        transferencias: transferenciasEn,
+        abastecimiento: abastecimientoEn,
+        consolidado: consolidadoEn,
         reservas: reservasEn,
         'facturacion-documentos': facturacionDocumentosEn,
         usuarios: usuariosEn,
@@ -154,7 +166,7 @@ void i18n
         fallbackLng: DEFAULT_LOCALE,
         supportedLngs: SUPPORTED_LOCALES as unknown as string[],
         defaultNS: 'common',
-        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'insumos', 'compras', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'reportes', 'dashboard', 'clientes', 'delivery', 'ofertas', 'reservas', 'facturacion-documentos', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
+        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'insumos', 'compras', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'reportes', 'dashboard', 'clientes', 'delivery', 'ofertas', 'transferencias', 'abastecimiento', 'consolidado', 'reservas', 'facturacion-documentos', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
         interpolation: {
             escapeValue: false,
         },

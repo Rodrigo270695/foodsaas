@@ -3,15 +3,8 @@
  */
 export const NAV_PLACEHOLDER_PATHS: ReadonlySet<string> = new Set([
     '/plataforma/configuracion',
-    '/plataforma/operaciones',
-    '/plataforma/esquema',
-    '/plataforma/sesiones-login',
-    '/plataforma/reportes',
-    '/plataforma/reportes/mapa',
-    '/plataforma/cobros',
     '/plataforma/salesbot-conversations',
     '/plataforma/salesbot-knowledge',
-    '/plataforma/uso-planes',
     '/plataforma/bot-ia-announcements',
     '/plataforma/in-app-assistant-knowledge',
 ]);

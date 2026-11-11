@@ -1,6 +1,10 @@
 <?php
 
 use App\Http\Controllers\PlanController;
+use App\Http\Controllers\PlataformaCobrosController;
+use App\Http\Controllers\PlataformaOperacionesController;
+use App\Http\Controllers\PlataformaReportesController;
+use App\Http\Controllers\PlataformaUsoPlanesController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\TenantImpersonationController;
@@ -102,4 +106,32 @@ Route::middleware(['auth', 'verified', 'tenant.none'])->prefix('plataforma')->na
     Route::middleware('permission:plataforma-suscripciones.delete')
         ->delete('suscripciones/{suscripcion}', [SubscriptionController::class, 'destroy'])
         ->name('suscripciones.destroy');
+
+    Route::middleware('permission:plataforma-operaciones.view')
+        ->get('operaciones', [PlataformaOperacionesController::class, 'index'])
+        ->name('operaciones.index');
+    Route::middleware('permission:plataforma-operaciones.view')
+        ->get('esquema', [PlataformaOperacionesController::class, 'index'])
+        ->name('esquema.index');
+    Route::middleware('permission:plataforma-operaciones.view')
+        ->get('sesiones-login', [PlataformaOperacionesController::class, 'index'])
+        ->name('sesiones-login.index');
+
+    Route::middleware('permission:plataforma-reportes.view')
+        ->get('reportes', [PlataformaReportesController::class, 'index'])
+        ->name('reportes.index');
+    Route::middleware('permission:plataforma-reportes.view')
+        ->get('reportes/mapa', [PlataformaReportesController::class, 'mapa'])
+        ->name('reportes.mapa');
+
+    Route::middleware('permission:plataforma-cobros.view')
+        ->get('cobros', [PlataformaCobrosController::class, 'index'])
+        ->name('cobros.index');
+    Route::middleware('permission:plataforma-cobros.export')
+        ->get('cobros/exportar', [PlataformaCobrosController::class, 'export'])
+        ->name('cobros.export');
+
+    Route::middleware('permission:plataforma-suscripciones.view')
+        ->get('uso-planes', [PlataformaUsoPlanesController::class, 'index'])
+        ->name('uso-planes.index');
 });

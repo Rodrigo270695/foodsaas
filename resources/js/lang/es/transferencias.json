@@ -1,0 +1,76 @@
+{
+    "title": "Transferencias",
+    "description": "Movimiento de insumos y productos SKU entre sedes.",
+    "breadcrumb_group": "Operación",
+    "actions": {
+        "new": "Nueva transferencia",
+        "new_short": "Nueva",
+        "enviar": "Enviar",
+        "recibir": "Recibir",
+        "anular": "Anular",
+        "save": "Guardar borrador",
+        "add_linea": "Agregar línea",
+        "confirm_enviar": "¿Enviar la transferencia? Se descontará el stock en la sede origen.",
+        "confirm_recibir": "¿Confirmar la recepción? Se sumará el stock en la sede destino.",
+        "confirm_anular": "¿Anular la transferencia?"
+    },
+    "stats": {
+        "total": "Total",
+        "enviadas": "En tránsito",
+        "recibidas": "Recibidas"
+    },
+    "filters": {
+        "estado": "Estado",
+        "todos": "Todos"
+    },
+    "estados": {
+        "borrador": "Borrador",
+        "enviada": "Enviada",
+        "recibida": "Recibida",
+        "anulada": "Anulada"
+    },
+    "columns": {
+        "numero": "N°",
+        "origen": "Origen",
+        "destino": "Destino",
+        "estado": "Estado",
+        "lineas": "Líneas",
+        "enviada": "Enviada",
+        "recibida": "Recibida"
+    },
+    "empty": {
+        "title": "Sin transferencias",
+        "description": "Crea una transferencia para mover stock entre sedes."
+    },
+    "form": {
+        "create": "Nueva transferencia",
+        "subtitle": "La sede origen descuenta stock al enviar; la sede destino lo suma al recibir.",
+        "section_datos": "Datos",
+        "origen": "Sede origen",
+        "destino": "Sede destino",
+        "sede_placeholder": "Elige sede",
+        "notas": "Notas",
+        "notas_placeholder": "Referencia, motivo, transportista…",
+        "lineas": "Líneas",
+        "lineas_hint": "Elige el ítem de la sede origen y su equivalente en la sede destino.",
+        "tipo": "Tipo",
+        "tipo_insumo": "Insumo",
+        "tipo_producto": "Producto SKU",
+        "item_origen": "Ítem origen",
+        "item_destino": "Ítem destino",
+        "item_placeholder": "Selecciona…",
+        "cantidad": "Cantidad",
+        "stock": "Stock: {{stock}}",
+        "loading_destino": "Cargando ítems de la sede destino…",
+        "pick_destino": "Elige primero la sede destino.",
+        "remove": "Quitar"
+    },
+    "show": {
+        "title": "Transferencia #{{numero}}",
+        "ruta": "{{origen}} → {{destino}}",
+        "tipo": "Tipo",
+        "origen": "Origen",
+        "destino": "Destino",
+        "cantidad": "Cantidad"
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "title": "Consolidated stock",
+    "description": "Stock across all locations grouped by item.",
+    "search_placeholder": "Search item…",
+    "stats": {
+        "skus": "Items",
+        "bajo_minimo": "Below minimum",
+        "sedes": "Locations"
+    },
+    "columns": {
+        "nombre": "Item",
+        "tipo": "Type",
+        "stock_total": "Total stock",
+        "sedes": "By location",
+        "estado": "Status"
+    },
+    "tipos": {
+        "insumo": "Supply",
+        "producto": "SKU product"
+    },
+    "estado": {
+        "ok": "OK",
+        "bajo": "Below minimum"
+    },
+    "minimo": "min. {{min}}",
+    "empty": {
+        "title": "No stock",
+        "description": "No items match your search."
+    }
+}

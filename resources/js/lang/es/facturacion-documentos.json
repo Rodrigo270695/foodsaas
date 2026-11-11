@@ -23,5 +23,61 @@
         "pasar_produccion_confirm": "Se reenviará {{numero}} a SUNAT producción con la misma serie y correlativo. Debes hacerlo en orden (1, luego 2…). ¿Continuar?",
         "esperar_orden": "Primero convierte {{numero}}",
         "hint": "Los de prueba no son válidos ante SUNAT. Conviértelos a producción en orden de correlativo."
+    },
+    "notas": {
+        "title": "Notas y guías",
+        "description": "Notas de crédito, notas de débito y guías de remisión electrónicas.",
+        "filters": {
+            "3": "Nota de crédito",
+            "4": "Nota de débito",
+            "5": "Guía de remisión",
+            "todos": "Todos"
+        },
+        "columns": {
+            "tipo": "Tipo",
+            "numero": "Número",
+            "afectado": "Documento afectado",
+            "motivo": "Motivo",
+            "total": "Total",
+            "estado": "Estado",
+            "fecha": "Emitido"
+        },
+        "empty": {
+            "title": "Sin documentos",
+            "description": "Emite una nota o guía desde los botones superiores."
+        },
+        "actions": {
+            "nota": "Emitir nota",
+            "guia": "Emitir guía",
+            "pdf": "PDF"
+        },
+        "nota": {
+            "title": "Emitir nota de crédito / débito",
+            "afectado": "Comprobante afectado",
+            "afectado_placeholder": "Elige boleta o factura…",
+            "tipo": "Tipo de nota",
+            "credito": "Nota de crédito",
+            "debito": "Nota de débito",
+            "motivo_codigo": "Código de motivo",
+            "motivo_descripcion": "Descripción del motivo",
+            "monto": "Monto",
+            "monto_hint": "Opcional en crédito (total del documento). Requerido para débito parcial.",
+            "submit": "Emitir nota"
+        },
+        "guia": {
+            "title": "Emitir guía de remisión",
+            "destinatario": "Destinatario",
+            "direccion_partida": "Dirección de partida",
+            "direccion_llegada": "Dirección de llegada",
+            "transportista": "Transportista",
+            "placa": "Placa",
+            "peso": "Peso (kg)",
+            "items": "Ítems",
+            "descripcion": "Descripción",
+            "cantidad": "Cantidad",
+            "unidad": "Unidad",
+            "add_item": "Agregar ítem",
+            "submit": "Emitir guía"
+        }
     }
 }
