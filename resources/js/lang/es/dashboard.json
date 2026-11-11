@@ -5,7 +5,9 @@
     },
     "empty": {
         "chart": "Sin datos para mostrar todavía",
-        "list": "Aún no hay registros recientes"
+        "list": "Aún no hay registros recientes",
+        "unavailable_title": "No se pudieron cargar las métricas",
+        "unavailable_hint": "Recarga la página. Si el problema continúa, vuelve a compilar el frontend (pnpm build)."
     },
     "medios": {
         "efectivo": "Efectivo",

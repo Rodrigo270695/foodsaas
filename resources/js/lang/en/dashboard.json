@@ -5,7 +5,9 @@
     },
     "empty": {
         "chart": "No data to show yet",
-        "list": "No recent records yet"
+        "list": "No recent records yet",
+        "unavailable_title": "Metrics could not be loaded",
+        "unavailable_hint": "Reload the page. If it persists, rebuild the frontend (pnpm build)."
     },
     "medios": {
         "efectivo": "Cash",

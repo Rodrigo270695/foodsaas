@@ -33,9 +33,32 @@ class DashboardController extends Controller
             ]);
         }
 
+        try {
+            $payload = $tenantMetrics->build();
+        } catch (\Throwable) {
+            $payload = [
+                'sede_id' => null,
+                'kpis' => [
+                    'ventas_hoy' => 0.0,
+                    'ventas_ayer' => 0.0,
+                    'delta_pct' => null,
+                    'ventas_count' => 0,
+                    'ticket_promedio' => 0.0,
+                    'pedidos_abiertos' => 0,
+                    'cocina_en_cola' => 0,
+                    'mesas_ocupadas' => 0,
+                    'caja_abierta' => false,
+                ],
+                'ventas_trend' => [],
+                'medios' => [],
+                'por_canal' => [],
+                'top_productos' => [],
+            ];
+        }
+
         return Inertia::render('dashboard', [
             'mode' => 'tenant',
-            'tenantMetrics' => $tenantMetrics->build(),
+            'tenantMetrics' => $payload,
             'platformMetrics' => null,
         ]);
     }
