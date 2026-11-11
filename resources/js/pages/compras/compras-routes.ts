@@ -17,6 +17,9 @@ const compras = {
         store: () => ({ url: proveedoresBase }),
         update: (id: string) => ({ url: `${proveedoresBase}/${id}` }),
         destroy: (id: string) => ({ url: `${proveedoresBase}/${id}` }),
+        consultaRuc: (ruc: string) => ({
+            url: `${proveedoresBase}/consulta-ruc?ruc=${encodeURIComponent(ruc)}`,
+        }),
     },
 };
 

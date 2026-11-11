@@ -69,6 +69,7 @@
         "costo": "Unit cost",
         "importe": "Amount",
         "total": "Estimated total",
+        "total_hint": "{{count}} line(s) in this order",
         "unidad": "Unit",
         "remove": "Remove"
     },
@@ -95,12 +96,19 @@
         "form": {
             "create": "New supplier",
             "edit": "Edit supplier",
-            "nombre": "Name",
-            "ruc": "Tax ID",
+            "description": "Register wholesalers or distributors. Look up the tax ID to autofill the legal name.",
+            "section_identity": "Identity",
+            "section_identity_hint": "Enter the tax ID and tap search to fetch the legal name.",
+            "section_contact": "Contact",
+            "nombre": "Legal name",
+            "nombre_placeholder": "Filled after tax ID lookup",
+            "ruc": "Tax ID (RUC)",
+            "ruc_hint": "11 digits. Use the search button inside the field.",
             "telefono": "Phone",
             "email": "Email",
             "notas": "Notes",
-            "activo": "Active"
+            "activo": "Active supplier",
+            "activo_hint": "Inactive suppliers are hidden when building a PO."
         },
         "delete": {
             "title": "Delete supplier",

@@ -69,6 +69,7 @@
         "costo": "Costo unit.",
         "importe": "Importe",
         "total": "Total estimado",
+        "total_hint": "{{count}} línea(s) en la orden",
         "unidad": "Unidad",
         "remove": "Quitar"
     },
@@ -95,12 +96,19 @@
         "form": {
             "create": "Nuevo proveedor",
             "edit": "Editar proveedor",
-            "nombre": "Nombre",
+            "description": "Registra mayoristas o distribuidoras. Consulta el RUC en SUNAT para autocompletar la razón social.",
+            "section_identity": "Identidad",
+            "section_identity_hint": "Ingresa el RUC y pulsa la lupa para traer la razón social.",
+            "section_contact": "Contacto",
+            "nombre": "Razón social / Nombre",
+            "nombre_placeholder": "Se completa al consultar el RUC",
             "ruc": "RUC",
+            "ruc_hint": "11 dígitos. Usa el botón de búsqueda dentro del campo.",
             "telefono": "Teléfono",
             "email": "Email",
             "notas": "Notas",
-            "activo": "Activo"
+            "activo": "Proveedor activo",
+            "activo_hint": "Los inactivos no aparecen al armar una OC."
         },
         "delete": {
             "title": "Eliminar proveedor",

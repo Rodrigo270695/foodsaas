@@ -96,6 +96,7 @@ export default function CompraFormPage({ compra, catalog }: Props) {
     const [saving, setSaving] = useState(false);
     const [proveedorModalOpen, setProveedorModalOpen] = useState(false);
     const [proveedorDraftName, setProveedorDraftName] = useState('');
+    const [proveedorDraftRuc, setProveedorDraftRuc] = useState('');
     const [data, setData] = useState<FormState>({
         proveedor_id: compra?.proveedor_id ?? '',
         fecha: compra?.fecha ?? new Date().toISOString().slice(0, 10),
@@ -153,7 +154,15 @@ export default function CompraFormPage({ compra, catalog }: Props) {
     };
 
     const openCreateProveedor = (query = '') => {
-        setProveedorDraftName(query.trim());
+        const trimmed = query.trim();
+        const digits = trimmed.replace(/\D/g, '');
+        if (digits.length === 11 && /^\d{11}$/.test(digits)) {
+            setProveedorDraftRuc(digits);
+            setProveedorDraftName('');
+        } else {
+            setProveedorDraftRuc('');
+            setProveedorDraftName(trimmed);
+        }
         setProveedorModalOpen(true);
     };
 
@@ -197,20 +206,20 @@ export default function CompraFormPage({ compra, catalog }: Props) {
             />
             <form
                 onSubmit={onSubmit}
-                className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 p-4 sm:p-6"
+                className="flex flex-1 flex-col gap-5 p-4 sm:gap-6 sm:p-6"
             >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="space-y-1">
-                        <h1 className="text-xl font-semibold tracking-tight">
+                <header className="flex flex-col gap-3 border-b border-border/60 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                        <h1 className="text-2xl font-semibold tracking-tight">
                             {isEdit
                                 ? t('form.edit', { numero: compra?.numero })
                                 : t('form.create')}
                         </h1>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="max-w-3xl text-sm text-muted-foreground">
                             {t('form.subtitle')}
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex shrink-0 flex-wrap gap-2">
                         <Button
                             type="button"
                             variant="outline"
@@ -238,378 +247,436 @@ export default function CompraFormPage({ compra, catalog }: Props) {
                             {t('actions.save')}
                         </Button>
                     </div>
-                </div>
+                </header>
 
-                <FormSection
-                    index={0}
-                    title={t('form.section_datos')}
-                    columns={2}
-                >
-                    <FormField
-                        id="oc-proveedor"
-                        label={t('form.proveedor')}
-                        hint={t('form.proveedor_hint')}
-                        error={pageErrors.proveedor_id}
-                        className="sm:col-span-2"
-                    >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                            <div className="min-w-0 flex-1">
-                                <Combobox
-                                    id="oc-proveedor"
-                                    options={proveedorOptions}
-                                    value={data.proveedor_id || null}
-                                    onChange={(v) =>
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+                    <div className="flex min-w-0 flex-col gap-5">
+                        <FormSection
+                            index={0}
+                            title={t('form.section_datos')}
+                            columns={2}
+                        >
+                            <FormField
+                                id="oc-proveedor"
+                                label={t('form.proveedor')}
+                                hint={t('form.proveedor_hint')}
+                                error={pageErrors.proveedor_id}
+                                className="sm:col-span-2"
+                            >
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                                    <div className="min-w-0 flex-1">
+                                        <Combobox
+                                            id="oc-proveedor"
+                                            options={proveedorOptions}
+                                            value={data.proveedor_id || null}
+                                            onChange={(v) =>
+                                                setData((prev) => ({
+                                                    ...prev,
+                                                    proveedor_id: v ?? '',
+                                                }))
+                                            }
+                                            placeholder={t(
+                                                'form.proveedor_placeholder',
+                                            )}
+                                            searchPlaceholder={t(
+                                                'form.proveedor_search',
+                                            )}
+                                            emptyMessage={t(
+                                                'form.proveedor_empty',
+                                            )}
+                                            creatable={canCreateProveedor}
+                                            createOptionLabel={(q) =>
+                                                t('form.proveedor_create', {
+                                                    name: q,
+                                                })
+                                            }
+                                            onCreateOption={(q) =>
+                                                openCreateProveedor(q)
+                                            }
+                                            clearable
+                                        />
+                                    </div>
+                                    {canCreateProveedor ? (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="shrink-0 cursor-pointer gap-1.5"
+                                            onClick={() =>
+                                                openCreateProveedor()
+                                            }
+                                        >
+                                            <Truck className="size-4" />
+                                            {t('form.proveedor_new')}
+                                        </Button>
+                                    ) : null}
+                                </div>
+                            </FormField>
+                            <FormField
+                                id="oc-fecha"
+                                label={t('form.fecha')}
+                                required
+                                error={pageErrors.fecha}
+                            >
+                                <Input
+                                    id="oc-fecha"
+                                    type="date"
+                                    value={data.fecha}
+                                    onChange={(e) =>
                                         setData((prev) => ({
                                             ...prev,
-                                            proveedor_id: v ?? '',
+                                            fecha: e.target.value,
                                         }))
                                     }
-                                    placeholder={t(
-                                        'form.proveedor_placeholder',
-                                    )}
-                                    searchPlaceholder={t(
-                                        'form.proveedor_search',
-                                    )}
-                                    emptyMessage={t('form.proveedor_empty')}
-                                    creatable={canCreateProveedor}
-                                    createOptionLabel={(q) =>
-                                        t('form.proveedor_create', { name: q })
-                                    }
-                                    onCreateOption={(q) =>
-                                        openCreateProveedor(q)
-                                    }
-                                    clearable
                                 />
-                            </div>
-                            {canCreateProveedor ? (
+                            </FormField>
+                            <FormField
+                                id="oc-notas"
+                                label={t('form.notas')}
+                                error={pageErrors.notas}
+                            >
+                                <Textarea
+                                    id="oc-notas"
+                                    value={data.notas}
+                                    onChange={(e) =>
+                                        setData((prev) => ({
+                                            ...prev,
+                                            notas: e.target.value,
+                                        }))
+                                    }
+                                    rows={2}
+                                    placeholder={t('form.notas_placeholder')}
+                                />
+                            </FormField>
+                        </FormSection>
+
+                        <FormSection
+                            index={1}
+                            title={t('form.lineas')}
+                            description={t('form.lineas_hint')}
+                            columns={1}
+                            actions={
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="cursor-pointer gap-1.5 shrink-0"
-                                    onClick={() => openCreateProveedor()}
+                                    size="sm"
+                                    className="cursor-pointer gap-1.5"
+                                    onClick={() =>
+                                        setData((prev) => ({
+                                            ...prev,
+                                            lineas: [
+                                                ...prev.lineas,
+                                                emptyLinea(),
+                                            ],
+                                        }))
+                                    }
                                 >
-                                    <Truck className="size-4" />
-                                    {t('form.proveedor_new')}
+                                    <Plus className="size-3.5" />
+                                    {t('actions.add_linea')}
                                 </Button>
-                            ) : null}
-                        </div>
-                    </FormField>
-                    <FormField
-                        id="oc-fecha"
-                        label={t('form.fecha')}
-                        required
-                        error={pageErrors.fecha}
-                    >
-                        <Input
-                            id="oc-fecha"
-                            type="date"
-                            value={data.fecha}
-                            onChange={(e) =>
-                                setData((prev) => ({
-                                    ...prev,
-                                    fecha: e.target.value,
-                                }))
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        id="oc-notas"
-                        label={t('form.notas')}
-                        error={pageErrors.notas}
-                    >
-                        <Textarea
-                            id="oc-notas"
-                            value={data.notas}
-                            onChange={(e) =>
-                                setData((prev) => ({
-                                    ...prev,
-                                    notas: e.target.value,
-                                }))
-                            }
-                            rows={2}
-                            placeholder={t('form.notas_placeholder')}
-                        />
-                    </FormField>
-                </FormSection>
-
-                <section className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                            <h2 className="text-sm font-semibold">
-                                {t('form.lineas')}
-                            </h2>
-                            <p className="text-xs text-muted-foreground">
-                                {t('form.lineas_hint')}
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="cursor-pointer gap-1.5"
-                            onClick={() =>
-                                setData((prev) => ({
-                                    ...prev,
-                                    lineas: [...prev.lineas, emptyLinea()],
-                                }))
                             }
                         >
-                            <Plus className="size-3.5" />
-                            {t('actions.add_linea')}
-                        </Button>
-                    </div>
+                            {typeof pageErrors.lineas === 'string' ? (
+                                <p className="text-xs text-destructive">
+                                    {pageErrors.lineas}
+                                </p>
+                            ) : null}
 
-                    {typeof pageErrors.lineas === 'string' ? (
-                        <p className="text-xs text-destructive">
-                            {pageErrors.lineas}
-                        </p>
-                    ) : null}
+                            <div className="overflow-hidden rounded-xl border bg-background">
+                                <div className="hidden grid-cols-[7.5rem_minmax(0,1.6fr)_6rem_7rem_7rem_2.5rem] gap-2 border-b bg-muted/40 px-3 py-2.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:grid">
+                                    <span>{t('form.tipo')}</span>
+                                    <span>{t('form.item')}</span>
+                                    <span className="text-right">
+                                        {t('form.cantidad')}
+                                    </span>
+                                    <span className="text-right">
+                                        {t('form.costo')}
+                                    </span>
+                                    <span className="text-right">
+                                        {t('form.importe')}
+                                    </span>
+                                    <span className="sr-only">
+                                        {t('form.remove')}
+                                    </span>
+                                </div>
 
-                    <div className="overflow-hidden rounded-xl border">
-                        <div className="hidden grid-cols-[7.5rem_minmax(0,1.4fr)_5.5rem_6.5rem_6.5rem_2.5rem] gap-2 border-b bg-muted/40 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:grid">
-                            <span>{t('form.tipo')}</span>
-                            <span>{t('form.item')}</span>
-                            <span className="text-right">
-                                {t('form.cantidad')}
-                            </span>
-                            <span className="text-right">{t('form.costo')}</span>
-                            <span className="text-right">
-                                {t('form.importe')}
-                            </span>
-                            <span className="sr-only">{t('form.remove')}</span>
-                        </div>
+                                <div className="divide-y">
+                                    {data.lineas.map((linea, index) => {
+                                        const itemOptions: ComboboxOption[] =
+                                            linea.linea_tipo === 'insumo'
+                                                ? catalog.insumos
+                                                      .filter(
+                                                          (i) =>
+                                                              i.id ===
+                                                                  linea.insumo_id ||
+                                                              !data.lineas.some(
+                                                                  (l, j) =>
+                                                                      j !==
+                                                                          index &&
+                                                                      l.linea_tipo ===
+                                                                          'insumo' &&
+                                                                      l.insumo_id ===
+                                                                          i.id,
+                                                              ),
+                                                      )
+                                                      .map((i) => ({
+                                                          value: i.id,
+                                                          label: `${i.nombre} (${i.unidad})`,
+                                                      }))
+                                                : catalog.productos
+                                                      .filter(
+                                                          (p) =>
+                                                              p.id ===
+                                                                  linea.producto_id ||
+                                                              !data.lineas.some(
+                                                                  (l, j) =>
+                                                                      j !==
+                                                                          index &&
+                                                                      l.linea_tipo ===
+                                                                          'producto' &&
+                                                                      l.producto_id ===
+                                                                          p.id,
+                                                              ),
+                                                      )
+                                                      .map((p) => ({
+                                                          value: p.id,
+                                                          label: p.nombre,
+                                                      }));
 
-                        <div className="divide-y">
-                            {data.lineas.map((linea, index) => {
-                                const itemOptions: ComboboxOption[] =
-                                    linea.linea_tipo === 'insumo'
-                                        ? catalog.insumos
-                                              .filter(
-                                                  (i) =>
-                                                      i.id ===
-                                                          linea.insumo_id ||
-                                                      !data.lineas.some(
-                                                          (l, j) =>
-                                                              j !== index &&
-                                                              l.linea_tipo ===
-                                                                  'insumo' &&
-                                                              l.insumo_id ===
-                                                                  i.id,
-                                                      ),
-                                              )
-                                              .map((i) => ({
-                                                  value: i.id,
-                                                  label: `${i.nombre} (${i.unidad})`,
-                                              }))
-                                        : catalog.productos
-                                              .filter(
-                                                  (p) =>
-                                                      p.id ===
-                                                          linea.producto_id ||
-                                                      !data.lineas.some(
-                                                          (l, j) =>
-                                                              j !== index &&
-                                                              l.linea_tipo ===
-                                                                  'producto' &&
-                                                              l.producto_id ===
-                                                                  p.id,
-                                                      ),
-                                              )
-                                              .map((p) => ({
-                                                  value: p.id,
-                                                  label: p.nombre,
-                                              }));
+                                        const importe = lineaImporte(linea);
 
-                                const importe = lineaImporte(linea);
-
-                                return (
-                                    <div
-                                        key={`linea-${index}`}
-                                        className={cn(
-                                            'grid gap-2 p-3',
-                                            'grid-cols-1',
-                                            'lg:grid-cols-[7.5rem_minmax(0,1.4fr)_5.5rem_6.5rem_6.5rem_2.5rem] lg:items-center',
-                                        )}
-                                    >
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-medium text-muted-foreground lg:sr-only">
-                                                {t('form.tipo')}
-                                            </label>
-                                            <Select
-                                                value={linea.linea_tipo}
-                                                onValueChange={(v) =>
-                                                    setLinea(index, {
-                                                        linea_tipo:
-                                                            v as FormLinea['linea_tipo'],
-                                                        insumo_id: '',
-                                                        producto_id: '',
-                                                        unidad: 'und',
-                                                        costo_unitario: '',
-                                                    })
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="insumo">
-                                                        {t('form.tipo_insumo')}
-                                                    </SelectItem>
-                                                    <SelectItem value="producto">
-                                                        {t(
-                                                            'form.tipo_producto',
-                                                        )}
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="space-y-1 min-w-0">
-                                            <label className="text-xs font-medium text-muted-foreground lg:sr-only">
-                                                {t('form.item')}
-                                            </label>
-                                            <Combobox
-                                                options={itemOptions}
-                                                value={
-                                                    (linea.linea_tipo ===
-                                                    'insumo'
-                                                        ? linea.insumo_id
-                                                        : linea.producto_id) ||
-                                                    null
-                                                }
-                                                onChange={(v) => {
-                                                    if (
-                                                        linea.linea_tipo ===
-                                                        'insumo'
-                                                    ) {
-                                                        const ins =
-                                                            catalog.insumos.find(
-                                                                (i) =>
-                                                                    i.id === v,
-                                                            );
-                                                        setLinea(index, {
-                                                            insumo_id: v ?? '',
-                                                            unidad:
-                                                                ins?.unidad ??
-                                                                'und',
-                                                            costo_unitario:
-                                                                ins?.costo_unitario ??
-                                                                linea.costo_unitario,
-                                                        });
-                                                    } else {
-                                                        const prod =
-                                                            catalog.productos.find(
-                                                                (p) =>
-                                                                    p.id === v,
-                                                            );
-                                                        setLinea(index, {
-                                                            producto_id:
-                                                                v ?? '',
-                                                            unidad: 'und',
-                                                            costo_unitario:
-                                                                prod?.costo_unitario ??
-                                                                linea.costo_unitario,
-                                                        });
-                                                    }
-                                                }}
-                                                placeholder={t(
-                                                    'form.item_placeholder',
+                                        return (
+                                            <div
+                                                key={`linea-${index}`}
+                                                className={cn(
+                                                    'grid gap-2 p-3',
+                                                    'grid-cols-1',
+                                                    'lg:grid-cols-[7.5rem_minmax(0,1.6fr)_6rem_7rem_7rem_2.5rem] lg:items-center',
                                                 )}
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-medium text-muted-foreground lg:sr-only">
-                                                {t('form.cantidad')}
-                                                {linea.unidad
-                                                    ? ` (${linea.unidad})`
-                                                    : ''}
-                                            </label>
-                                            <Input
-                                                type="number"
-                                                min={0.001}
-                                                step="0.001"
-                                                inputMode="decimal"
-                                                aria-label={t('form.cantidad')}
-                                                value={linea.cantidad}
-                                                onChange={(e) =>
-                                                    setLinea(index, {
-                                                        cantidad:
-                                                            e.target.value,
-                                                    })
-                                                }
-                                                className="text-right tabular-nums"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-medium text-muted-foreground lg:sr-only">
-                                                {t('form.costo')}
-                                            </label>
-                                            <Input
-                                                type="number"
-                                                min={0}
-                                                step="0.0001"
-                                                inputMode="decimal"
-                                                aria-label={t('form.costo')}
-                                                value={linea.costo_unitario}
-                                                onChange={(e) =>
-                                                    setLinea(index, {
-                                                        costo_unitario:
-                                                            e.target.value,
-                                                    })
-                                                }
-                                                className="text-right tabular-nums"
-                                            />
-                                        </div>
-
-                                        <div className="flex items-center justify-between gap-2 lg:justify-end">
-                                            <span className="text-xs text-muted-foreground lg:hidden">
-                                                {t('form.importe')}
-                                            </span>
-                                            <span className="tabular-nums text-sm font-medium">
-                                                {money(importe)}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-end lg:justify-center">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="size-9 cursor-pointer text-destructive"
-                                                disabled={
-                                                    data.lineas.length <= 1
-                                                }
-                                                onClick={() =>
-                                                    setData((prev) => ({
-                                                        ...prev,
-                                                        lineas: prev.lineas.filter(
-                                                            (_, i) =>
-                                                                i !== index,
-                                                        ),
-                                                    }))
-                                                }
-                                                aria-label={t('form.remove')}
                                             >
-                                                <Trash2 className="size-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-muted-foreground lg:sr-only">
+                                                        {t('form.tipo')}
+                                                    </label>
+                                                    <Select
+                                                        value={linea.linea_tipo}
+                                                        onValueChange={(v) =>
+                                                            setLinea(index, {
+                                                                linea_tipo:
+                                                                    v as FormLinea['linea_tipo'],
+                                                                insumo_id: '',
+                                                                producto_id: '',
+                                                                unidad: 'und',
+                                                                costo_unitario:
+                                                                    '',
+                                                            })
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="insumo">
+                                                                {t(
+                                                                    'form.tipo_insumo',
+                                                                )}
+                                                            </SelectItem>
+                                                            <SelectItem value="producto">
+                                                                {t(
+                                                                    'form.tipo_producto',
+                                                                )}
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
 
-                        <div className="flex items-center justify-between gap-3 border-t bg-muted/30 px-3 py-3">
-                            <span className="text-sm font-medium">
-                                {t('form.total')}
-                            </span>
-                            <span className="text-base font-semibold tabular-nums">
-                                {money(total)}
-                            </span>
-                        </div>
+                                                <div className="min-w-0 space-y-1">
+                                                    <label className="text-xs font-medium text-muted-foreground lg:sr-only">
+                                                        {t('form.item')}
+                                                    </label>
+                                                    <Combobox
+                                                        options={itemOptions}
+                                                        value={
+                                                            (linea.linea_tipo ===
+                                                            'insumo'
+                                                                ? linea.insumo_id
+                                                                : linea.producto_id) ||
+                                                            null
+                                                        }
+                                                        onChange={(v) => {
+                                                            if (
+                                                                linea.linea_tipo ===
+                                                                'insumo'
+                                                            ) {
+                                                                const ins =
+                                                                    catalog.insumos.find(
+                                                                        (i) =>
+                                                                            i.id ===
+                                                                            v,
+                                                                    );
+                                                                setLinea(
+                                                                    index,
+                                                                    {
+                                                                        insumo_id:
+                                                                            v ??
+                                                                            '',
+                                                                        unidad:
+                                                                            ins?.unidad ??
+                                                                            'und',
+                                                                        costo_unitario:
+                                                                            ins?.costo_unitario ??
+                                                                            linea.costo_unitario,
+                                                                    },
+                                                                );
+                                                            } else {
+                                                                const prod =
+                                                                    catalog.productos.find(
+                                                                        (p) =>
+                                                                            p.id ===
+                                                                            v,
+                                                                    );
+                                                                setLinea(
+                                                                    index,
+                                                                    {
+                                                                        producto_id:
+                                                                            v ??
+                                                                            '',
+                                                                        unidad: 'und',
+                                                                        costo_unitario:
+                                                                            prod?.costo_unitario ??
+                                                                            linea.costo_unitario,
+                                                                    },
+                                                                );
+                                                            }
+                                                        }}
+                                                        placeholder={t(
+                                                            'form.item_placeholder',
+                                                        )}
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-muted-foreground lg:sr-only">
+                                                        {t('form.cantidad')}
+                                                        {linea.unidad
+                                                            ? ` (${linea.unidad})`
+                                                            : ''}
+                                                    </label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0.001}
+                                                        step="0.001"
+                                                        inputMode="decimal"
+                                                        aria-label={t(
+                                                            'form.cantidad',
+                                                        )}
+                                                        value={linea.cantidad}
+                                                        onChange={(e) =>
+                                                            setLinea(index, {
+                                                                cantidad:
+                                                                    e.target
+                                                                        .value,
+                                                            })
+                                                        }
+                                                        className="text-right tabular-nums"
+                                                    />
+                                                </div>
+
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-muted-foreground lg:sr-only">
+                                                        {t('form.costo')}
+                                                    </label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        step="0.0001"
+                                                        inputMode="decimal"
+                                                        aria-label={t(
+                                                            'form.costo',
+                                                        )}
+                                                        value={
+                                                            linea.costo_unitario
+                                                        }
+                                                        onChange={(e) =>
+                                                            setLinea(index, {
+                                                                costo_unitario:
+                                                                    e.target
+                                                                        .value,
+                                                            })
+                                                        }
+                                                        className="text-right tabular-nums"
+                                                    />
+                                                </div>
+
+                                                <div className="flex items-center justify-between gap-2 lg:justify-end">
+                                                    <span className="text-xs text-muted-foreground lg:hidden">
+                                                        {t('form.importe')}
+                                                    </span>
+                                                    <span className="text-sm font-medium tabular-nums">
+                                                        {money(importe)}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex justify-end lg:justify-center">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-9 cursor-pointer text-destructive"
+                                                        disabled={
+                                                            data.lineas
+                                                                .length <= 1
+                                                        }
+                                                        onClick={() =>
+                                                            setData((prev) => ({
+                                                                ...prev,
+                                                                lineas: prev.lineas.filter(
+                                                                    (_, i) =>
+                                                                        i !==
+                                                                        index,
+                                                                ),
+                                                            }))
+                                                        }
+                                                        aria-label={t(
+                                                            'form.remove',
+                                                        )}
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </FormSection>
                     </div>
-                </section>
+
+                    <aside className="xl:sticky xl:top-4">
+                        <div className="rounded-xl border bg-card p-5 shadow-sm">
+                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {t('form.total')}
+                            </p>
+                            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
+                                {money(total)}
+                            </p>
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                {t('form.total_hint', {
+                                    count: data.lineas.length,
+                                })}
+                            </p>
+                            <Button
+                                type="submit"
+                                disabled={!canSubmit}
+                                className="mt-4 w-full cursor-pointer gap-2"
+                            >
+                                {saving ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : null}
+                                {t('actions.save')}
+                            </Button>
+                        </div>
+                    </aside>
+                </div>
             </form>
 
             <ProveedorFormModal
@@ -617,6 +684,7 @@ export default function CompraFormPage({ compra, catalog }: Props) {
                 onOpenChange={setProveedorModalOpen}
                 proveedor={null}
                 initialNombre={proveedorDraftName}
+                initialRuc={proveedorDraftRuc}
                 onCreated={() => {
                     router.reload({ only: ['catalog'], preserveScroll: true });
                 }}

@@ -157,6 +157,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:proveedores.view')
                     ->get('/', [ProveedorController::class, 'index'])
                     ->name('index');
+                Route::middleware('permission:proveedores.create|proveedores.update')
+                    ->get('consulta-ruc', [ProveedorController::class, 'consultaRuc'])
+                    ->name('consulta-ruc');
                 Route::middleware('permission:proveedores.create')
                     ->post('/', [ProveedorController::class, 'store'])
                     ->name('store');

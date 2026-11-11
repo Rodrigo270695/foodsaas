@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Http\Controllers\Concerns\RespondsToApiPeruConsulta;
 use App\Models\Proveedor;
+use App\Services\Integrations\ApiPeruRucService;
 use App\Support\Sedes\ActiveSedeContext;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,6 +18,7 @@ class ProveedorController extends Controller
 {
     use ResolvesActiveSede;
     use ResolvesTenantId;
+    use RespondsToApiPeruConsulta;
 
     private const PER_PAGE_OPTIONS = [10, 15, 20, 25, 50];
 
@@ -84,6 +88,27 @@ class ProveedorController extends Controller
                 'coincidencias' => $proveedores->total(),
             ],
         ]);
+    }
+
+    public function consultaRuc(Request $request, ApiPeruRucService $apiPeru): JsonResponse
+    {
+        $this->tenantIdOrAbort();
+        abort_unless(
+            $request->user()?->can('proveedores.create')
+            || $request->user()?->can('proveedores.update'),
+            403,
+        );
+
+        $ruc = preg_replace('/\D+/', '', (string) $request->query('ruc', '')) ?? '';
+        $request->merge(['ruc' => $ruc]);
+
+        $validated = $request->validate([
+            'ruc' => ['required', 'string', 'regex:/^[0-9]{11}$/'],
+        ]);
+
+        return $this->consultaApiPeruResponse(
+            fn () => $apiPeru->consultar($validated['ruc']),
+        );
     }
 
     public function store(Request $request): RedirectResponse
