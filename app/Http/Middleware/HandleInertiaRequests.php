@@ -94,6 +94,7 @@ class HandleInertiaRequests extends Middleware
                     'copy_url' => $session->get('copy_url'),
                     'copy_label' => $session->get('copy_label'),
                     'created_area_id' => $session->get('created_area_id'),
+                    'created_proveedor_id' => $session->get('created_proveedor_id'),
                 ];
 
                 $hasMessage = collect($payload)

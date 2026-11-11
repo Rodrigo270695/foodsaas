@@ -92,12 +92,14 @@ class ProveedorController extends Controller
         $sedeId = $this->activeSedeIdOrAbort();
         $data = $this->validated($request);
 
-        Proveedor::query()->create([
+        $proveedor = Proveedor::query()->create([
             ...$data,
             'sede_id' => $sedeId,
         ]);
 
-        return back()->with('success', 'Proveedor creado.');
+        return back()
+            ->with('success', 'Proveedor creado.')
+            ->with('created_proveedor_id', $proveedor->id);
     }
 
     public function update(Request $request, Proveedor $proveedor): RedirectResponse

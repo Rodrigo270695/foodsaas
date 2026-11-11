@@ -14,6 +14,9 @@ type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     proveedor: ProveedorRow | null;
+    /** Prefill al crear desde OC. */
+    initialNombre?: string;
+    onCreated?: () => void;
 };
 
 type FormData = {
@@ -25,7 +28,13 @@ type FormData = {
     activo: boolean;
 };
 
-export function ProveedorFormModal({ open, onOpenChange, proveedor }: Props) {
+export function ProveedorFormModal({
+    open,
+    onOpenChange,
+    proveedor,
+    initialNombre = '',
+    onCreated,
+}: Props) {
     const { t } = useTranslation(['compras', 'common']);
     const isEdit = proveedor !== null;
     const { data, setData, post, put, processing, errors, reset, clearErrors } =
@@ -42,7 +51,7 @@ export function ProveedorFormModal({ open, onOpenChange, proveedor }: Props) {
         if (!open) return;
         clearErrors();
         setData({
-            nombre: proveedor?.nombre ?? '',
+            nombre: proveedor?.nombre ?? initialNombre,
             ruc: proveedor?.ruc ?? '',
             telefono: proveedor?.telefono ?? '',
             email: proveedor?.email ?? '',
@@ -50,7 +59,7 @@ export function ProveedorFormModal({ open, onOpenChange, proveedor }: Props) {
             activo: proveedor?.activo ?? true,
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, proveedor?.id]);
+    }, [open, proveedor?.id, initialNombre]);
 
     const canSubmit = useMemo(
         () => !processing && data.nombre.trim().length > 0,
@@ -64,6 +73,9 @@ export function ProveedorFormModal({ open, onOpenChange, proveedor }: Props) {
             onSuccess: () => {
                 reset();
                 onOpenChange(false);
+                if (!isEdit) {
+                    onCreated?.();
+                }
             },
         };
         if (isEdit && proveedor) {
@@ -107,7 +119,11 @@ export function ProveedorFormModal({ open, onOpenChange, proveedor }: Props) {
                 </>
             }
         >
-            <FormSection index={0} title={t('proveedores.form.create')} columns={2}>
+            <FormSection
+                index={0}
+                title={t('proveedores.form.create')}
+                columns={2}
+            >
                 <FormField
                     id="prov-nombre"
                     label={t('proveedores.form.nombre')}
@@ -119,6 +135,7 @@ export function ProveedorFormModal({ open, onOpenChange, proveedor }: Props) {
                         id="prov-nombre"
                         value={data.nombre}
                         onChange={(e) => setData('nombre', e.target.value)}
+                        autoComplete="organization"
                     />
                 </FormField>
                 <FormField
