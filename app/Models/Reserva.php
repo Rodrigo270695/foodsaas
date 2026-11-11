@@ -23,10 +23,13 @@ class Reserva extends Model
 {
     use HasUuids;
 
+    /** Reserva creada; esperando confirmación. Mesa = reservada (pendiente). */
     public const ESTADO_PENDIENTE = 'pendiente';
 
+    /** Confirmada. Mesa = reservada hasta que lleguen. */
     public const ESTADO_CONFIRMADA = 'confirmada';
 
+    /** Clientes en mesa: abre pedido y la mesa pasa a ocupada (UI: «En mesa»). */
     public const ESTADO_SENTADA = 'sentada';
 
     public const ESTADO_CANCELADA = 'cancelada';

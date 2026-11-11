@@ -6,12 +6,15 @@ use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Models\Cliente;
 use App\Models\Mesa;
+use App\Models\Pedido;
 use App\Models\Reserva;
+use App\Services\Operacion\PedidoService;
 use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -158,7 +161,7 @@ class ReservaController extends Controller
         return back()->with('success', 'Reserva creada.');
     }
 
-    public function update(Request $request, Reserva $reserva): RedirectResponse
+    public function update(Request $request, Reserva $reserva, PedidoService $pedidos): RedirectResponse
     {
         $this->tenantIdOrAbort();
 
@@ -167,15 +170,64 @@ class ReservaController extends Controller
             $data = $request->validate([
                 'estado' => ['required', Rule::in(Reserva::ESTADOS)],
             ]);
-            $reserva->update(['estado' => $data['estado']]);
 
-            return back()->with('success', 'Estado de reserva actualizado.');
+            return $this->applyEstadoChange($reserva, (string) $data['estado'], $pedidos);
         }
 
         $data = $this->validated($request, (string) $reserva->sede_id, false);
         $reserva->update($data);
 
         return back()->with('success', 'Reserva actualizada.');
+    }
+
+    /**
+     * Flujo operativo:
+     * pendiente → confirmada → en mesa (sentada) → abre pedido y la mesa pasa a Ocupada.
+     * cancelada / no_show liberan la reserva sin abrir pedido.
+     */
+    private function applyEstadoChange(
+        Reserva $reserva,
+        string $estado,
+        PedidoService $pedidos,
+    ): RedirectResponse {
+        if ($estado === Reserva::ESTADO_SENTADA) {
+            if ($reserva->mesa_id === null || $reserva->mesa_id === '') {
+                throw ValidationException::withMessages([
+                    'estado' => 'Asigna una mesa a la reserva antes de marcar En mesa.',
+                ]);
+            }
+
+            $activo = Pedido::query()
+                ->where('mesa_id', $reserva->mesa_id)
+                ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+                ->orderByDesc('created_at')
+                ->first();
+
+            $reserva->update(['estado' => Reserva::ESTADO_SENTADA]);
+
+            if ($activo !== null) {
+                return redirect()
+                    ->route('pedidos.show', $activo)
+                    ->with('success', 'Reserva en mesa. La mesa ya tenía pedido abierto.');
+            }
+
+            $pedido = $pedidos->abrir((string) $reserva->sede_id, [
+                'canal' => Pedido::CANAL_SALON,
+                'mesa_id' => $reserva->mesa_id,
+                'comensales' => max(1, (int) $reserva->personas),
+                'notas' => $reserva->cliente_nombre
+                    ? 'Reserva: '.$reserva->cliente_nombre
+                    : null,
+            ]);
+
+            return redirect()
+                ->route('pedidos.show', $pedido)
+                ->with('success', 'Clientes en mesa. Pedido #'.$pedido->numero.' abierto · mesa ocupada.');
+        }
+
+        $reserva->update(['estado' => $estado]);
+
+        return back()->with('success', 'Estado de reserva actualizado.');
     }
 
     public function destroy(Reserva $reserva): RedirectResponse

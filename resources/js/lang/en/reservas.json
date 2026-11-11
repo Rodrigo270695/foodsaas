@@ -5,7 +5,8 @@
     "search_placeholder": "Search by customer, phone or notes…",
     "toast": {
         "load_error": "We could not load reservations.",
-        "estado_updated": "Status updated."
+        "estado_updated": "Status updated.",
+        "estado_error": "Could not update the status."
     },
     "actions": {
         "new": "New reservation",
@@ -28,6 +29,13 @@
         "sentada": "Seated",
         "cancelada": "Cancelled",
         "no_show": "No-show"
+    },
+    "estados_hint": {
+        "pendiente": "Awaiting confirmation. Table shows as reserved.",
+        "confirmada": "Confirmed. Table stays reserved until they arrive.",
+        "sentada": "Guests arrived: opens the order and marks the table occupied.",
+        "cancelada": "Reservation cancelled.",
+        "no_show": "The guest did not show up."
     },
     "columns": {
         "hora": "Time",

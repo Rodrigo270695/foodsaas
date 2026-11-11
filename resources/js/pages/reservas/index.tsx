@@ -30,6 +30,7 @@ import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
+import { toastManager } from '@/lib/toast';
 import type { Paginated } from '@/types';
 import { todayIso } from '../pedidos/types';
 import {
@@ -78,11 +79,12 @@ function estadoSelectTone(estado: string): FilterSelectTone {
         case 'confirmada':
             return 'success';
         case 'sentada':
-            return 'default';
+            // Alineado con mesa «Ocupada» del salón.
+            return 'warning';
         case 'cancelada':
             return 'danger';
         case 'no_show':
-            return 'warning';
+            return 'muted';
         default:
             return 'muted';
     }
@@ -121,18 +123,35 @@ export default function ReservasIndex({
 
     const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
 
-    const changeEstado = useCallback((reservaId: string, estado: string) => {
-        setUpdatingEstadoId(reservaId);
-        router.patch(
-            `/reservas/${reservaId}`,
-            { estado },
-            {
-                preserveScroll: true,
-                only: ['reservas', 'filters', 'stats'],
-                onFinish: () => setUpdatingEstadoId(null),
-            },
-        );
-    }, []);
+    const changeEstado = useCallback(
+        (reservaId: string, estado: string) => {
+            setUpdatingEstadoId(reservaId);
+            const abrePedido = estado === 'sentada';
+            router.patch(
+                `/reservas/${reservaId}`,
+                { estado },
+                {
+                    preserveScroll: !abrePedido,
+                    // «En mesa» redirige al pedido; no usar only.
+                    ...(abrePedido
+                        ? {}
+                        : { only: ['reservas', 'filters', 'stats'] as const }),
+                    onError: (errors) => {
+                        const message =
+                            (typeof errors.estado === 'string' &&
+                                errors.estado) ||
+                            t('reservas:toast.estado_error', {
+                                defaultValue:
+                                    'No se pudo actualizar el estado.',
+                            });
+                        toastManager.error({ title: message });
+                    },
+                    onFinish: () => setUpdatingEstadoId(null),
+                },
+            );
+        },
+        [t],
+    );
 
     const estadoFilterOptions = useMemo<FilterSelectOption[]>(
         () => [
@@ -141,6 +160,9 @@ export default function ReservasIndex({
                 value: estado,
                 label: t(`reservas:estados.${estado}`, {
                     defaultValue: estado,
+                }),
+                description: t(`reservas:estados_hint.${estado}`, {
+                    defaultValue: '',
                 }),
                 tone: estadoSelectTone(estado),
             })),
@@ -154,6 +176,9 @@ export default function ReservasIndex({
                 value: estado,
                 label: t(`reservas:estados.${estado}`, {
                     defaultValue: estado,
+                }),
+                description: t(`reservas:estados_hint.${estado}`, {
+                    defaultValue: '',
                 }),
                 tone: estadoSelectTone(estado),
             })),

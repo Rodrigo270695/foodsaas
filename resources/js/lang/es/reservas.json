@@ -5,7 +5,8 @@
     "search_placeholder": "Buscar por cliente, teléfono o notas…",
     "toast": {
         "load_error": "No pudimos cargar las reservas.",
-        "estado_updated": "Estado actualizado."
+        "estado_updated": "Estado actualizado.",
+        "estado_error": "No se pudo actualizar el estado."
     },
     "actions": {
         "new": "Nueva reserva",
@@ -25,9 +26,16 @@
     "estados": {
         "pendiente": "Pendiente",
         "confirmada": "Confirmada",
-        "sentada": "Sentada",
+        "sentada": "En mesa",
         "cancelada": "Cancelada",
         "no_show": "No asistió"
+    },
+    "estados_hint": {
+        "pendiente": "Esperando confirmación. La mesa aparece como reservada.",
+        "confirmada": "Reserva confirmada. La mesa sigue reservada hasta que lleguen.",
+        "sentada": "Clientes llegaron: abre el pedido y la mesa pasa a ocupada.",
+        "cancelada": "Reserva cancelada.",
+        "no_show": "El cliente no se presentó."
     },
     "columns": {
         "hora": "Horario",
