@@ -56,14 +56,14 @@ final class PlatformDashboardMetrics
 
         $porPlan = Subscription::query()
             ->select([
-                'planes.nombre as plan',
-                'planes.codigo as codigo',
-                'planes.color_hex as color',
+                'plans.nombre as plan',
+                'plans.codigo as codigo',
+                'plans.color_hex as color',
                 DB::raw('COUNT(*) as count'),
             ])
-            ->join('planes', 'planes.id', '=', 'subscriptions.plan_id')
+            ->join('plans', 'plans.id', '=', 'subscriptions.plan_id')
             ->whereIn('subscriptions.estado', ['trial', 'active', 'grace'])
-            ->groupBy('planes.id', 'planes.nombre', 'planes.codigo', 'planes.color_hex')
+            ->groupBy('plans.id', 'plans.nombre', 'plans.codigo', 'plans.color_hex')
             ->orderByDesc('count')
             ->get()
             ->map(fn ($row) => [

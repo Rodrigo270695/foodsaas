@@ -22,9 +22,9 @@ test('authenticated users can visit the tenant dashboard', function () {
     $response->assertOk();
     $response->assertInertia(fn (Assert $page) => $page
         ->component('dashboard')
-        ->where('mode', 'tenant')
-        ->has('tenantMetrics.kpis.ventas_hoy')
-        ->has('tenantMetrics.ventas_trend')
-        ->where('platformMetrics', null)
+        ->where('panel.mode', 'tenant')
+        ->has('panel.tenant.kpis.ventas_hoy')
+        ->has('panel.tenant.kpis.caja_abierta')
+        ->where('panel.platform', null)
     );
 });

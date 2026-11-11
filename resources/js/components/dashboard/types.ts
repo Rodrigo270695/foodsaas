@@ -55,9 +55,13 @@ export type PlatformDashboardData = {
     }>;
 };
 
-export type DashboardProps = {
+/** Payload Inertia del dashboard (clave `panel`, sin chocar con share `tenant`). */
+export type DashboardPanel = {
     mode: 'tenant' | 'platform';
-    /** Métricas del dashboard tenant (no confundir con el share `tenant`). */
-    tenantMetrics: TenantDashboardData | null;
-    platformMetrics: PlatformDashboardData | null;
+    tenant: TenantDashboardData | null;
+    platform: PlatformDashboardData | null;
+};
+
+export type DashboardProps = {
+    panel: DashboardPanel;
 };

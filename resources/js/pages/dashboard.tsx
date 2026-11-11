@@ -1,6 +1,7 @@
 import { Head, usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 import type {
+    DashboardPanel,
     DashboardProps,
     PlatformDashboardData,
     TenantDashboardData,
@@ -9,61 +10,74 @@ import { dashboard } from '@/routes';
 import { PlatformDashboard } from './dashboard/platform-dashboard';
 import { TenantDashboard } from './dashboard/tenant-dashboard';
 
-type PageProps = DashboardProps & {
-    // Compat: builds/backends antiguos
-    tenant?: TenantDashboardData | null;
-    platform?: PlatformDashboardData | null;
-};
-
-function isTenantMetrics(
-    value: unknown,
-): value is TenantDashboardData {
+function isTenantMetrics(value: unknown): value is TenantDashboardData {
+    if (typeof value !== 'object' || value === null || !('kpis' in value)) {
+        return false;
+    }
+    const kpis = (value as TenantDashboardData).kpis;
     return (
-        typeof value === 'object' &&
-        value !== null &&
-        'kpis' in value &&
-        typeof (value as TenantDashboardData).kpis === 'object' &&
-        (value as TenantDashboardData).kpis !== null &&
-        'ventas_hoy' in (value as TenantDashboardData).kpis
+        typeof kpis === 'object' &&
+        kpis !== null &&
+        'caja_abierta' in kpis &&
+        'ventas_hoy' in kpis
     );
 }
 
-function isPlatformMetrics(
-    value: unknown,
-): value is PlatformDashboardData {
+function isPlatformMetrics(value: unknown): value is PlatformDashboardData {
+    if (typeof value !== 'object' || value === null || !('kpis' in value)) {
+        return false;
+    }
+    const kpis = (value as PlatformDashboardData).kpis;
     return (
-        typeof value === 'object' &&
-        value !== null &&
-        'kpis' in value &&
-        typeof (value as PlatformDashboardData).kpis === 'object' &&
-        (value as PlatformDashboardData).kpis !== null &&
-        'tenants_total' in (value as PlatformDashboardData).kpis
+        typeof kpis === 'object' &&
+        kpis !== null &&
+        'tenants_total' in kpis
     );
 }
 
-export default function Dashboard(props: PageProps) {
+function resolvePanel(
+    props: DashboardProps & Record<string, unknown>,
+    page: Record<string, unknown>,
+): DashboardPanel | null {
+    const raw = (props.panel ?? page.panel) as unknown;
+
+    if (typeof raw === 'object' && raw !== null && 'mode' in raw) {
+        const panel = raw as DashboardPanel;
+        return {
+            mode: panel.mode === 'platform' ? 'platform' : 'tenant',
+            tenant: isTenantMetrics(panel.tenant) ? panel.tenant : null,
+            platform: isPlatformMetrics(panel.platform) ? panel.platform : null,
+        };
+    }
+
+    // Compat builds previos (tenantMetrics / platformMetrics).
+    const mode =
+        (props as { mode?: string }).mode ??
+        (page.mode as string | undefined) ??
+        'tenant';
+    const tenantCandidate =
+        (props as { tenantMetrics?: unknown }).tenantMetrics ??
+        page.tenantMetrics;
+    const platformCandidate =
+        (props as { platformMetrics?: unknown }).platformMetrics ??
+        page.platformMetrics;
+
+    return {
+        mode: mode === 'platform' ? 'platform' : 'tenant',
+        tenant: isTenantMetrics(tenantCandidate) ? tenantCandidate : null,
+        platform: isPlatformMetrics(platformCandidate)
+            ? platformCandidate
+            : null,
+    };
+}
+
+export default function Dashboard(props: DashboardProps) {
     const { t } = useTranslation('dashboard');
-    const page = usePage<PageProps>().props;
-
-    const mode = props.mode ?? page.mode;
-    const tenantMetricsCandidate =
-        props.tenantMetrics ?? page.tenantMetrics ?? props.tenant ?? page.tenant;
-    const platformMetricsCandidate =
-        props.platformMetrics ??
-        page.platformMetrics ??
-        props.platform ??
-        page.platform;
-
-    const tenantMetrics = isTenantMetrics(tenantMetricsCandidate)
-        ? tenantMetricsCandidate
-        : null;
-    const platformMetrics = isPlatformMetrics(platformMetricsCandidate)
-        ? platformMetricsCandidate
-        : null;
+    const page = usePage().props as Record<string, unknown>;
+    const panel = resolvePanel(props, page);
 
     const showPlatform =
-        mode === 'platform' ||
-        (platformMetrics !== null && tenantMetrics === null);
+        panel?.mode === 'platform' && panel.platform !== null;
 
     return (
         <>
@@ -72,22 +86,17 @@ export default function Dashboard(props: PageProps) {
                     showPlatform ? t('platform.title') : t('tenant.title')
                 }
             />
-            {showPlatform && platformMetrics ? (
-                <PlatformDashboard data={platformMetrics} />
-            ) : tenantMetrics ? (
-                <TenantDashboard data={tenantMetrics} />
+            {showPlatform && panel?.platform ? (
+                <PlatformDashboard data={panel.platform} />
+            ) : panel?.tenant ? (
+                <TenantDashboard data={panel.tenant} />
             ) : (
                 <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
                     <p className="text-sm font-medium text-foreground">
-                        {t('empty.unavailable_title', {
-                            defaultValue: 'No se pudieron cargar las métricas',
-                        })}
+                        {t('empty.unavailable_title')}
                     </p>
                     <p className="max-w-md text-sm text-muted-foreground">
-                        {t('empty.unavailable_hint', {
-                            defaultValue:
-                                'Recarga la página. Si el problema continúa, vuelve a compilar el frontend (pnpm build).',
-                        })}
+                        {t('empty.unavailable_hint')}
                     </p>
                 </div>
             )}

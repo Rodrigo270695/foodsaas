@@ -10,6 +10,7 @@ use App\Services\Dashboard\TenantDashboardMetrics;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class DashboardController extends Controller
 {
@@ -25,18 +26,64 @@ class DashboardController extends Controller
 
         if ($onPlatform) {
             return Inertia::render('dashboard', [
-                'mode' => 'platform',
-                // No usar la clave `tenant`: choca con el share de Inertia
-                // (contexto del restaurante: id/slug/schema).
-                'tenantMetrics' => null,
-                'platformMetrics' => $platformMetrics->build(),
+                // Clave propia: no chocar con el share `tenant` (id/slug/schema).
+                'panel' => [
+                    'mode' => 'platform',
+                    'tenant' => null,
+                    'platform' => $this->safePlatform($platformMetrics),
+                ],
             ]);
         }
 
+        return Inertia::render('dashboard', [
+            'panel' => [
+                'mode' => 'tenant',
+                'tenant' => $this->safeTenant($tenantMetrics),
+                'platform' => null,
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function safePlatform(PlatformDashboardMetrics $service): array
+    {
         try {
-            $payload = $tenantMetrics->build();
-        } catch (\Throwable) {
-            $payload = [
+            return $service->build();
+        } catch (Throwable $e) {
+            report($e);
+
+            return [
+                'kpis' => [
+                    'tenants_total' => 0,
+                    'tenants_active' => 0,
+                    'tenants_trial' => 0,
+                    'tenants_suspended' => 0,
+                    'tenants_cancelled' => 0,
+                    'mrr' => 0.0,
+                    'users_total' => 0,
+                    'planes_activos' => 0,
+                ],
+                'por_estado' => [],
+                'por_plan' => [],
+                'altas_trend' => [],
+                'recientes' => [],
+            ];
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function safeTenant(TenantDashboardMetrics $service): array
+    {
+        try {
+            return $service->build();
+        } catch (Throwable $e) {
+            report($e);
+
+            return [
                 'sede_id' => null,
                 'kpis' => [
                     'ventas_hoy' => 0.0,
@@ -55,11 +102,5 @@ class DashboardController extends Controller
                 'top_productos' => [],
             ];
         }
-
-        return Inertia::render('dashboard', [
-            'mode' => 'tenant',
-            'tenantMetrics' => $payload,
-            'platformMetrics' => null,
-        ]);
     }
 }
