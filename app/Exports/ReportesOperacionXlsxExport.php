@@ -14,6 +14,12 @@ final class ReportesOperacionXlsxExport
      * @param  list<array{medio: string, monto: float, count: int}>  $medios
      * @param  list<array{tipo: string, count: int, monto: float}>  $porComprobante
      * @param  list<array{nombre: string, cantidad: float, importe: float}>  $topProductos
+     * @param  array{
+     *     costo_teorico: float,
+     *     ventas_monto: float,
+     *     porcentaje: float|null,
+     *     top_insumos: list<array{nombre: string, unidad: string|null, cantidad: float, costo: float}>
+     * }|null  $foodcost
      */
     public function __construct(
         private readonly array $stats,
@@ -22,6 +28,7 @@ final class ReportesOperacionXlsxExport
         private readonly array $topProductos,
         private readonly string $desde,
         private readonly string $hasta,
+        private readonly ?array $foodcost = null,
     ) {}
 
     public function writeToPhpOutput(): void
@@ -92,6 +99,35 @@ final class ReportesOperacionXlsxExport
         foreach ($this->topProductos as $item) {
             $sheet->fromArray([[$item['nombre'], $item['cantidad'], $item['importe']]], null, "A{$row}");
             $row++;
+        }
+
+        if ($this->foodcost !== null) {
+            $row += 2;
+            $sheet->fromArray([['Foodcost']], null, "A{$row}");
+            $sheet->getStyle("A{$row}")->getFont()->setBold(true);
+            $row++;
+            $sheet->fromArray([
+                ['Costo teórico', $this->foodcost['costo_teorico']],
+                ['Ventas', $this->foodcost['ventas_monto']],
+                ['% foodcost', $this->foodcost['porcentaje']],
+            ], null, "A{$row}");
+            $row += 4;
+            $sheet->fromArray([['Insumo', 'Cantidad', 'Costo']], null, "A{$row}");
+            $sheet->getStyle("A{$row}:C{$row}")->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '660033'],
+                ],
+            ]);
+            $row++;
+            foreach ($this->foodcost['top_insumos'] as $item) {
+                $label = $item['unidad']
+                    ? $item['nombre'].' ('.$item['unidad'].')'
+                    : $item['nombre'];
+                $sheet->fromArray([[$label, $item['cantidad'], $item['costo']]], null, "A{$row}");
+                $row++;
+            }
         }
 
         foreach (range('A', 'C') as $col) {

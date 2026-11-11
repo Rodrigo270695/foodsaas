@@ -39,6 +39,7 @@
     "pedidos-cocina-caja-ventas",
     "fel-apisunat-series-emit-sync-anular",
     "almacen-kardex-productos",
+    "recetas-bom-foodcost-corte1",
     "rbac-seeders",
     "i18n-es-en",
     "pwa",
@@ -53,8 +54,8 @@
     "salon-union-cobro-cuenta-unica"
   ],
   "pending_next_wave": [
-    "recetas-bom-foodcost",
     "compras-recepcion",
+    "descuentos-gerente",
     "reverb-realtime-kds",
     "carta-pdf-horarios",
     "franquicia-consolidado",

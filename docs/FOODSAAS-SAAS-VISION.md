@@ -19,14 +19,14 @@ tenancy (subdominio + schema), panel `/plataforma/*`, API de provisioning Orvae,
 **Qué pide el mercado peruano hoy (prioridad comercial):**
 1. Que el local **abra, tome pedidos, cocine y cobre** sin fricción (ya cubierto).
 2. **Boleta/factura SUNAT** confiable y anulación (ya cubierto; endurecer UX y límites de plan).
-3. **Reportes del día/turno** y exportes (vendido en planes; aún débil en producto).
-4. **Delivery** (apps + propio) y **reservas** (vendidos en Pro/Restaurante; **aún no construidos**).
+3. **Reportes del día/turno** y exportes (cubierto en producto; seguir puliendo).
+4. **Delivery** propio (canal + datos de entrega) y **reservas** (cubiertos; apps Rappi/PedidosYa = siguiente ola).
 5. **Multi-sede / cadena** con consolidado (plan Restaurante/Multi-sede; parcial).
 6. Foodcost/recetas y compras (diferenciador vs Restaurant.pe; **siguiente ola**, no bloqueante para vender Starter).
 
-**Diferenciador frente a Restaurant.pe:** Orvae checkout nativo, permisos granulares, FEL Lucode integrado al cobro, PWA mesero/cocina, multi-tenant schema, overrides de módulos por tenant (UI parcial; falta middleware duro).
+**Diferenciador frente a Restaurant.pe:** Orvae checkout nativo, permisos granulares, FEL Lucode integrado al cobro, PWA mesero/cocina, multi-tenant schema, overrides de módulos por tenant + middleware `tenant.module`.
 
-**Próximo hito de producto (mercado, no arquitectura):** cerrar lo que **ya se vende en planes** — reportes operativos, delivery, reservas — y cablear `tenant.module` / límites; luego foodcost y franquicia.
+**Próximo hito de producto (mercado, no arquitectura):** Fase B restante — compras, descuentos gerente, realtime; Corte 1 (recetas/BOM + foodcost básico) ya entregado; luego cadenas / franquicia.
 
 ---
 
@@ -410,24 +410,26 @@ Planes en código/Orvae: **`free` → `starter` → `pro` → `restaurante` → 
 - [x] Almacén/kardex de productos (no BOM aún)
 - [x] PWA, i18n, RBAC roles operativos
 
-### Fase A — Cerrar lo que ya se vende (4–6 semanas) 🎯 **PRIORIDAD MERCADO**
+### Fase A — Cerrar lo que ya se vende ✅ **CERRADA (nov 2026)**
 
-Lo que el cliente **paga hoy** en Starter/Pro y aún no ve completo:
+Lo que el cliente paga en Starter/Pro ya tiene superficie usable:
 
-- [ ] **Reportes operativos** (turno/día, top platos, medios de pago, export) — feature `modulo_reportes`
-- [ ] **Delivery**: recepción de pedidos apps + estados; luego menú/zonas propias — `modulo_delivery`
-- [ ] **Reservas** de mesa — `modulo_reservas`
-- [ ] **Gates duros:** middleware `tenant.module` + límites `plan_features` + persistir `modulos_deshabilitados` / límites desde plataforma
-- [ ] **Clientes** maestro (historial, búsqueda) — base para CRM y marketing
-- [ ] **Salón + cobro en unión:** cuenta única del grupo y auto-separar al cobrar (`SALON-MESAS-UNION.md`)
+- [x] **Reportes operativos** (turno/día, medios de pago, export) — `modulo_reportes`
+- [x] **Delivery** canal propio (alta con cliente/tel/dirección, estados activos/histórico) — `modulo_delivery`  
+  _Pendiente ola B/C: zonas tarifadas, menú online, integraciones Rappi/PedidosYa._
+- [x] **Reservas** de mesa + estado En mesa abre pedido/ocupa mesa — `modulo_reservas`
+- [x] **Gates duros:** middleware `tenant.module` + `TenantModuleRegistry` + `modulos_deshabilitados` / `limites_overrides` desde plataforma + conteo real `max_pedidos_mes`
+- [x] **Clientes** maestro (historial, búsqueda, consulta DNI/RUC)
+- [x] **Salón + cobro en unión:** cuenta única del grupo, auto-separar al cobrar, bloquear Separar con cuenta abierta (`SALON-MESAS-UNION.md`)
 
-### Fase B — Diferenciación operativa (6 semanas)
+### Fase B — Diferenciación operativa (6 semanas) 🎯 **EN CURSO**
 
-- [ ] Recetas / BOM + consumo al cobrar → foodcost
+- [x] **Corte 1:** Recetas / BOM + consumo al cobrar → foodcost básico (`modulo_recetas` / módulo `insumos`: CRUD insumos, BOM en carta recipe, baja/reverso al cobrar/anular, sección foodcost en reportes)
 - [ ] Compras (OC → recepción → stock)
 - [ ] Descuentos/créditos/ofertas con permiso gerente
 - [ ] Realtime cocina/mesero (Reverb) en lugar de solo polling
 - [ ] Carta avanzada: PDF server-side, horarios vigentes, deep link mesero
+- [ ] Delivery avanzado: zonas/tarifas e integraciones apps
 
 ### Fase C — Cadenas / franquicia (6–8 semanas)
 

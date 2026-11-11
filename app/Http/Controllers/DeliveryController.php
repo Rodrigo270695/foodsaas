@@ -130,20 +130,30 @@ class DeliveryController extends Controller
 
         $data = $request->validate([
             'cliente_nombre' => ['required', 'string', 'max:180'],
+            'telefono' => ['nullable', 'string', 'max:40'],
+            'direccion' => ['required', 'string', 'max:255'],
             'comensales' => ['nullable', 'integer', 'min:1', 'max:99'],
             'notas' => ['nullable', 'string', 'max:500'],
         ]);
 
         $cliente = trim((string) $data['cliente_nombre']);
+        $telefono = trim((string) ($data['telefono'] ?? ''));
+        $direccion = trim((string) $data['direccion']);
         $notasExtra = trim((string) ($data['notas'] ?? ''));
-        $notas = $notasExtra !== ''
-            ? "Cliente: {$cliente}. {$notasExtra}"
-            : "Cliente: {$cliente}";
+
+        $parts = ["Cliente: {$cliente}", "Dir: {$direccion}"];
+        if ($telefono !== '') {
+            $parts[] = "Tel: {$telefono}";
+        }
+        if ($notasExtra !== '') {
+            $parts[] = $notasExtra;
+        }
+        $notas = implode(' · ', $parts);
 
         $pedido = $service->abrir($sedeId, [
             'canal' => Pedido::CANAL_DELIVERY,
             'comensales' => max(1, (int) ($data['comensales'] ?? 1)),
-            'notas' => $notas,
+            'notas' => mb_substr($notas, 0, 500),
         ]);
 
         return redirect()

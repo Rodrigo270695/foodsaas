@@ -285,7 +285,11 @@ export function MesaFloorCard({
                     ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-0.5">
-                    {showManageChrome && canUpdate && joined && onSeparar ? (
+                    {showManageChrome &&
+                    canUpdate &&
+                    joined &&
+                    onSeparar &&
+                    !occupied ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -304,6 +308,35 @@ export function MesaFloorCard({
                             </TooltipTrigger>
                             <TooltipContent side="top">
                                 {t('union.separar')}
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : null}
+                    {showManageChrome &&
+                    canUpdate &&
+                    joined &&
+                    onSeparar &&
+                    occupied ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled
+                                    className="size-8 cursor-not-allowed text-muted-foreground opacity-60"
+                                    aria-label={t('union.separar_blocked', {
+                                        defaultValue:
+                                            'Hay cuenta abierta. Cobra antes de separar.',
+                                    })}
+                                >
+                                    <Unlink2 className="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[14rem]">
+                                {t('union.separar_blocked', {
+                                    defaultValue:
+                                        'Hay cuenta abierta. Cobra antes de separar.',
+                                })}
                             </TooltipContent>
                         </Tooltip>
                     ) : null}
@@ -362,7 +395,7 @@ export function MesaFloorCard({
                                         {t('common:actions.edit')}
                                     </DropdownMenuItem>
                                 ) : null}
-                                {canUpdate && onSeparar ? (
+                                {canUpdate && onSeparar && !occupied ? (
                                     <DropdownMenuItem
                                         onSelect={onSeparar}
                                         className="cursor-pointer gap-2"
@@ -370,6 +403,18 @@ export function MesaFloorCard({
                                         <Unlink2 className="size-4" />
                                         {t('union.separar', {
                                             defaultValue: 'Separar mesa',
+                                        })}
+                                    </DropdownMenuItem>
+                                ) : null}
+                                {canUpdate && onSeparar && occupied ? (
+                                    <DropdownMenuItem
+                                        disabled
+                                        className="gap-2 opacity-70"
+                                    >
+                                        <Unlink2 className="size-4" />
+                                        {t('union.separar_blocked', {
+                                            defaultValue:
+                                                'Hay cuenta abierta. Cobra antes de separar.',
                                         })}
                                     </DropdownMenuItem>
                                 ) : null}

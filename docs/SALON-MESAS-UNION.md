@@ -2,7 +2,7 @@
 
 ## Problema
 
-A veces solo hay mesas chicas libres (ej. dos de 4) y llega un grupo grande (familia de 6). En el salón se unen mesas físicas; FoodSaaS debe reflejar ese grupo como **una unidad operativa** (capacidad conjunta, misma cuenta futura).
+A veces solo hay mesas chicas libres (ej. dos de 4) y llega un grupo grande (familia de 6). En el salón se unen mesas físicas; FoodSaaS refleja ese grupo como **una unidad operativa** (capacidad conjunta, misma cuenta).
 
 ## Qué hay hoy (implementado)
 
@@ -11,7 +11,10 @@ A veces solo hay mesas chicas libres (ej. dos de 4) y llega un grupo grande (fam
 | Campo | `cfg_mesas.union_id` (UUID nullable). Mismo valor = mismo grupo. |
 | API | `POST /salon/mesas/unir` con `mesa_ids[]` (2–8). `POST /salon/mesas/{mesa}/separar`. |
 | Permiso | `salon.update` |
-| UI | Arrastre / modo Unir (tap-tap). Las unidas se renderizan como **un solo card** (`MesaUnionCard`) con tablero alargado y códigos. Línea SVG solo durante el drag. |
+| UI | Arrastre / modo Unir (tap-tap). Las unidas se renderizan como **un solo card** (`MesaUnionCard`) con tablero alargado y códigos. |
+| Pedido | `PedidoService` / `openOrCreateUnionPedido`: una cuenta por grupo (reutiliza pedido activo de cualquier mesa del `union_id`). |
+| Cobro | Al cerrar el pedido, `CajaService::autoSepararUnionTrasCobro` limpia `union_id` si no quedan pedidos activos en el grupo. |
+| Separar | Bloqueado (UI + backend) mientras el grupo tiene pedido activo. |
 
 Reglas actuales:
 
@@ -19,12 +22,10 @@ Reglas actuales:
 - Solo mesas de la **misma zona** (no se une Principal con Terraza).
 - Si una mesa ya pertenece a un grupo, unir con otra **absorbe / fusiona** grupos (misma zona).
 - En el plano: un card de grupo (`col-span-2`) en lugar de N cards + líneas.
-- Separar grupo: Unlink en el card (disuelve vía API `separar` en cadena). Menú ⋯: editar / sacar una mesa / borrar.
-- Tras cobro: **aún no** auto-separa (POS ya existe; falta el hook — ver abajo).
+- Separar grupo: Unlink en el card (disuelve vía API `separar`). Menú ⋯: editar / sacar una mesa / borrar — solo si **no** hay cuenta abierta.
+- Tras cobro exitoso: el grupo se disuelve solo si no quedan pedidos activos en el `union_id`.
 
-## Pendiente mercado: cobro de grupo + separación automática
-
-Ya existen pedidos, caja y ventas. Lo que falta es que la **unión** sea la unidad de cobro: una cuenta del grupo y, al cerrar, limpiar `union_id`.
+## Flujo operativo
 
 ```
 Disponible ──(unir)──► Grupo unido ──(abrir cuenta)──► Ocupado (grupo)
@@ -37,55 +38,12 @@ Disponible ──(unir)──► Grupo unido ──(abrir cuenta)──► Ocupa
                                               (mesas de nuevo individuales)
 ```
 
-### Comportamiento esperado (cerrar el gap POS ↔ unión)
+1. **Abrir cuenta en un grupo** — una sola comanda / ticket; capacidad = suma.
+2. **Cobrar / cerrar** — al pagar, auto-separar si no quedan activos.
+3. **No separar a mano durante la comida** — Separar queda bloqueado con cuenta abierta (mensaje claro).
+4. **Transferencia / cambio de mesa** — pendiente de producto (mover el `union_id` completo).
 
-1. **Abrir cuenta en un grupo**  
-   Una sola cuenta / ticket para todas las mesas con el mismo `union_id`. La capacidad mostrada es la suma.
+## UI futura (opcional)
 
-2. **Cobrar / cerrar la cuenta**  
-   Al marcar la ocupación como pagada / liberada:
-   - Poner `union_id = null` en **todas** las mesas del grupo.
-   - Volver cada mesa a estado disponible (o el flujo de limpieza que se defina).
-
-3. **No separar a mano durante la comida** (salvo fuerza mayor)  
-   El botón Separar en salón puede quedar restringido si hay cuenta abierta, o pedir confirmación fuerte (“rompe el grupo y la cuenta”).
-
-4. **Transferencia / cambio de mesa**  
-   Si se mueve el grupo a otra zona, mover el `union_id` completo, no mesa a mesa.
-
-### Hook sugerido (pseudocódigo)
-
-```php
-// Cuando exista App\Services\Pos\AccountCloser (o similar):
-public function afterAccountClosed(Account $account): void
-{
-    $mesaIds = $account->mesaIds(); // o las del servicio
-    $unionIds = Mesa::query()
-        ->whereIn('id', $mesaIds)
-        ->whereNotNull('union_id')
-        ->pluck('union_id')
-        ->unique();
-
-    Mesa::query()
-        ->whereIn('union_id', $unionIds)
-        ->update(['union_id' => null]);
-}
-```
-
-### UI futura
-
-- En el plano: grupo unido + indicador “cuenta abierta”.
-- Tras cobro: animación de disolución del card de grupo a cards individuales.
-- KDS / cocina: una sola comanda agrupada.
-
-## Fuera de alcance ahora
-
-- Ventas, tickets, métodos de pago, propinas.
-- Estados ocupado / reservado / sucio (cuando existan, la unión interactúa con ellos).
-- Plano libre drag-and-drop de posiciones físicas (hoy es grid; la línea une cards).
-
-## Referencias de código
-
-- Migración: `database/migrations/tenant/2026_10_30_210000_t021_mesa_union_id.php`
-- Backend: `SalonController::unirMesas` / `separarMesa`
-- Frontend: `resources/js/pages/salon/components/mesas-grid.tsx`, `mesa-floor-card.tsx`
+- Animación de disolución del card de grupo tras cobro.
+- KDS: etiqueta de grupo en la comanda.

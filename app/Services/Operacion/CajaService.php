@@ -12,6 +12,7 @@ use App\Models\PedidoLinea;
 use App\Models\ProductoCarta;
 use App\Models\Venta;
 use App\Services\Inventario\KardexService;
+use App\Services\Inventario\RecetaConsumoService;
 use App\Support\Caja\CajaBilleteras;
 use App\Support\Fel\FelComprobanteAvailability;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,7 @@ class CajaService
 {
     public function __construct(
         private readonly KardexService $kardex,
+        private readonly RecetaConsumoService $recetaConsumo,
         private readonly PedidoService $pedidos,
     ) {}
 
@@ -383,6 +385,8 @@ class CajaService
                     $linea->save();
                 }
             }
+
+            $this->recetaConsumo->consumirPorVenta($locked, $venta, $lineasCobrables);
 
             $locked->estado = Pedido::ESTADO_CERRADO;
             $locked->cerrado_at = now();

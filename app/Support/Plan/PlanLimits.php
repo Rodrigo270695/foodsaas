@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Plan;
 
 use App\Models\Mesa;
+use App\Models\Pedido;
 use App\Models\Plan;
 use App\Models\ProductoCarta;
 use App\Models\Sede;
@@ -106,8 +107,16 @@ final class PlanLimits
             }
 
             if ($feature === 'max_pedidos_mes') {
-                // Contador real cuando exista el módulo de ventas / pedidos.
-                return 0;
+                if (! Schema::hasTable('ope_pedidos')) {
+                    return 0;
+                }
+
+                return (int) Pedido::query()
+                    ->whereBetween('created_at', [
+                        now()->startOfMonth(),
+                        now()->endOfMonth(),
+                    ])
+                    ->count();
             }
 
             $model = self::FEATURE_MODELS[$feature] ?? null;

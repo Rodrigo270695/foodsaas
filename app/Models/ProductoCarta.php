@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -76,6 +77,11 @@ class ProductoCarta extends Model
         return $this->control_inventario === self::CONTROL_SKU;
     }
 
+    public function tracksRecipeStock(): bool
+    {
+        return $this->control_inventario === self::CONTROL_RECIPE;
+    }
+
     public function getImagenUrlAttribute(): ?string
     {
         if (! $this->imagen_path) {
@@ -107,6 +113,14 @@ class ProductoCarta extends Model
     public function movimientos(): HasMany
     {
         return $this->hasMany(MovimientoInventario::class, 'producto_id');
+    }
+
+    /**
+     * @return HasOne<Receta, $this>
+     */
+    public function receta(): HasOne
+    {
+        return $this->hasOne(Receta::class, 'producto_id');
     }
 
     public function deleteImagenFile(): void

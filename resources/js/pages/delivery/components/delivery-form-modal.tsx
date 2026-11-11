@@ -14,6 +14,8 @@ type DeliveryFormModalProps = {
 
 type FormData = {
     cliente_nombre: string;
+    telefono: string;
+    direccion: string;
     comensales: number;
     notas: string;
 };
@@ -23,6 +25,8 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
     const { data, setData, post, processing, errors, reset, clearErrors } =
         useForm<FormData>({
             cliente_nombre: '',
+            telefono: '',
+            direccion: '',
             comensales: 1,
             notas: '',
         });
@@ -35,6 +39,8 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
         reset();
         setData({
             cliente_nombre: '',
+            telefono: '',
+            direccion: '',
             comensales: 1,
             notas: '',
         });
@@ -48,8 +54,16 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
         if (data.cliente_nombre.trim().length < 2) {
             return false;
         }
+        if (data.direccion.trim().length < 3) {
+            return false;
+        }
         return data.comensales >= 1 && data.comensales <= 99;
-    }, [processing, data.cliente_nombre, data.comensales]);
+    }, [
+        processing,
+        data.cliente_nombre,
+        data.direccion,
+        data.comensales,
+    ]);
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -71,7 +85,7 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
             onOpenChange={onOpenChange}
             title={t('delivery:form.title')}
             description={t('delivery:form.description')}
-            size="sm"
+            size="md"
             onSubmit={onSubmit}
             footer={
                 <>
@@ -115,6 +129,33 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
                     />
                 </FormField>
                 <FormField
+                    id="delivery-telefono"
+                    label={t('delivery:form.telefono')}
+                    error={errors.telefono}
+                >
+                    <Input
+                        id="delivery-telefono"
+                        type="tel"
+                        value={data.telefono}
+                        onChange={(e) => setData('telefono', e.target.value)}
+                        placeholder={t('delivery:form.telefono_placeholder')}
+                    />
+                </FormField>
+                <FormField
+                    id="delivery-direccion"
+                    label={t('delivery:form.direccion')}
+                    error={errors.direccion}
+                    required
+                    className="sm:col-span-2"
+                >
+                    <Input
+                        id="delivery-direccion"
+                        value={data.direccion}
+                        onChange={(e) => setData('direccion', e.target.value)}
+                        placeholder={t('delivery:form.direccion_placeholder')}
+                    />
+                </FormField>
+                <FormField
                     id="delivery-comensales"
                     label={t('delivery:form.comensales')}
                     error={errors.comensales}
@@ -139,12 +180,13 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
                     label={t('delivery:form.notas')}
                     error={errors.notas}
                     hint={t('delivery:form.notas_hint')}
+                    className="sm:col-span-2"
                 >
                     <Textarea
                         id="delivery-notas"
                         value={data.notas}
                         onChange={(e) => setData('notas', e.target.value)}
-                        rows={3}
+                        rows={2}
                         placeholder={t('delivery:form.notas_placeholder')}
                     />
                 </FormField>

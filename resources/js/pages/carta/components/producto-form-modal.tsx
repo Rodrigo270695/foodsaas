@@ -1,5 +1,5 @@
 import { router, useForm, usePage } from '@inertiajs/react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -29,7 +29,9 @@ import type {
     AreaCarta,
     CategoriaCarta,
     ControlInventario,
+    InsumoOption,
     ProductoCarta,
+    RecetaLineaForm,
 } from '../types';
 import { ProductoImagenUploader } from './producto-imagen-uploader';
 
@@ -39,6 +41,7 @@ export type ProductoFormModalProps = {
     producto: ProductoCarta | null;
     categorias: readonly CategoriaCarta[];
     areas: readonly AreaCarta[];
+    insumos?: readonly InsumoOption[];
     defaultCategoriaId?: string | null;
     /** Siguiente orden sugerido por categoría (create). */
     nextOrdenByCategoria?: Readonly<Record<string, number>>;
@@ -59,6 +62,8 @@ type ProductoFormData = {
     stock_minimo: string;
     imagen: File | null;
     clear_imagen: boolean;
+    receta_notas: string;
+    receta_lineas: RecetaLineaForm[];
 };
 
 type FlashProps = {
@@ -90,7 +95,15 @@ const emptyForm = (
     stock_minimo: '',
     imagen: null,
     clear_imagen: false,
+    receta_notas: '',
+    receta_lineas: [],
 });
+
+const buildRecetaLineas = (producto: ProductoCarta | null): RecetaLineaForm[] =>
+    (producto?.receta?.lineas ?? []).map((linea) => ({
+        insumo_id: linea.insumo_id,
+        cantidad: String(linea.cantidad ?? ''),
+    }));
 
 const buildInitialData = (
     producto: ProductoCarta | null,
@@ -113,13 +126,32 @@ const buildInitialData = (
     stock_minimo: producto?.stock_minimo ?? '',
     imagen: null,
     clear_imagen: false,
+    receta_notas: producto?.receta?.notas ?? '',
+    receta_lineas: buildRecetaLineas(producto),
 });
 
-const isFormValid = (data: ProductoFormData): boolean =>
-    data.nombre.trim().length > 0 &&
-    data.categoria_id.trim().length > 0 &&
-    data.precio.trim().length > 0 &&
-    !Number.isNaN(Number.parseFloat(data.precio));
+const isFormValid = (data: ProductoFormData): boolean => {
+    if (
+        data.nombre.trim().length === 0 ||
+        data.categoria_id.trim().length === 0 ||
+        data.precio.trim().length === 0 ||
+        Number.isNaN(Number.parseFloat(data.precio))
+    ) {
+        return false;
+    }
+    if (data.control_inventario !== 'recipe') {
+        return true;
+    }
+    if (data.receta_lineas.length < 1) {
+        return false;
+    }
+    return data.receta_lineas.every(
+        (linea) =>
+            linea.insumo_id.trim().length > 0 &&
+            Number(linea.cantidad) > 0 &&
+            !Number.isNaN(Number(linea.cantidad)),
+    );
+};
 
 export function ProductoFormModal({
     open,
@@ -127,13 +159,21 @@ export function ProductoFormModal({
     producto,
     categorias,
     areas,
+    insumos = [],
     defaultCategoriaId = null,
     nextOrdenByCategoria = {},
 }: ProductoFormModalProps) {
     const { t } = useTranslation(['carta', 'common']);
     const { can } = usePermission();
     const canManageAreas = can('carta.manage-areas');
-    const { flash } = usePage<FlashProps>().props;
+    const page = usePage<
+        FlashProps & {
+            tenant_modules?: { enabled?: Record<string, boolean> } | null;
+        }
+    >();
+    const { flash } = page.props;
+    const recipeModuleEnabled =
+        page.props.tenant_modules?.enabled?.insumos !== false;
     const isEdit = producto !== null;
     const fallbackCategoria =
         defaultCategoriaId ??
@@ -204,11 +244,32 @@ export function ProductoFormModal({
                 if (key === 'imagen') {
                     return data.imagen !== null || data.clear_imagen;
                 }
+                if (key === 'receta_lineas') {
+                    return (
+                        JSON.stringify(initial.receta_lineas) !==
+                        JSON.stringify(data.receta_lineas)
+                    );
+                }
 
                 return initial[key] !== data[key];
             },
         );
     }, [data]);
+
+    const insumoOptions = useMemo<ComboboxOption[]>(
+        () =>
+            insumos.map((insumo) => ({
+                value: insumo.id,
+                label: `${insumo.nombre} (${insumo.unidad})`,
+            })),
+        [insumos],
+    );
+
+    const unidadByInsumo = useMemo(() => {
+        const map = new Map<string, string>();
+        insumos.forEach((i) => map.set(i.id, i.unidad));
+        return map;
+    }, [insumos]);
 
     const handleClose = (next: boolean) => {
         if (!next) {
@@ -258,14 +319,22 @@ export function ProductoFormModal({
             onSuccess,
         };
 
+        const body = {
+            ...data,
+            orden,
+            area_id: data.area_id || null,
+            receta_notas:
+                data.control_inventario === 'recipe' ? data.receta_notas : '',
+            receta_lineas:
+                data.control_inventario === 'recipe' ? data.receta_lineas : [],
+        };
+
         if (isEdit && producto) {
             // Inertia: method spoofing for multipart PATCH
             router.post(
                 carta.productos.update(producto.id).url,
                 {
-                    ...data,
-                    orden,
-                    area_id: data.area_id || null,
+                    ...body,
                     _method: 'patch',
                 },
                 payload,
@@ -274,15 +343,7 @@ export function ProductoFormModal({
             return;
         }
 
-        router.post(
-            carta.productos.store().url,
-            {
-                ...data,
-                orden,
-                area_id: data.area_id || null,
-            },
-            payload,
-        );
+        router.post(carta.productos.store().url, body, payload);
     };
 
     return (
@@ -584,6 +645,14 @@ export function ProductoFormModal({
                                 if (next !== 'sku') {
                                     setData('codigo_barras', '');
                                 }
+                                if (
+                                    next === 'recipe' &&
+                                    data.receta_lineas.length === 0
+                                ) {
+                                    setData('receta_lineas', [
+                                        { insumo_id: '', cantidad: '' },
+                                    ]);
+                                }
                             }}
                             disabled={saving}
                         >
@@ -597,12 +666,161 @@ export function ProductoFormModal({
                                 <SelectItem value="sku">
                                     {t('producto_form.fields.control_sku')}
                                 </SelectItem>
-                                <SelectItem value="recipe">
-                                    {t('producto_form.fields.control_recipe')}
-                                </SelectItem>
+                                {recipeModuleEnabled ? (
+                                    <SelectItem value="recipe">
+                                        {t(
+                                            'producto_form.fields.control_recipe',
+                                        )}
+                                    </SelectItem>
+                                ) : null}
                             </SelectContent>
                         </Select>
                     </FormField>
+
+                    {data.control_inventario === 'recipe' ? (
+                        <div className="sm:col-span-2 flex flex-col gap-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-medium">
+                                    {t('producto_form.bom.title')}
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="cursor-pointer gap-1.5"
+                                    disabled={saving || insumos.length === 0}
+                                    onClick={() =>
+                                        setData('receta_lineas', [
+                                            ...data.receta_lineas,
+                                            { insumo_id: '', cantidad: '' },
+                                        ])
+                                    }
+                                >
+                                    <Plus className="size-3.5" />
+                                    {t('producto_form.bom.add')}
+                                </Button>
+                            </div>
+                            {insumos.length === 0 ? (
+                                <p className="text-xs text-amber-700 dark:text-amber-300">
+                                    {t('producto_form.bom.no_insumos')}
+                                </p>
+                            ) : null}
+                            {data.receta_lineas.map((linea, index) => (
+                                <div
+                                    key={`bom-${index}`}
+                                    className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]"
+                                >
+                                    <Combobox
+                                        options={insumoOptions.filter(
+                                            (opt) =>
+                                                opt.value === linea.insumo_id ||
+                                                !data.receta_lineas.some(
+                                                    (l, i) =>
+                                                        i !== index &&
+                                                        l.insumo_id ===
+                                                            opt.value,
+                                                ),
+                                        )}
+                                        value={linea.insumo_id || null}
+                                        onChange={(value) => {
+                                            const next = [
+                                                ...data.receta_lineas,
+                                            ];
+                                            next[index] = {
+                                                ...next[index],
+                                                insumo_id: value ?? '',
+                                            };
+                                            setData('receta_lineas', next);
+                                        }}
+                                        placeholder={t(
+                                            'producto_form.bom.insumo_placeholder',
+                                        )}
+                                        searchPlaceholder={t(
+                                            'producto_form.bom.insumo_search',
+                                        )}
+                                        emptyMessage={t(
+                                            'producto_form.bom.insumo_empty',
+                                        )}
+                                        disabled={saving}
+                                    />
+                                    <div className="relative">
+                                        <Input
+                                            type="number"
+                                            min={0.001}
+                                            step="0.001"
+                                            value={linea.cantidad}
+                                            placeholder={t(
+                                                'producto_form.bom.cantidad',
+                                            )}
+                                            onChange={(e) => {
+                                                const next = [
+                                                    ...data.receta_lineas,
+                                                ];
+                                                next[index] = {
+                                                    ...next[index],
+                                                    cantidad: e.target.value,
+                                                };
+                                                setData('receta_lineas', next);
+                                            }}
+                                            disabled={saving}
+                                        />
+                                        {linea.insumo_id ? (
+                                            <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[10px] text-muted-foreground">
+                                                {unidadByInsumo.get(
+                                                    linea.insumo_id,
+                                                )}
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-9 cursor-pointer text-destructive"
+                                        disabled={
+                                            saving ||
+                                            data.receta_lineas.length <= 1
+                                        }
+                                        onClick={() =>
+                                            setData(
+                                                'receta_lineas',
+                                                data.receta_lineas.filter(
+                                                    (_, i) => i !== index,
+                                                ),
+                                            )
+                                        }
+                                        aria-label={t(
+                                            'producto_form.bom.remove',
+                                        )}
+                                    >
+                                        <Trash2 className="size-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                            {errors.receta_lineas ? (
+                                <p className="text-xs text-destructive">
+                                    {errors.receta_lineas}
+                                </p>
+                            ) : null}
+                            <FormField
+                                id="producto-receta-notas"
+                                label={t('producto_form.bom.notas')}
+                                error={errors.receta_notas}
+                            >
+                                <Input
+                                    id="producto-receta-notas"
+                                    value={data.receta_notas}
+                                    onChange={(e) =>
+                                        setData('receta_notas', e.target.value)
+                                    }
+                                    placeholder={t(
+                                        'producto_form.bom.notas_placeholder',
+                                    )}
+                                    disabled={saving}
+                                />
+                            </FormField>
+                        </div>
+                    ) : null}
 
                     {data.control_inventario === 'sku' ? (
                         <>

@@ -10,8 +10,10 @@ use App\Http\Requests\CategoriaCartaRequest;
 use App\Http\Requests\ProductoCartaRequest;
 use App\Models\AreaCarta;
 use App\Models\CategoriaCarta;
+use App\Models\Insumo;
 use App\Models\ProductoCarta;
 use App\Services\Inventario\KardexService;
+use App\Services\Inventario\RecetaSyncService;
 use App\Services\Sedes\CopyCartaToSedeService;
 use App\Support\Plan\PlanLimits;
 use App\Support\Sedes\ActiveSedeContext;
@@ -72,6 +74,7 @@ class CartaController extends Controller
             ->with([
                 'categoria:id,nombre',
                 'area:id,nombre',
+                'receta.lineas.insumo:id,nombre,unidad',
             ])
             ->orderBy('orden')
             ->orderBy('nombre');
@@ -126,10 +129,25 @@ class CartaController extends Controller
             ? 1
             : ((int) CategoriaCarta::query()->where('sede_id', $sedeId)->max('orden')) + 1;
 
+        $insumosOptions = $sedeId === ''
+            ? []
+            : Insumo::query()
+                ->where('activo', true)
+                ->where(fn ($q) => $q->whereNull('sede_id')->orWhere('sede_id', $sedeId))
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'unidad'])
+                ->map(fn (Insumo $i) => [
+                    'id' => $i->id,
+                    'nombre' => $i->nombre,
+                    'unidad' => $i->unidad,
+                ])
+                ->all();
+
         return Inertia::render('carta/index', [
             'productos' => $productos,
             'categorias' => $categorias,
             'areas' => $areas,
+            'insumos' => $insumosOptions,
             'filters' => [
                 'search' => $search,
                 'per_page' => $perPage,
@@ -264,6 +282,7 @@ class CartaController extends Controller
         ProductoCartaRequest $request,
         TenantManager $tenants,
         KardexService $kardex,
+        RecetaSyncService $recetas,
     ): RedirectResponse {
         $this->tenantIdOrAbort();
 
@@ -289,6 +308,14 @@ class CartaController extends Controller
             $kardex->stockInicial($producto, $stockInicial);
         }
 
+        if ($producto->tracksRecipeStock()) {
+            $recetas->sync(
+                $producto,
+                $request->validated('receta_lineas') ?? [],
+                $request->validated('receta_notas'),
+            );
+        }
+
         return back()->with('success', 'Producto creado correctamente.');
     }
 
@@ -297,6 +324,7 @@ class CartaController extends Controller
         ProductoCarta $productoCarta,
         TenantManager $tenants,
         KardexService $kardex,
+        RecetaSyncService $recetas,
     ): RedirectResponse {
         $this->tenantIdOrAbort();
 
@@ -330,6 +358,16 @@ class CartaController extends Controller
             $kardex->stockInicial($productoCarta, $stockInicial);
         }
 
+        if ($productoCarta->tracksRecipeStock()) {
+            $recetas->sync(
+                $productoCarta,
+                $request->validated('receta_lineas') ?? [],
+                $request->validated('receta_notas'),
+            );
+        } else {
+            $recetas->clearIfNotRecipe($productoCarta);
+        }
+
         return back()->with('success', 'Producto actualizado correctamente.');
     }
 
@@ -347,6 +385,7 @@ class CartaController extends Controller
             ->with([
                 'categoria:id,nombre',
                 'area:id,nombre',
+                'receta.lineas.insumo:id,nombre,unidad',
             ])
             ->orderBy('orden')
             ->orderBy('nombre');

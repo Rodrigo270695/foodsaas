@@ -2,9 +2,11 @@ import { Head, router } from '@inertiajs/react';
 import {
     BarChart3,
     Download,
+    Percent,
     Receipt,
     ShoppingBag,
     Ticket,
+    Wheat,
     XCircle,
 } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
@@ -31,6 +33,18 @@ type Stats = {
 type MedioRow = { medio: string; monto: number; count: number };
 type ComprobanteRow = { tipo: string; count: number; monto: number };
 type ProductoRow = { nombre: string; cantidad: number; importe: number };
+type InsumoFoodcostRow = {
+    nombre: string;
+    unidad: string | null;
+    cantidad: number;
+    costo: number;
+};
+type Foodcost = {
+    costo_teorico: number;
+    ventas_monto: number;
+    porcentaje: number | null;
+    top_insumos: InsumoFoodcostRow[];
+};
 
 type Props = {
     filters: { desde: string; hasta: string };
@@ -38,6 +52,7 @@ type Props = {
     medios: MedioRow[];
     por_comprobante: ComprobanteRow[];
     top_productos: ProductoRow[];
+    foodcost?: Foodcost | null;
 };
 
 function money(value: number): string {
@@ -54,6 +69,7 @@ export default function ReportesIndex({
     medios,
     por_comprobante,
     top_productos,
+    foodcost = null,
 }: Props) {
     const { t } = useTranslation(['reportes', 'common']);
 
@@ -71,6 +87,7 @@ export default function ReportesIndex({
                     'medios',
                     'por_comprobante',
                     'top_productos',
+                    'foodcost',
                 ],
             },
         );
@@ -84,20 +101,20 @@ export default function ReportesIndex({
     const medioColumns = useMemo<DataTableColumn<MedioRow>[]>(
         () => [
             {
-                id: 'medio',
+                key: 'medio',
                 header: t('reportes:columns.medio'),
                 cell: (row) => (
                     <span className="font-semibold capitalize">{row.medio}</span>
                 ),
             },
             {
-                id: 'count',
+                key: 'count',
                 header: t('reportes:columns.cantidad'),
                 cell: (row) => row.count,
                 className: 'text-right',
             },
             {
-                id: 'monto',
+                key: 'monto',
                 header: t('reportes:columns.monto'),
                 cell: (row) => money(row.monto),
                 className: 'text-right font-medium',
@@ -109,22 +126,54 @@ export default function ReportesIndex({
     const productoColumns = useMemo<DataTableColumn<ProductoRow>[]>(
         () => [
             {
-                id: 'nombre',
+                key: 'nombre',
                 header: t('reportes:columns.producto'),
                 cell: (row) => (
                     <span className="font-semibold">{row.nombre}</span>
                 ),
             },
             {
-                id: 'cantidad',
+                key: 'cantidad',
                 header: t('reportes:columns.cantidad'),
                 cell: (row) => row.cantidad,
                 className: 'text-right',
             },
             {
-                id: 'importe',
+                key: 'importe',
                 header: t('reportes:columns.importe'),
                 cell: (row) => money(row.importe),
+                className: 'text-right font-medium',
+            },
+        ],
+        [t],
+    );
+
+    const foodcostColumns = useMemo<DataTableColumn<InsumoFoodcostRow>[]>(
+        () => [
+            {
+                key: 'nombre',
+                header: t('reportes:columns.insumo'),
+                cell: (row) => (
+                    <span className="font-semibold">
+                        {row.nombre}
+                        {row.unidad ? (
+                            <span className="ml-1 text-xs font-normal text-muted-foreground">
+                                ({row.unidad})
+                            </span>
+                        ) : null}
+                    </span>
+                ),
+            },
+            {
+                key: 'cantidad',
+                header: t('reportes:columns.cantidad'),
+                cell: (row) => row.cantidad,
+                className: 'text-right',
+            },
+            {
+                key: 'costo',
+                header: t('reportes:columns.costo'),
+                cell: (row) => money(row.costo),
                 className: 'text-right font-medium',
             },
         ],
@@ -261,6 +310,63 @@ export default function ReportesIndex({
                         }
                     />
                 </section>
+
+                {foodcost ? (
+                    <section className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-1">
+                            <h2 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+                                <Wheat className="size-4 text-brand-600" />
+                                {t('reportes:sections.foodcost')}
+                            </h2>
+                            <p className="text-xs text-muted-foreground">
+                                {t('reportes:foodcost.hint')}
+                            </p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="rounded-xl border bg-card px-4 py-3">
+                                <p className="text-xs text-muted-foreground">
+                                    {t('reportes:foodcost.costo_teorico')}
+                                </p>
+                                <p className="mt-1 text-lg font-semibold tabular-nums">
+                                    {money(foodcost.costo_teorico)}
+                                </p>
+                            </div>
+                            <div className="rounded-xl border bg-card px-4 py-3">
+                                <p className="text-xs text-muted-foreground">
+                                    {t('reportes:foodcost.ventas')}
+                                </p>
+                                <p className="mt-1 text-lg font-semibold tabular-nums">
+                                    {money(foodcost.ventas_monto)}
+                                </p>
+                            </div>
+                            <div className="rounded-xl border bg-card px-4 py-3">
+                                <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Percent className="size-3" />
+                                    {t('reportes:foodcost.porcentaje')}
+                                </p>
+                                <p className="mt-1 text-lg font-semibold tabular-nums">
+                                    {foodcost.porcentaje != null
+                                        ? `${foodcost.porcentaje}%`
+                                        : '—'}
+                                </p>
+                            </div>
+                        </div>
+                        <h3 className="text-sm font-medium">
+                            {t('reportes:foodcost.top_insumos')}
+                        </h3>
+                        <DataTable
+                            columns={foodcostColumns}
+                            data={foodcost.top_insumos}
+                            rowKey={(row) => row.nombre}
+                            emptyState={
+                                <EmptyState
+                                    title={t('reportes:empty.foodcost')}
+                                    description={t('reportes:empty.hint')}
+                                />
+                            }
+                        />
+                    </section>
+                ) : null}
             </div>
         </>
     );

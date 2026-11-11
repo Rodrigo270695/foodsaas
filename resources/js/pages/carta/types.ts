@@ -27,6 +27,30 @@ export type ProductoAreaRef = {
 
 export type ControlInventario = 'none' | 'sku' | 'recipe';
 
+export type InsumoOption = {
+    id: string;
+    nombre: string;
+    unidad: string;
+};
+
+export type RecetaLineaForm = {
+    insumo_id: string;
+    cantidad: string;
+};
+
+export type ProductoRecetaLinea = {
+    id: string;
+    insumo_id: string;
+    cantidad: string;
+    insumo?: InsumoOption | null;
+};
+
+export type ProductoReceta = {
+    id: string;
+    notas: string | null;
+    lineas?: ProductoRecetaLinea[];
+};
+
 export type ProductoCarta = {
     id: string;
     categoria_id: string;
@@ -45,6 +69,7 @@ export type ProductoCarta = {
     imagen_url?: string | null;
     categoria?: ProductoCategoriaRef | null;
     area?: ProductoAreaRef | null;
+    receta?: ProductoReceta | null;
 };
 
 export type CartaStats = {

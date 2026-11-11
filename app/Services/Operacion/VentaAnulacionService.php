@@ -9,6 +9,7 @@ use App\Models\ProductoCarta;
 use App\Models\Venta;
 use App\Services\Fel\FelAnulacionComprobanteService;
 use App\Services\Inventario\KardexService;
+use App\Services\Inventario\RecetaConsumoService;
 use App\Support\Fel\FelDocumentApisunatModeResolver;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,7 @@ final class VentaAnulacionService
     public function __construct(
         private readonly FelAnulacionComprobanteService $felAnulacion,
         private readonly KardexService $kardex,
+        private readonly RecetaConsumoService $recetaConsumo,
     ) {}
 
     /**
@@ -76,6 +78,7 @@ final class VentaAnulacionService
             }
 
             $this->revertirStock($locked);
+            $this->recetaConsumo->revertirPorVenta($locked);
 
             $locked->update([
                 'estado' => Venta::ESTADO_ANULADA,
@@ -112,6 +115,10 @@ final class VentaAnulacionService
             ->get();
 
         foreach ($movimientos as $mov) {
+            if ($mov->producto_id === null) {
+                continue;
+            }
+
             $producto = ProductoCarta::query()->find($mov->producto_id);
             if ($producto === null || ! $producto->tracksSkuStock()) {
                 continue;

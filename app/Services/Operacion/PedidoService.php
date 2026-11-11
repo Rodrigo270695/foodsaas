@@ -6,6 +6,7 @@ use App\Models\Mesa;
 use App\Models\Pedido;
 use App\Models\PedidoLinea;
 use App\Models\ProductoCarta;
+use App\Support\Plan\PlanLimits;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,6 +23,12 @@ class PedidoService
         if ($canal === Pedido::CANAL_SALON && $mesaId === null) {
             throw ValidationException::withMessages([
                 'mesa_id' => 'Selecciona una mesa para el pedido de salón.',
+            ]);
+        }
+
+        if (PlanLimits::wouldExceed('max_pedidos_mes')) {
+            throw ValidationException::withMessages([
+                'plan_limit' => PlanLimits::message('max_pedidos_mes'),
             ]);
         }
 

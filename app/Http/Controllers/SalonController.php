@@ -322,6 +322,7 @@ class SalonController extends Controller
 
     /**
      * Saca una mesa del grupo (o disuelve el grupo si quedan < 2).
+     * Bloqueado si el grupo tiene pedido activo (cuenta abierta).
      */
     public function separarMesa(Mesa $mesa): RedirectResponse
     {
@@ -331,6 +332,22 @@ class SalonController extends Controller
         $unionId = $mesa->union_id;
         if (! is_string($unionId) || $unionId === '') {
             return back()->with('success', 'La mesa ya estaba separada.');
+        }
+
+        $mesaIds = Mesa::query()
+            ->where('union_id', $unionId)
+            ->pluck('id')
+            ->all();
+
+        $tieneCuentaAbierta = Pedido::query()
+            ->whereIn('mesa_id', $mesaIds)
+            ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+            ->exists();
+
+        if ($tieneCuentaAbierta) {
+            throw ValidationException::withMessages([
+                'union' => 'No se puede separar el grupo mientras hay una cuenta abierta. Cobra o cierra el pedido primero.',
+            ]);
         }
 
         $mesa->update(['union_id' => null]);

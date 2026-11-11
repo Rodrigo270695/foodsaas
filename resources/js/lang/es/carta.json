@@ -213,7 +213,7 @@
         "no_categories": "Crea al menos una categoría antes de agregar productos.",
         "section_basic": "Datos del producto",
         "section_inventory": "Inventario",
-        "section_inventory_hint": "Ceviche / platos: sin control. Gaseosas: control SKU con kardex. Receta: descuenta insumos (próximamente).",
+        "section_inventory_hint": "Ceviche / platos: sin control. Gaseosas: control SKU con kardex. Receta: descuenta insumos al cobrar.",
         "section_status": "Estado",
         "fields": {
             "categoria": "Categoría",
@@ -246,7 +246,7 @@
             "control_inventario": "Control de inventario",
             "control_none": "Sin control (ilimitado)",
             "control_sku": "SKU — descuenta al vender",
-            "control_recipe": "Por receta (próximamente)",
+            "control_recipe": "Por receta (BOM)",
             "control_hint": "«Sin control» equivale a no llevar stock (antes −1). Usa SKU para bebidas embotelladas y similares.",
             "codigo_barras": "Código de barras",
             "codigo_barras_placeholder": "Escanea o escribe el código…",
@@ -256,6 +256,18 @@
             "stock_actual": "Stock actual: {{stock}} (ajusta en Almacén)",
             "stock_minimo": "Stock mínimo",
             "stock_minimo_hint": "Alerta en Almacén cuando el stock llega a este valor."
+        },
+        "bom": {
+            "title": "Receta (BOM)",
+            "add": "Agregar insumo",
+            "remove": "Quitar línea",
+            "insumo_placeholder": "Selecciona un insumo…",
+            "insumo_search": "Buscar insumo…",
+            "insumo_empty": "Sin insumos coincidentes",
+            "cantidad": "Cantidad",
+            "notas": "Notas de receta",
+            "notas_placeholder": "Opcional (preparación, merma…)",
+            "no_insumos": "No hay insumos activos. Créalos en Insumos antes de armar la receta."
         }
     }
 }

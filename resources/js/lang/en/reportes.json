@@ -13,19 +13,30 @@
     "sections": {
         "medios": "Payment methods",
         "comprobantes": "By document type",
-        "top_productos": "Top products"
+        "top_productos": "Top products",
+        "foodcost": "Food cost"
+    },
+    "foodcost": {
+        "costo_teorico": "Theoretical cost",
+        "ventas": "Sales",
+        "porcentaje": "Food cost %",
+        "top_insumos": "Ingredients used",
+        "hint": "Ingredient cost deducted from recipes at checkout."
     },
     "columns": {
         "medio": "Method",
         "cantidad": "Qty",
         "monto": "Amount",
         "producto": "Product",
-        "importe": "Amount"
+        "importe": "Amount",
+        "insumo": "Ingredient",
+        "costo": "Cost"
     },
     "empty": {
         "medios": "No payments in range",
         "comprobantes": "No documents in range",
         "productos": "No products sold",
+        "foodcost": "No recipe consumption in range",
         "hint": "Try another date range or record sales."
     }
 }

@@ -47,6 +47,7 @@ import type {
     CartaFilters,
     CartaStats,
     CategoriaCarta,
+    InsumoOption,
     ProductoCarta,
 } from './types';
 
@@ -54,6 +55,7 @@ type CartaIndexProps = {
     productos: Paginated<ProductoCarta>;
     categorias: CategoriaCarta[];
     areas: AreaCarta[];
+    insumos?: InsumoOption[];
     filters: CartaFilters;
     stats: CartaStats;
     plan_productos_reached?: boolean;
@@ -80,6 +82,7 @@ export default function Index({
     productos: paginated,
     categorias,
     areas,
+    insumos = [],
     filters,
     stats,
     plan_productos_reached = false,
@@ -115,6 +118,7 @@ export default function Index({
                 'productos',
                 'categorias',
                 'areas',
+                'insumos',
                 'filters',
                 'stats',
                 'plan_productos_reached',
@@ -552,6 +556,7 @@ export default function Index({
                 }
                 categorias={categorias}
                 areas={areas}
+                insumos={insumos}
                 defaultCategoriaId={defaultCategoriaForProduct}
                 nextOrdenByCategoria={next_producto_orden_by_categoria}
             />

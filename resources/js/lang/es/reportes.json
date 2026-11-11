@@ -13,19 +13,30 @@
     "sections": {
         "medios": "Medios de pago",
         "comprobantes": "Por comprobante",
-        "top_productos": "Top productos"
+        "top_productos": "Top productos",
+        "foodcost": "Foodcost"
+    },
+    "foodcost": {
+        "costo_teorico": "Costo teórico",
+        "ventas": "Ventas",
+        "porcentaje": "% foodcost",
+        "top_insumos": "Insumos consumidos",
+        "hint": "Costo de insumos descontados por receta al cobrar."
     },
     "columns": {
         "medio": "Medio",
         "cantidad": "Cantidad",
         "monto": "Monto",
         "producto": "Producto",
-        "importe": "Importe"
+        "importe": "Importe",
+        "insumo": "Insumo",
+        "costo": "Costo"
     },
     "empty": {
         "medios": "Sin pagos en el rango",
         "comprobantes": "Sin comprobantes en el rango",
         "productos": "Sin productos vendidos",
+        "foodcost": "Sin consumo de recetas en el rango",
         "hint": "Prueba otro rango de fechas o registra ventas."
     }
 }

@@ -1,7 +1,7 @@
 {
     "title": "Delivery",
     "description": "Active and recent delivery orders.",
-    "search_placeholder": "Search by number or notes…",
+    "search_placeholder": "Search by number, customer or address…",
     "toast": {
         "load_error": "We could not load delivery orders."
     },
@@ -38,12 +38,16 @@
         "title": "New delivery order",
         "description": "Opens a delivery-channel order ready to build.",
         "section": "Delivery details",
-        "cliente": "Customer / address",
-        "cliente_placeholder": "Name or delivery reference",
+        "cliente": "Customer",
+        "cliente_placeholder": "Recipient name",
+        "telefono": "Phone",
+        "telefono_placeholder": "E.g. +51 999 888 777",
+        "direccion": "Address",
+        "direccion_placeholder": "Street, number, district or landmark",
         "comensales": "Guests",
-        "notas": "Notes",
-        "notas_hint": "Optional: phone, landmark or instructions.",
-        "notas_placeholder": "Address, landmark, phone…",
+        "notas": "Instructions",
+        "notas_hint": "Optional: doorbell, floor, building color…",
+        "notas_placeholder": "Notes for the rider…",
         "submit": "Open order"
     }
 }

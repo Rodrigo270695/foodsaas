@@ -36,6 +36,7 @@ import {
     UtensilsCrossed,
     Wallet,
     Warehouse,
+    Wheat,
 } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -94,6 +95,14 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             icon: Warehouse,
                             permission: 'almacen.view',
                             context: 'tenant',
+                        },
+                        {
+                            title: t('items.insumos'),
+                            href: '/insumos',
+                            icon: Wheat,
+                            permission: 'insumos.view',
+                            context: 'tenant',
+                            moduleKey: 'insumos',
                         },
                     ],
                 },

@@ -8,6 +8,7 @@ use App\Http\Controllers\CartaMenuController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CocinaController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\InsumoController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReporteOperacionController;
@@ -120,6 +121,30 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                     ->name('kardex.export');
                 Route::middleware('permission:almacen.ajustar')
                     ->post('{productoCarta}/movimientos', [AlmacenController::class, 'storeMovimiento'])
+                    ->name('movimientos.store');
+            });
+
+        Route::prefix('insumos')
+            ->name('insumos.')
+            ->middleware('tenant.module:insumos')
+            ->group(function (): void {
+                Route::middleware('permission:insumos.view')
+                    ->get('/', [InsumoController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:insumos.create')
+                    ->post('/', [InsumoController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:insumos.update')
+                    ->match(['put', 'patch'], '{insumo}', [InsumoController::class, 'update'])
+                    ->whereUuid('insumo')
+                    ->name('update');
+                Route::middleware('permission:insumos.delete')
+                    ->delete('{insumo}', [InsumoController::class, 'destroy'])
+                    ->whereUuid('insumo')
+                    ->name('destroy');
+                Route::middleware('permission:insumos.ajustar')
+                    ->post('{insumo}/movimientos', [InsumoController::class, 'storeMovimiento'])
+                    ->whereUuid('insumo')
                     ->name('movimientos.store');
             });
 

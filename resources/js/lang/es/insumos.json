@@ -1,0 +1,76 @@
+{
+    "title": "Insumos",
+    "description": "Materias primas y stock para recetas (BOM).",
+    "search_placeholder": "Buscar insumo…",
+    "toast": {
+        "load_error": "No pudimos cargar los insumos."
+    },
+    "actions": {
+        "new": "Nuevo insumo",
+        "new_short": "Nuevo",
+        "create_first": "Crear primer insumo",
+        "ajustar": "Ajustar stock"
+    },
+    "stats": {
+        "total": "Total",
+        "activos": "Activos",
+        "bajo": "Bajo mínimo",
+        "filtros": "Filtros",
+        "coincidencias": "Coincidencias"
+    },
+    "filters": {
+        "estado": "Estado",
+        "activos": "Activos",
+        "inactivos": "Inactivos",
+        "todos": "Todos",
+        "alerta": "Alerta",
+        "alerta_all": "Todas",
+        "alerta_bajo": "Bajo mínimo",
+        "alerta_ok": "OK"
+    },
+    "columns": {
+        "nombre": "Insumo",
+        "unidad": "Unidad",
+        "stock": "Stock",
+        "costo": "Costo unit.",
+        "estado": "Estado"
+    },
+    "empty": {
+        "title": "Sin insumos",
+        "description": "Crea insumos para armar las recetas de tus platos."
+    },
+    "form": {
+        "create": "Nuevo insumo",
+        "edit": "Editar insumo",
+        "description": "Define unidad, costo y stock inicial.",
+        "section": "Datos del insumo",
+        "nombre": "Nombre",
+        "nombre_placeholder": "Ej. Harina, Pollo, Aceite",
+        "unidad": "Unidad",
+        "stock": "Stock inicial",
+        "stock_minimo": "Stock mínimo",
+        "costo_unitario": "Costo unitario",
+        "activo": "Activo",
+        "submit_create": "Crear",
+        "submit_edit": "Guardar"
+    },
+    "movimiento": {
+        "title": "Movimiento de stock",
+        "description": "Entrada, salida, ajuste o merma del insumo.",
+        "tipo": "Tipo",
+        "cantidad": "Cantidad",
+        "stock_nuevo": "Stock resultante",
+        "motivo": "Motivo",
+        "costo_unitario": "Costo unitario",
+        "submit": "Registrar"
+    },
+    "delete": {
+        "title": "Eliminar insumo",
+        "description": "¿Eliminar «{{name}}»? No debe estar en ninguna receta."
+    },
+    "badge": {
+        "activo": "Activo",
+        "inactivo": "Inactivo",
+        "bajo": "Bajo"
+    }
+}

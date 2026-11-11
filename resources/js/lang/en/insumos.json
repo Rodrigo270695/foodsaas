@@ -1,0 +1,76 @@
+{
+    "title": "Ingredients",
+    "description": "Raw materials and stock for recipes (BOM).",
+    "search_placeholder": "Search ingredient…",
+    "toast": {
+        "load_error": "We could not load ingredients."
+    },
+    "actions": {
+        "new": "New ingredient",
+        "new_short": "New",
+        "create_first": "Create first ingredient",
+        "ajustar": "Adjust stock"
+    },
+    "stats": {
+        "total": "Total",
+        "activos": "Active",
+        "bajo": "Below min",
+        "filtros": "Filters",
+        "coincidencias": "Matches"
+    },
+    "filters": {
+        "estado": "Status",
+        "activos": "Active",
+        "inactivos": "Inactive",
+        "todos": "All",
+        "alerta": "Alert",
+        "alerta_all": "All",
+        "alerta_bajo": "Below min",
+        "alerta_ok": "OK"
+    },
+    "columns": {
+        "nombre": "Ingredient",
+        "unidad": "Unit",
+        "stock": "Stock",
+        "costo": "Unit cost",
+        "estado": "Status"
+    },
+    "empty": {
+        "title": "No ingredients",
+        "description": "Create ingredients to build recipes for your dishes."
+    },
+    "form": {
+        "create": "New ingredient",
+        "edit": "Edit ingredient",
+        "description": "Set unit, cost and opening stock.",
+        "section": "Ingredient details",
+        "nombre": "Name",
+        "nombre_placeholder": "E.g. Flour, Chicken, Oil",
+        "unidad": "Unit",
+        "stock": "Opening stock",
+        "stock_minimo": "Minimum stock",
+        "costo_unitario": "Unit cost",
+        "activo": "Active",
+        "submit_create": "Create",
+        "submit_edit": "Save"
+    },
+    "movimiento": {
+        "title": "Stock movement",
+        "description": "Inbound, outbound, adjustment or waste.",
+        "tipo": "Type",
+        "cantidad": "Quantity",
+        "stock_nuevo": "Resulting stock",
+        "motivo": "Reason",
+        "costo_unitario": "Unit cost",
+        "submit": "Save"
+    },
+    "delete": {
+        "title": "Delete ingredient",
+        "description": "Delete «{{name}}»? It must not be used in any recipe."
+    },
+    "badge": {
+        "activo": "Active",
+        "inactivo": "Inactive",
+        "bajo": "Low"
+    }
+}

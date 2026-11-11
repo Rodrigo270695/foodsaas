@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Exports\ReportesOperacionXlsxExport;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Models\MovimientoInventario;
 use App\Models\Pago;
 use App\Models\PedidoLinea;
 use App\Models\Venta;
 use App\Support\Sedes\ActiveSedeContext;
+use App\Support\Tenancy\TenantModuleRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -23,15 +25,21 @@ class ReporteOperacionController extends Controller
         $this->tenantIdOrAbort();
         [$desde, $hasta, $sedeId] = $this->resolveRange($request);
 
+        $stats = $this->buildStats($sedeId, $desde, $hasta);
+        $foodcostEnabled = TenantModuleRegistry::isEnabled(tenant()?->tenant, 'insumos');
+
         return Inertia::render('reportes/index', [
             'filters' => [
                 'desde' => $desde,
                 'hasta' => $hasta,
             ],
-            'stats' => $this->buildStats($sedeId, $desde, $hasta),
+            'stats' => $stats,
             'medios' => $this->buildMedios($sedeId, $desde, $hasta),
             'por_comprobante' => $this->buildPorComprobante($sedeId, $desde, $hasta),
             'top_productos' => $this->buildTopProductos($sedeId, $desde, $hasta),
+            'foodcost' => $foodcostEnabled
+                ? $this->buildFoodcost($sedeId, $desde, $hasta, (float) $stats['monto_total'])
+                : null,
         ]);
     }
 
@@ -40,13 +48,19 @@ class ReporteOperacionController extends Controller
         $this->tenantIdOrAbort();
         [$desde, $hasta, $sedeId] = $this->resolveRange($request);
 
+        $stats = $this->buildStats($sedeId, $desde, $hasta);
+        $foodcostEnabled = TenantModuleRegistry::isEnabled(tenant()?->tenant, 'insumos');
+
         $export = new ReportesOperacionXlsxExport(
-            stats: $this->buildStats($sedeId, $desde, $hasta),
+            stats: $stats,
             medios: $this->buildMedios($sedeId, $desde, $hasta),
             porComprobante: $this->buildPorComprobante($sedeId, $desde, $hasta),
             topProductos: $this->buildTopProductos($sedeId, $desde, $hasta, 50),
             desde: $desde,
             hasta: $hasta,
+            foodcost: $foodcostEnabled
+                ? $this->buildFoodcost($sedeId, $desde, $hasta, (float) $stats['monto_total'])
+                : null,
         );
 
         $filename = 'reportes-'.$desde.'_'.$hasta.'.xlsx';
@@ -216,5 +230,82 @@ class ReporteOperacionController extends Controller
                 'importe' => round((float) $row->importe, 2),
             ])
             ->all();
+    }
+
+    /**
+     * Costo teórico de insumos consumidos al cobrar (movimientos tipo venta).
+     *
+     * @return array{
+     *     costo_teorico: float,
+     *     ventas_monto: float,
+     *     porcentaje: float|null,
+     *     top_insumos: list<array{nombre: string, unidad: string|null, cantidad: float, costo: float}>
+     * }
+     */
+    private function buildFoodcost(string $sedeId, string $desde, string $hasta, float $ventasMonto): array
+    {
+        if ($sedeId === '') {
+            return [
+                'costo_teorico' => 0.0,
+                'ventas_monto' => 0.0,
+                'porcentaje' => null,
+                'top_insumos' => [],
+            ];
+        }
+
+        $ventaIds = Venta::query()
+            ->where('sede_id', $sedeId)
+            ->where('estado', Venta::ESTADO_PAGADA)
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta)
+            ->pluck('id');
+
+        if ($ventaIds->isEmpty()) {
+            return [
+                'costo_teorico' => 0.0,
+                'ventas_monto' => round($ventasMonto, 2),
+                'porcentaje' => null,
+                'top_insumos' => [],
+            ];
+        }
+
+        $base = MovimientoInventario::query()
+            ->whereNotNull('insumo_id')
+            ->where('tipo', MovimientoInventario::TIPO_VENTA)
+            ->where('referencia_tipo', 'venta')
+            ->whereIn('referencia_id', $ventaIds);
+
+        $costoTeorico = round((float) (clone $base)->sum('costo_total'), 2);
+
+        $topInsumos = (clone $base)
+            ->select([
+                'inv_insumos.nombre',
+                'inv_insumos.unidad',
+                DB::raw('SUM(inv_movimientos.cantidad) as cantidad'),
+                DB::raw('SUM(inv_movimientos.costo_total) as costo'),
+            ])
+            ->join('inv_insumos', 'inv_insumos.id', '=', 'inv_movimientos.insumo_id')
+            ->groupBy('inv_insumos.id', 'inv_insumos.nombre', 'inv_insumos.unidad')
+            ->orderByDesc('costo')
+            ->limit(10)
+            ->get()
+            ->map(fn ($row) => [
+                'nombre' => (string) $row->nombre,
+                'unidad' => $row->unidad !== null ? (string) $row->unidad : null,
+                'cantidad' => round((float) $row->cantidad, 3),
+                'costo' => round((float) $row->costo, 2),
+            ])
+            ->all();
+
+        $porcentaje = $ventasMonto > 0
+            ? round(($costoTeorico / $ventasMonto) * 100, 2)
+            : null;
+
+        return [
+            'costo_teorico' => $costoTeorico,
+            'ventas_monto' => round($ventasMonto, 2),
+            'porcentaje' => $porcentaje,
+            'top_insumos' => $topInsumos,
+        ];
     }
 }

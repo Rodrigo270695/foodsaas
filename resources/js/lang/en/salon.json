@@ -109,6 +109,7 @@
         "separar": "Split join",
         "separar_grupo": "Split group",
         "separar_one": "Remove {{code}}",
+        "separar_blocked": "Open check on this group. Charge or close the order before splitting.",
         "edit_member": "Edit {{code}}",
         "group_actions": "Group actions",
         "group_title": "Group · {{count}} tables",

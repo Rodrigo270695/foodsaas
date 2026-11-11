@@ -8,11 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property string $id
- * @property string $producto_id
+ * @property string|null $producto_id
+ * @property string|null $insumo_id
  * @property string $tipo
  * @property string $cantidad
  * @property string $stock_anterior
  * @property string $stock_despues
+ * @property string|null $costo_unitario
+ * @property string|null $costo_total
  */
 class MovimientoInventario extends Model
 {
@@ -40,10 +43,13 @@ class MovimientoInventario extends Model
 
     protected $fillable = [
         'producto_id',
+        'insumo_id',
         'tipo',
         'cantidad',
         'stock_anterior',
         'stock_despues',
+        'costo_unitario',
+        'costo_total',
         'motivo',
         'referencia_tipo',
         'referencia_id',
@@ -56,6 +62,8 @@ class MovimientoInventario extends Model
             'cantidad' => 'decimal:3',
             'stock_anterior' => 'decimal:3',
             'stock_despues' => 'decimal:3',
+            'costo_unitario' => 'decimal:4',
+            'costo_total' => 'decimal:4',
         ];
     }
 
@@ -65,6 +73,14 @@ class MovimientoInventario extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(ProductoCarta::class, 'producto_id');
+    }
+
+    /**
+     * @return BelongsTo<Insumo, $this>
+     */
+    public function insumo(): BelongsTo
+    {
+        return $this->belongsTo(Insumo::class, 'insumo_id');
     }
 
     /**

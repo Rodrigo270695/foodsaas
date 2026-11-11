@@ -249,7 +249,7 @@ export function MesaUnionCard({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-0.5">
-                    {showManageChrome && canUpdate ? (
+                    {showManageChrome && canUpdate && !occupied ? (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -268,6 +268,31 @@ export function MesaUnionCard({
                             </TooltipTrigger>
                             <TooltipContent side="top">
                                 {t('union.separar_grupo')}
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : null}
+                    {showManageChrome && canUpdate && occupied ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    disabled
+                                    className="size-8 cursor-not-allowed text-muted-foreground opacity-60"
+                                    aria-label={t('union.separar_blocked', {
+                                        defaultValue:
+                                            'Hay cuenta abierta. Cobra antes de separar.',
+                                    })}
+                                >
+                                    <Unlink2 className="size-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[14rem]">
+                                {t('union.separar_blocked', {
+                                    defaultValue:
+                                        'Hay cuenta abierta. Cobra antes de separar.',
+                                })}
                             </TooltipContent>
                         </Tooltip>
                     ) : null}
@@ -331,7 +356,7 @@ export function MesaUnionCard({
                                           </DropdownMenuItem>
                                       ))
                                     : null}
-                                {canUpdate ? (
+                                {canUpdate && !occupied ? (
                                     <>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
@@ -355,6 +380,21 @@ export function MesaUnionCard({
                                                 })}
                                             </DropdownMenuItem>
                                         ))}
+                                    </>
+                                ) : null}
+                                {canUpdate && occupied ? (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            disabled
+                                            className="gap-2 opacity-70"
+                                        >
+                                            <Unlink2 className="size-4" />
+                                            {t('union.separar_blocked', {
+                                                defaultValue:
+                                                    'Hay cuenta abierta. Cobra antes de separar.',
+                                            })}
+                                        </DropdownMenuItem>
                                     </>
                                 ) : null}
                                 {canDelete ? (

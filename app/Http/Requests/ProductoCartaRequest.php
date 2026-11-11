@@ -72,6 +72,24 @@ class ProductoCartaRequest extends FormRequest
                 'max:2048',
             ],
             'clear_imagen' => ['sometimes', 'boolean'],
+            'receta_notas' => ['nullable', 'string', 'max:500'],
+            'receta_lineas' => [
+                Rule::requiredIf($control === ProductoCarta::CONTROL_RECIPE),
+                'nullable',
+                'array',
+                'min:1',
+            ],
+            'receta_lineas.*.insumo_id' => [
+                'required_with:receta_lineas',
+                'uuid',
+                Rule::exists('inv_insumos', 'id'),
+            ],
+            'receta_lineas.*.cantidad' => [
+                'required_with:receta_lineas',
+                'numeric',
+                'min:0.001',
+                'max:999999999.999',
+            ],
         ];
     }
 
@@ -91,6 +109,9 @@ class ProductoCartaRequest extends FormRequest
             'stock_inicial' => 'stock inicial',
             'stock_minimo' => 'stock mínimo',
             'imagen' => 'imagen',
+            'receta_lineas' => 'líneas de receta',
+            'receta_lineas.*.insumo_id' => 'insumo',
+            'receta_lineas.*.cantidad' => 'cantidad',
         ];
     }
 

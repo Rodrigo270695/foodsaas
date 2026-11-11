@@ -108,6 +108,7 @@
         "separar": "Separar unión",
         "separar_grupo": "Separar grupo",
         "separar_one": "Sacar {{code}}",
+        "separar_blocked": "Hay cuenta abierta. Cobra o cierra el pedido antes de separar.",
         "edit_member": "Editar {{code}}",
         "group_actions": "Acciones del grupo",
         "group_title": "Grupo · {{count}} mesas",
