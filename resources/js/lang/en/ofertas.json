@@ -1,15 +1,51 @@
 {
     "title": "Offers",
-    "description": "Coupons and promos you can apply at checkout.",
+    "description": "Coupons and promos for checkout. Set a code, discount type and validity window.",
+    "search_placeholder": "Search by code or name…",
+    "toast": {
+        "load_error": "We could not load offers."
+    },
     "actions": {
         "create": "New offer",
-        "save": "Save"
+        "create_short": "New",
+        "create_first": "Create first offer"
+    },
+    "stats": {
+        "total": "Total",
+        "activos": "Active",
+        "vigentes": "Valid today",
+        "filtros": "Filters",
+        "coincidencias": "Matches"
+    },
+    "filters": {
+        "label": "Status",
+        "activos": "Active",
+        "inactivos": "Inactive",
+        "todos": "All"
+    },
+    "columns": {
+        "codigo": "Offer",
+        "descuento": "Discount",
+        "usos": "Uses",
+        "vigencia": "Validity",
+        "estado": "Status",
+        "acciones": "Actions"
+    },
+    "row": {
+        "vigente": "Valid",
+        "inactiva_hoy": "Out of date",
+        "desactivada": "Disabled",
+        "sin_vigencia": "No dates"
     },
     "fields": {
         "codigo": "Code",
+        "codigo_placeholder": "E.g. PROMO10",
         "nombre": "Name",
+        "nombre_placeholder": "E.g. 10% lunch deal",
         "tipo": "Type",
         "valor": "Value",
+        "valor_hint_pct": "Percentage from 0.01 to 100.",
+        "valor_hint_monto": "Fixed amount in PEN.",
         "tope": "Cap (PEN)",
         "usos_max": "Max uses",
         "desde": "From",
@@ -20,9 +56,25 @@
         "monto": "Fixed amount",
         "porcentaje": "Percentage"
     },
-    "empty": "No offers yet. Create a code for checkout.",
-    "stats": {
-        "total": "Offers",
-        "activas": "Valid today"
+    "form": {
+        "title_create": "New offer",
+        "title_edit": "Edit offer",
+        "description_create": "The code is used at checkout. Fill required fields to save.",
+        "description_edit": "Update the coupon or its validity.",
+        "section_basic": "Offer details",
+        "section_basic_hint": "Code, name and discount are required.",
+        "section_limits": "Limits & validity",
+        "section_limits_hint": "Optional: cap, max uses and date range.",
+        "activa_hint": "If disabled it cannot be applied at checkout.",
+        "submit_create": "Save",
+        "submit_edit": "Update"
+    },
+    "empty": {
+        "title": "No offers yet",
+        "description": "Create a code to apply discounts at checkout."
+    },
+    "delete": {
+        "title": "Delete offer",
+        "description": "Delete code «{{code}}»? Historical sales are not changed."
     }
 }

@@ -1,93 +1,269 @@
-import { Head, useForm } from '@inertiajs/react';
-import { Percent, TicketPercent } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { Head } from '@inertiajs/react';
+import {
+    CheckCircle2,
+    Filter,
+    MoreHorizontal,
+    Pencil,
+    Percent,
+    Plus,
+    ScreenShare,
+    TicketPercent,
+    Trash2,
+} from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Can } from '@/components/can';
-import { EmptyState, PageHeader } from '@/components/data-page';
-import { FormField, FormModal } from '@/components/forms';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    DataPagination,
+    DataTable,
+    DataToolbar,
+    EmptyState,
+    PageHeader,
+    StatBadge,
+    type DataTableColumn,
+} from '@/components/data-page';
+import { Button } from '@/components/ui/button';
+import { ConfirmDeleteDialog } from '@/components/ui/confirm-delete-dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    FilterSelect,
+    type FilterSelectOption,
+} from '@/components/ui/filter-select';
+import { useDataTablePage } from '@/hooks/use-data-table-page';
+import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
-
-type OfertaRow = {
-    id: string;
-    codigo: string;
-    nombre: string;
-    tipo: 'monto' | 'porcentaje';
-    valor: number;
-    tope_monto: number | null;
-    usos_max: number | null;
-    usos_count: number;
-    vigente_desde: string | null;
-    vigente_hasta: string | null;
-    activa: boolean;
-    vigente_hoy: boolean;
-};
+import type { Paginated } from '@/types';
+import { OfertaFormModal } from './components/oferta-form-modal';
+import ofertas from './ofertas-routes';
+import type {
+    OfertaEstadoFilter,
+    OfertaFilters,
+    OfertaRow,
+    OfertaStats,
+} from './types';
 
 type Props = {
-    ofertas: OfertaRow[];
+    ofertas: Paginated<OfertaRow>;
+    filters: OfertaFilters;
+    stats: OfertaStats;
 };
 
-type FormData = {
-    codigo: string;
-    nombre: string;
-    tipo: 'monto' | 'porcentaje';
-    valor: string;
-    tope_monto: string;
-    usos_max: string;
-    vigente_desde: string;
-    vigente_hasta: string;
-    activa: boolean;
-};
+type ModalState =
+    | { type: 'idle' }
+    | { type: 'create' }
+    | { type: 'edit'; oferta: OfertaRow }
+    | { type: 'delete'; oferta: OfertaRow };
 
-const emptyForm = (): FormData => ({
-    codigo: '',
-    nombre: '',
-    tipo: 'porcentaje',
-    valor: '',
-    tope_monto: '',
-    usos_max: '',
-    vigente_desde: '',
-    vigente_hasta: '',
-    activa: true,
-});
+function formatValor(row: OfertaRow): string {
+    if (row.tipo === 'porcentaje') {
+        return `${row.valor}%`;
+    }
 
-export default function OfertasIndex({ ofertas }: Props) {
+    return new Intl.NumberFormat('es-PE', {
+        style: 'currency',
+        currency: 'PEN',
+        minimumFractionDigits: 2,
+    }).format(row.valor);
+}
+
+export default function OfertasIndex({
+    ofertas: paginated,
+    filters,
+    stats,
+}: Props) {
     const { t } = useTranslation(['ofertas', 'common']);
-    const [open, setOpen] = useState(false);
-    const form = useForm<FormData>(emptyForm());
+    const { can } = usePermission();
+    const canCreate = can('ofertas.create');
+    const canUpdate = can('ofertas.update');
+    const canDelete = can('ofertas.delete');
+    const [modal, setModal] = useState<ModalState>({ type: 'idle' });
 
-    const vigentes = useMemo(
-        () => ofertas.filter((o) => o.vigente_hoy).length,
-        [ofertas],
+    const { search, setSearch, isLoading, setPerPage, applyFilter } =
+        useDataTablePage<{ estado: OfertaEstadoFilter }>({
+            routeUrl: ofertas.index().url,
+            initialFilters: filters,
+            only: ['ofertas', 'filters', 'stats'],
+            errorMessage: t('ofertas:toast.load_error'),
+            storageKey: 'foodsaas.ofertas.prefs',
+            defaults: { per_page: 10 },
+        });
+
+    const closeModal = useCallback(() => setModal({ type: 'idle' }), []);
+
+    const estadoOptions = useMemo<
+        readonly FilterSelectOption<OfertaEstadoFilter>[]
+    >(
+        () => [
+            {
+                value: 'activos',
+                label: t('ofertas:filters.activos'),
+                tone: 'success',
+            },
+            {
+                value: 'inactivos',
+                label: t('ofertas:filters.inactivos'),
+                tone: 'warning',
+            },
+            { value: 'todos', label: t('ofertas:filters.todos') },
+        ],
+        [t],
     );
 
-    const onSubmit = (event: FormEvent) => {
-        event.preventDefault();
-        form.transform((data) => ({
-            ...data,
-            valor: Number(data.valor || 0),
-            tope_monto: data.tope_monto !== '' ? Number(data.tope_monto) : null,
-            usos_max: data.usos_max !== '' ? Number(data.usos_max) : null,
-            vigente_desde: data.vigente_desde || null,
-            vigente_hasta: data.vigente_hasta || null,
-        }));
-        form.post('/ofertas', {
-            preserveScroll: true,
-            onSuccess: () => {
-                form.reset();
-                setOpen(false);
+    const columns = useMemo<DataTableColumn<OfertaRow>[]>(
+        () => [
+            {
+                key: 'codigo',
+                header: t('ofertas:columns.codigo'),
+                cell: (row) => (
+                    <div className="min-w-0">
+                        <p className="font-semibold tracking-wide uppercase">
+                            {row.codigo}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                            {row.nombre}
+                        </p>
+                    </div>
+                ),
             },
-        });
-    };
+            {
+                key: 'tipo',
+                header: t('ofertas:columns.descuento'),
+                cell: (row) => (
+                    <div className="text-sm">
+                        <p className="font-medium tabular-nums">
+                            {formatValor(row)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {row.tipo === 'porcentaje'
+                                ? t('ofertas:tipos.porcentaje')
+                                : t('ofertas:tipos.monto')}
+                            {row.tope_monto
+                                ? ` · tope S/ ${row.tope_monto.toFixed(2)}`
+                                : ''}
+                        </p>
+                    </div>
+                ),
+            },
+            {
+                key: 'usos',
+                header: t('ofertas:columns.usos'),
+                cell: (row) => (
+                    <span className="tabular-nums text-sm">
+                        {row.usos_max
+                            ? `${row.usos_count}/${row.usos_max}`
+                            : String(row.usos_count)}
+                    </span>
+                ),
+                className: 'hidden sm:table-cell',
+            },
+            {
+                key: 'vigencia',
+                header: t('ofertas:columns.vigencia'),
+                cell: (row) => {
+                    if (!row.vigente_desde && !row.vigente_hasta) {
+                        return (
+                            <span className="text-xs text-muted-foreground italic">
+                                {t('ofertas:row.sin_vigencia')}
+                            </span>
+                        );
+                    }
+
+                    return (
+                        <span className="text-xs tabular-nums text-muted-foreground">
+                            {row.vigente_desde ?? '…'} →{' '}
+                            {row.vigente_hasta ?? '…'}
+                        </span>
+                    );
+                },
+                className: 'hidden md:table-cell',
+            },
+            {
+                key: 'estado',
+                header: t('ofertas:columns.estado'),
+                cell: (row) =>
+                    row.vigente_hoy ? (
+                        <StatBadge
+                            label={t('ofertas:row.vigente')}
+                            value=""
+                            variant="success"
+                        />
+                    ) : row.activa ? (
+                        <StatBadge
+                            label={t('ofertas:row.inactiva_hoy')}
+                            value=""
+                            variant="warning"
+                        />
+                    ) : (
+                        <StatBadge
+                            label={t('ofertas:row.desactivada')}
+                            value=""
+                            variant="muted"
+                        />
+                    ),
+            },
+            {
+                key: 'acciones',
+                header: (
+                    <span className="sr-only">
+                        {t('ofertas:columns.acciones')}
+                    </span>
+                ),
+                align: 'right',
+                cell: (row) =>
+                    canUpdate || canDelete ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 cursor-pointer"
+                                >
+                                    <MoreHorizontal className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-44">
+                                {canUpdate ? (
+                                    <DropdownMenuItem
+                                        className="cursor-pointer gap-2"
+                                        onSelect={() =>
+                                            setModal({
+                                                type: 'edit',
+                                                oferta: row,
+                                            })
+                                        }
+                                    >
+                                        <Pencil className="size-4" />
+                                        {t('common:actions.edit')}
+                                    </DropdownMenuItem>
+                                ) : null}
+                                {canDelete ? (
+                                    <DropdownMenuItem
+                                        className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                                        onSelect={() =>
+                                            setModal({
+                                                type: 'delete',
+                                                oferta: row,
+                                            })
+                                        }
+                                    >
+                                        <Trash2 className="size-4" />
+                                        {t('common:actions.delete')}
+                                    </DropdownMenuItem>
+                                ) : null}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : null,
+                className: 'w-12',
+            },
+        ],
+        [t, canUpdate, canDelete],
+    );
 
     return (
         <>
@@ -100,192 +276,140 @@ export default function OfertasIndex({ ofertas }: Props) {
                         {
                             icon: TicketPercent,
                             label: t('ofertas:stats.total'),
-                            value: ofertas.length,
-                            variant: 'primary',
+                            value: stats.total,
+                            variant: 'info',
+                        },
+                        {
+                            icon: CheckCircle2,
+                            label: t('ofertas:stats.activos'),
+                            value: stats.activos,
+                            variant: 'success',
                         },
                         {
                             icon: Percent,
-                            label: t('ofertas:stats.activas'),
-                            value: vigentes,
-                            variant: 'success',
+                            label: t('ofertas:stats.vigentes'),
+                            value: stats.vigentes,
+                            variant: 'primary',
+                        },
+                        {
+                            icon: Filter,
+                            label: t('ofertas:stats.filtros'),
+                            value: stats.filtros,
+                            variant: 'warning',
+                        },
+                        {
+                            icon: ScreenShare,
+                            label: t('ofertas:stats.coincidencias'),
+                            value: stats.coincidencias,
+                            variant: 'primary',
                         },
                     ]}
                     action={
                         <Can permission="ofertas.create">
                             <Button
-                                className="cursor-pointer"
-                                onClick={() => {
-                                    form.setData(emptyForm());
-                                    form.clearErrors();
-                                    setOpen(true);
-                                }}
+                                type="button"
+                                className="cursor-pointer gap-2"
+                                onClick={() => setModal({ type: 'create' })}
                             >
-                                {t('ofertas:actions.create')}
+                                <Plus className="size-4" strokeWidth={2.5} />
+                                <span className="hidden sm:inline">
+                                    {t('ofertas:actions.create')}
+                                </span>
+                                <span className="sm:hidden">
+                                    {t('ofertas:actions.create_short')}
+                                </span>
                             </Button>
                         </Can>
                     }
                 />
 
-                {ofertas.length === 0 ? (
-                    <EmptyState
-                        title={t('ofertas:empty')}
-                        icon={TicketPercent}
-                    />
-                ) : (
-                    <ul className="divide-y divide-border/60 overflow-hidden rounded-xl border border-border/70 bg-card">
-                        {ofertas.map((row) => (
-                            <li
-                                key={row.id}
-                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                            >
-                                <div className="min-w-0">
-                                    <p className="font-semibold tracking-wide">
-                                        {row.codigo}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {row.nombre} ·{' '}
-                                        {row.tipo === 'porcentaje'
-                                            ? `${row.valor}%`
-                                            : `S/ ${row.valor.toFixed(2)}`}
-                                        {row.usos_max
-                                            ? ` · ${row.usos_count}/${row.usos_max} usos`
-                                            : ` · ${row.usos_count} usos`}
-                                    </p>
-                                </div>
-                                <Badge
-                                    variant={
-                                        row.vigente_hoy ? 'default' : 'secondary'
-                                    }
-                                >
-                                    {row.vigente_hoy
-                                        ? t('ofertas:fields.activa')
-                                        : '—'}
-                                </Badge>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                <DataTable
+                    columns={columns}
+                    data={paginated.data}
+                    rowKey={(row) => row.id}
+                    isLoading={isLoading}
+                    toolbar={
+                        <DataToolbar
+                            search={search}
+                            onSearchChange={setSearch}
+                            isSearching={isLoading}
+                            placeholder={t('ofertas:search_placeholder')}
+                        >
+                            <FilterSelect
+                                ariaLabel={t('ofertas:filters.label')}
+                                value={filters.estado}
+                                onChange={(estado) => applyFilter({ estado })}
+                                options={estadoOptions}
+                                disabled={isLoading}
+                            />
+                        </DataToolbar>
+                    }
+                    footer={
+                        <DataPagination
+                            meta={paginated}
+                            onPerPageChange={setPerPage}
+                            preservedQuery={{
+                                search: filters.search || undefined,
+                                estado: filters.estado,
+                                per_page: filters.per_page,
+                            }}
+                        />
+                    }
+                    emptyState={
+                        <EmptyState
+                            icon={TicketPercent}
+                            title={t('ofertas:empty.title')}
+                            description={t('ofertas:empty.description')}
+                            action={
+                                canCreate ? (
+                                    <Button
+                                        className="cursor-pointer gap-2"
+                                        onClick={() =>
+                                            setModal({ type: 'create' })
+                                        }
+                                    >
+                                        <Plus className="size-4" />
+                                        {t('ofertas:actions.create_first')}
+                                    </Button>
+                                ) : undefined
+                            }
+                        />
+                    }
+                />
             </div>
 
-            <FormModal
-                open={open}
-                onOpenChange={setOpen}
-                title={t('ofertas:actions.create')}
-                onSubmit={onSubmit}
-                footer={
-                    <Button
-                        type="submit"
-                        disabled={form.processing}
-                        className="cursor-pointer"
-                    >
-                        {t('ofertas:actions.save')}
-                    </Button>
+            <OfertaFormModal
+                open={modal.type === 'create' || modal.type === 'edit'}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+                oferta={modal.type === 'edit' ? modal.oferta : null}
+            />
+
+            <ConfirmDeleteDialog
+                open={modal.type === 'delete'}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+                title={t('ofertas:delete.title')}
+                description={
+                    modal.type === 'delete'
+                        ? t('ofertas:delete.description', {
+                              code: modal.oferta.codigo,
+                          })
+                        : ''
                 }
-            >
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <FormField
-                        label={t('ofertas:fields.codigo')}
-                        error={form.errors.codigo}
-                    >
-                        <Input
-                            value={form.data.codigo}
-                            onChange={(e) =>
-                                form.setData(
-                                    'codigo',
-                                    e.target.value.toUpperCase(),
-                                )
-                            }
-                        />
-                    </FormField>
-                    <FormField
-                        label={t('ofertas:fields.nombre')}
-                        error={form.errors.nombre}
-                    >
-                        <Input
-                            value={form.data.nombre}
-                            onChange={(e) =>
-                                form.setData('nombre', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField label={t('ofertas:fields.tipo')}>
-                        <Select
-                            value={form.data.tipo}
-                            onValueChange={(v) =>
-                                form.setData(
-                                    'tipo',
-                                    v as FormData['tipo'],
-                                )
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="porcentaje">
-                                    {t('ofertas:tipos.porcentaje')}
-                                </SelectItem>
-                                <SelectItem value="monto">
-                                    {t('ofertas:tipos.monto')}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </FormField>
-                    <FormField
-                        label={t('ofertas:fields.valor')}
-                        error={form.errors.valor}
-                    >
-                        <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={form.data.valor}
-                            onChange={(e) =>
-                                form.setData('valor', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField label={t('ofertas:fields.tope')}>
-                        <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={form.data.tope_monto}
-                            onChange={(e) =>
-                                form.setData('tope_monto', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField label={t('ofertas:fields.usos_max')}>
-                        <Input
-                            type="number"
-                            min="1"
-                            value={form.data.usos_max}
-                            onChange={(e) =>
-                                form.setData('usos_max', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField label={t('ofertas:fields.desde')}>
-                        <Input
-                            type="date"
-                            value={form.data.vigente_desde}
-                            onChange={(e) =>
-                                form.setData('vigente_desde', e.target.value)
-                            }
-                        />
-                    </FormField>
-                    <FormField label={t('ofertas:fields.hasta')}>
-                        <Input
-                            type="date"
-                            value={form.data.vigente_hasta}
-                            onChange={(e) =>
-                                form.setData('vigente_hasta', e.target.value)
-                            }
-                        />
-                    </FormField>
-                </div>
-            </FormModal>
+                deleteUrl={
+                    modal.type === 'delete'
+                        ? ofertas.destroy(modal.oferta.id).url
+                        : null
+                }
+                onSuccess={closeModal}
+            />
         </>
     );
 }

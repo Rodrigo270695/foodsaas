@@ -1,15 +1,51 @@
 {
     "title": "Ofertas",
-    "description": "Cupones y promociones aplicables en el cobro.",
+    "description": "Cupones y promociones aplicables en el cobro. Define código, tipo de descuento y vigencia.",
+    "search_placeholder": "Buscar por código o nombre…",
+    "toast": {
+        "load_error": "No pudimos cargar las ofertas."
+    },
     "actions": {
         "create": "Nueva oferta",
-        "save": "Guardar"
+        "create_short": "Nueva",
+        "create_first": "Crear primera oferta"
+    },
+    "stats": {
+        "total": "Total",
+        "activos": "Activas",
+        "vigentes": "Vigentes hoy",
+        "filtros": "Filtros",
+        "coincidencias": "Coincidencias"
+    },
+    "filters": {
+        "label": "Estado",
+        "activos": "Activas",
+        "inactivos": "Inactivas",
+        "todos": "Todas"
+    },
+    "columns": {
+        "codigo": "Oferta",
+        "descuento": "Descuento",
+        "usos": "Usos",
+        "vigencia": "Vigencia",
+        "estado": "Estado",
+        "acciones": "Acciones"
+    },
+    "row": {
+        "vigente": "Vigente",
+        "inactiva_hoy": "Fuera de vigencia",
+        "desactivada": "Desactivada",
+        "sin_vigencia": "Sin fechas"
     },
     "fields": {
         "codigo": "Código",
+        "codigo_placeholder": "Ej. PROMO10",
         "nombre": "Nombre",
+        "nombre_placeholder": "Ej. 10% en almuerzo",
         "tipo": "Tipo",
         "valor": "Valor",
+        "valor_hint_pct": "Porcentaje de 0.01 a 100.",
+        "valor_hint_monto": "Monto fijo en soles.",
         "tope": "Tope (S/)",
         "usos_max": "Usos máx.",
         "desde": "Desde",
@@ -20,9 +56,25 @@
         "monto": "Monto fijo",
         "porcentaje": "Porcentaje"
     },
-    "empty": "Aún no hay ofertas. Crea un código para el cobro.",
-    "stats": {
-        "total": "Ofertas",
-        "activas": "Vigentes hoy"
+    "form": {
+        "title_create": "Nueva oferta",
+        "title_edit": "Editar oferta",
+        "description_create": "El código se usa en el cobro. Completa los obligatorios para guardar.",
+        "description_edit": "Actualiza el cupón o su vigencia.",
+        "section_basic": "Datos de la oferta",
+        "section_basic_hint": "Código, nombre y descuento son obligatorios.",
+        "section_limits": "Límites y vigencia",
+        "section_limits_hint": "Opcional: tope, usos máximos y rango de fechas.",
+        "activa_hint": "Si está desactivada no se puede aplicar en cobro.",
+        "submit_create": "Guardar",
+        "submit_edit": "Modificar"
+    },
+    "empty": {
+        "title": "Aún no hay ofertas",
+        "description": "Crea un código para aplicar descuentos en el cobro."
+    },
+    "delete": {
+        "title": "Eliminar oferta",
+        "description": "¿Eliminar el código «{{code}}»? Los cobros históricos no se alteran."
     }
 }

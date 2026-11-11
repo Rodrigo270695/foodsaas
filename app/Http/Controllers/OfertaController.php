@@ -19,36 +19,77 @@ class OfertaController extends Controller
     use ResolvesActiveSede;
     use ResolvesTenantId;
 
-    public function index(): Response
+    private const PER_PAGE_OPTIONS = [10, 15, 20, 25, 50];
+
+    public function index(Request $request): Response
     {
         $this->tenantIdOrAbort();
         $sedeId = ActiveSedeContext::id() ?? '';
 
-        $ofertas = $sedeId === ''
-            ? collect()
-            : Oferta::query()
-                ->where(function ($q) use ($sedeId): void {
-                    $q->whereNull('sede_id')->orWhere('sede_id', $sedeId);
-                })
-                ->orderByDesc('activa')
-                ->orderBy('codigo')
-                ->get();
+        $estado = (string) $request->string('estado', 'todos');
+        if (! in_array($estado, ['activos', 'inactivos', 'todos'], true)) {
+            $estado = 'todos';
+        }
+
+        $search = trim((string) $request->string('search', ''));
+        $perPage = (int) $request->integer('per_page', 10);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS, true)) {
+            $perPage = 10;
+        }
+
+        $base = Oferta::query()
+            ->when(
+                $sedeId !== '',
+                fn ($q) => $q->where(function ($inner) use ($sedeId): void {
+                    $inner->whereNull('sede_id')->orWhere('sede_id', $sedeId);
+                }),
+                fn ($q) => $q->whereRaw('1 = 0'),
+            );
+
+        $query = (clone $base)->orderByDesc('activa')->orderBy('codigo');
+
+        if ($estado === 'activos') {
+            $query->where('activa', true);
+        } elseif ($estado === 'inactivos') {
+            $query->where('activa', false);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search): void {
+                $q->where('codigo', 'ilike', "%{$search}%")
+                    ->orWhere('nombre', 'ilike', "%{$search}%");
+            });
+        }
+
+        $ofertas = $query
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (Oferta $o) => $this->serialize($o));
+
+        $total = (clone $base)->count();
+        $activos = (clone $base)->where('activa', true)->count();
+        $vigentesHoy = (clone $base)
+            ->where('activa', true)
+            ->get()
+            ->filter(fn (Oferta $o) => $o->isVigenteHoy())
+            ->count();
 
         return Inertia::render('ofertas/index', [
-            'ofertas' => $ofertas->map(fn (Oferta $o) => [
-                'id' => $o->id,
-                'codigo' => $o->codigo,
-                'nombre' => $o->nombre,
-                'tipo' => $o->tipo,
-                'valor' => (float) $o->valor,
-                'tope_monto' => $o->tope_monto !== null ? (float) $o->tope_monto : null,
-                'usos_max' => $o->usos_max,
-                'usos_count' => $o->usos_count,
-                'vigente_desde' => $o->vigente_desde?->toDateString(),
-                'vigente_hasta' => $o->vigente_hasta?->toDateString(),
-                'activa' => $o->activa,
-                'vigente_hoy' => $o->isVigenteHoy(),
-            ]),
+            'ofertas' => $ofertas,
+            'filters' => [
+                'search' => $search,
+                'estado' => $estado,
+                'per_page' => $perPage,
+                'sort' => null,
+                'direction' => null,
+            ],
+            'stats' => [
+                'total' => $total,
+                'activos' => $activos,
+                'vigentes' => $vigentesHoy,
+                'filtros' => ($estado !== 'todos' ? 1 : 0) + ($search !== '' ? 1 : 0),
+                'coincidencias' => $ofertas->total(),
+            ],
         ]);
     }
 
@@ -115,9 +156,30 @@ class OfertaController extends Controller
     /**
      * @return array<string, mixed>
      */
+    private function serialize(Oferta $o): array
+    {
+        return [
+            'id' => $o->id,
+            'codigo' => $o->codigo,
+            'nombre' => $o->nombre,
+            'tipo' => $o->tipo,
+            'valor' => (float) $o->valor,
+            'tope_monto' => $o->tope_monto !== null ? (float) $o->tope_monto : null,
+            'usos_max' => $o->usos_max,
+            'usos_count' => $o->usos_count,
+            'vigente_desde' => $o->vigente_desde?->toDateString(),
+            'vigente_hasta' => $o->vigente_hasta?->toDateString(),
+            'activa' => $o->activa,
+            'vigente_hoy' => $o->isVigenteHoy(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function validated(Request $request, ?string $ignoreId = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'codigo' => [
                 'required',
                 'string',
@@ -133,6 +195,18 @@ class OfertaController extends Controller
             'vigente_hasta' => ['nullable', 'date', 'after_or_equal:vigente_desde'],
             'activa' => ['sometimes', 'boolean'],
         ]);
+
+        $data['activa'] = $request->boolean('activa', true);
+        $data['tope_monto'] = array_key_exists('tope_monto', $data) && $data['tope_monto'] !== null
+            ? round((float) $data['tope_monto'], 2)
+            : null;
+        $data['usos_max'] = array_key_exists('usos_max', $data) && $data['usos_max'] !== null
+            ? (int) $data['usos_max']
+            : null;
+        $data['vigente_desde'] = $data['vigente_desde'] ?? null;
+        $data['vigente_hasta'] = $data['vigente_hasta'] ?? null;
+
+        return $data;
     }
 
     private function assertSede(Oferta $oferta): void
