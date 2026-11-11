@@ -84,14 +84,33 @@ class PedidoService
             return Pedido::query()->create([
                 'sede_id' => $sedeId,
                 'mesa_id' => $mesaId,
+                'cliente_id' => isset($data['cliente_id']) && $data['cliente_id'] !== ''
+                    ? (string) $data['cliente_id']
+                    : null,
                 'numero' => $numero,
                 'estado' => Pedido::ESTADO_BORRADOR,
                 'comensales' => max(1, (int) ($data['comensales'] ?? 1)),
                 'canal' => $canal,
                 'notas' => isset($data['notas']) ? trim((string) $data['notas']) ?: null : null,
+                'delivery_nombre' => isset($data['delivery_nombre'])
+                    ? (trim((string) $data['delivery_nombre']) ?: null)
+                    : null,
+                'delivery_telefono' => isset($data['delivery_telefono'])
+                    ? (trim((string) $data['delivery_telefono']) ?: null)
+                    : null,
+                'delivery_direccion' => isset($data['delivery_direccion'])
+                    ? (trim((string) $data['delivery_direccion']) ?: null)
+                    : null,
+                'delivery_zona_id' => isset($data['delivery_zona_id']) && $data['delivery_zona_id'] !== ''
+                    ? (string) $data['delivery_zona_id']
+                    : null,
+                'delivery_tarifa' => round((float) ($data['delivery_tarifa'] ?? 0), 2),
+                'delivery_estado' => $canal === Pedido::CANAL_DELIVERY
+                    ? Pedido::DELIVERY_RECIBIDO
+                    : null,
                 'subtotal' => 0,
                 'descuento' => 0,
-                'total' => 0,
+                'total' => round((float) ($data['delivery_tarifa'] ?? 0), 2),
                 'opened_by' => Auth::id(),
             ]);
         });
@@ -342,7 +361,8 @@ class PedidoService
 
         $subtotal = round($subtotal, 2);
         $descuento = DescuentoCobro::normalizar((float) $pedido->descuento, $subtotal);
-        $total = max(0, round($subtotal - $descuento, 2));
+        $tarifa = round((float) ($pedido->delivery_tarifa ?? 0), 2);
+        $total = max(0, round($subtotal - $descuento + $tarifa, 2));
 
         $pedido->forceFill([
             'subtotal' => $subtotal,

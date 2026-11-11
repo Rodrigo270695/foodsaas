@@ -64,6 +64,7 @@ export default function Nueva({
     const [clienteDoc, setClienteDoc] = useState('');
     const [descuento, setDescuento] = useState('0');
     const [motivoDescuento, setMotivoDescuento] = useState('');
+    const [ofertaCodigo, setOfertaCodigo] = useState('');
     const [busy, setBusy] = useState(false);
     const [pedidosOpen, setPedidosOpen] = useState(false);
     const [pedidoActivo, setPedidoActivo] = useState<PedidoPendiente | null>(
@@ -109,17 +110,22 @@ export default function Nueva({
             ),
         [cart],
     );
-    const descuentoNum = canApplyDescuento
-        ? Math.min(subtotal, Math.max(0, Number(descuento) || 0))
-        : 0;
+    const descuentoNum = Math.min(
+        subtotal,
+        Math.max(0, Number(descuento) || 0),
+    );
     const total = round2(Math.max(0, subtotal - descuentoNum));
 
     useEffect(() => {
-        if (!canApplyDescuento && descuento !== '0') {
+        if (
+            !canApplyDescuento &&
+            ofertaCodigo.trim() === '' &&
+            descuento !== '0'
+        ) {
             setDescuento('0');
             setMotivoDescuento('');
         }
-    }, [canApplyDescuento, descuento]);
+    }, [canApplyDescuento, descuento, ofertaCodigo]);
 
     function addProduct(p: Producto) {
         if (cobrandoPedido) {
@@ -221,11 +227,12 @@ export default function Nueva({
             router.post(
                 ventas.cobrar(pedidoActivo.id).url,
                 {
-                    descuento: descuentoNum,
+                    descuento: ofertaCodigo.trim() ? null : descuentoNum,
                     motivo_descuento:
                         descuentoNum > 0
                             ? motivoDescuento.trim() || null
                             : null,
+                    oferta_codigo: ofertaCodigo.trim() || null,
                     pagos,
                 },
                 { onFinish: () => setBusy(false) },
@@ -239,9 +246,10 @@ export default function Nueva({
                 tipo_comprobante: tipo,
                 cliente_nombre: clienteNombre.trim() || 'Varios',
                 cliente_documento: clienteDoc.trim() || null,
-                descuento: descuentoNum,
+                descuento: ofertaCodigo.trim() ? null : descuentoNum,
                 motivo_descuento:
                     descuentoNum > 0 ? motivoDescuento.trim() || null : null,
+                oferta_codigo: ofertaCodigo.trim() || null,
                 items: cart
                     .filter((l) => l.producto_id)
                     .map((l) => ({
@@ -425,10 +433,20 @@ export default function Nueva({
                     <CobroPanel
                         medios={medios}
                         descuento={descuento}
-                        onDescuentoChange={setDescuento}
+                        onDescuentoChange={(v) => {
+                            setOfertaCodigo('');
+                            setDescuento(v);
+                        }}
                         motivoDescuento={motivoDescuento}
                         onMotivoDescuentoChange={setMotivoDescuento}
                         canApplyDescuento={canApplyDescuento}
+                        ofertaCodigo={ofertaCodigo}
+                        onOfertaCodigoChange={setOfertaCodigo}
+                        onOfertaAplicada={(monto, codigo) => {
+                            setOfertaCodigo(codigo);
+                            setDescuento(String(monto));
+                            setMotivoDescuento(`Oferta ${codigo}`);
+                        }}
                         subtotal={subtotal}
                         descuentoNum={descuentoNum}
                         total={total}

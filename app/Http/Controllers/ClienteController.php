@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Http\Controllers\Concerns\RespondsToApiPeruConsulta;
 use App\Models\Cliente;
 use App\Models\Venta;
+use App\Services\Crm\ClienteCreditoService;
 use App\Services\Integrations\ApiPeruDniService;
 use App\Services\Integrations\ApiPeruRucService;
 use App\Support\Sedes\ActiveSedeContext;
@@ -87,6 +88,7 @@ class ClienteController extends Controller
                     'telefono' => $cliente->telefono,
                     'email' => $cliente->email,
                     'notas' => $cliente->notas,
+                    'saldo_credito' => (float) $cliente->saldo_credito,
                     'total_compras' => round($totalCompras, 2),
                     'ultima_venta' => $ultima?->toIso8601String(),
                 ];
@@ -186,6 +188,30 @@ class ClienteController extends Controller
         $cliente->delete();
 
         return back()->with('success', 'Cliente eliminado.');
+    }
+
+    public function abonarCredito(
+        Request $request,
+        Cliente $cliente,
+        ClienteCreditoService $credito,
+    ): RedirectResponse {
+        $this->tenantIdOrAbort();
+
+        $data = $request->validate([
+            'monto' => ['required', 'numeric', 'min:0.01'],
+            'motivo' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $credito->abonar(
+            $cliente,
+            (float) $data['monto'],
+            isset($data['motivo']) ? (string) $data['motivo'] : null,
+        );
+
+        return back()->with(
+            'success',
+            'Crédito abonado. Saldo: S/ '.number_format((float) $cliente->fresh()->saldo_credito, 2),
+        );
     }
 
     /**

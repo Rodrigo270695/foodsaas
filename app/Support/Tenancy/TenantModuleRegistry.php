@@ -33,6 +33,7 @@ final class TenantModuleRegistry
         'reportes',
         'delivery',
         'reservas',
+        'ofertas',
         'clientes',
         'sedes',
         'usuarios',
@@ -53,7 +54,7 @@ final class TenantModuleRegistry
             ],
             [
                 'group' => 'cobros',
-                'modules' => ['caja', 'ventas', 'clientes', 'reportes'],
+                'modules' => ['caja', 'ventas', 'clientes', 'reportes', 'ofertas'],
             ],
             [
                 'group' => 'catalogo',
@@ -86,6 +87,7 @@ final class TenantModuleRegistry
             'reservas' => 'modulo_reservas',
             'insumos' => 'modulo_recetas',
             'compras' => 'modulo_compras',
+            'ofertas' => 'modulo_ofertas',
             default => null,
         };
     }

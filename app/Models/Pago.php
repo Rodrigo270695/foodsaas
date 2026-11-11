@@ -32,6 +32,8 @@ class Pago extends Model
 
     public const MEDIO_OTRO = 'otro';
 
+    public const MEDIO_CREDITO = 'credito';
+
     public const MEDIOS = [
         self::MEDIO_EFECTIVO,
         self::MEDIO_TARJETA,
@@ -40,6 +42,7 @@ class Pago extends Model
         self::MEDIO_TRANSFERENCIA,
         self::MEDIO_AGORA,
         self::MEDIO_SIP,
+        self::MEDIO_CREDITO,
         self::MEDIO_OTRO,
     ];
 

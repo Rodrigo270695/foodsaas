@@ -80,6 +80,7 @@
         "transferencia": "Transfer",
         "agora": "Agora",
         "sip": "Sip",
+        "credito": "Credit",
         "otro": "Other"
     },
     "sesiones": {

@@ -142,8 +142,22 @@
             "descripcion": "Descripción",
             "descripcion_placeholder": "Opcional",
             "paginas": "Páginas",
-            "paginas_hint": "Hasta 8. Puedes agregar más en el canvas."
+            "paginas_hint": "Hasta 8. Puedes agregar más en el canvas.",
+            "vigente_desde": "Desde",
+            "vigente_hasta": "Hasta"
         },
+        "vigencia_title": "Vigencia y días",
+        "dias_hint": "Vacío = todos los días. ISO: lun=1 … dom=7.",
+        "dias": {
+            "lun": "Lun",
+            "mar": "Mar",
+            "mie": "Mié",
+            "jue": "Jue",
+            "vie": "Vie",
+            "sab": "Sáb",
+            "dom": "Dom"
+        },
+        "fuera_vigencia": "Esta carta está fuera de vigencia hoy (fecha o día).",
         "catalog_title": "Catálogo",
         "catalog_hint": "Arrastra o toca para agregar.",
         "catalog_search": "Buscar plato…",
@@ -181,7 +195,8 @@
         "save": "Guardar",
         "saved": "Canvas guardado",
         "preview": "Vista previa",
-        "pdf": "PDF / Imprimir"
+        "pdf": "Imprimir",
+        "pdf_download": "Descargar PDF"
     },
     "categoria_form": {
         "title_create": "Nueva categoría",

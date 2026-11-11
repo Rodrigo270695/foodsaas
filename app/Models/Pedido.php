@@ -42,20 +42,47 @@ class Pedido extends Model
 
     public const CANAL_DELIVERY = 'delivery';
 
+    public const DELIVERY_RECIBIDO = 'recibido';
+
+    public const DELIVERY_PREPARANDO = 'preparando';
+
+    public const DELIVERY_LISTO = 'listo';
+
+    public const DELIVERY_EN_CAMINO = 'en_camino';
+
+    public const DELIVERY_ENTREGADO = 'entregado';
+
+    public const DELIVERY_ESTADOS = [
+        self::DELIVERY_RECIBIDO,
+        self::DELIVERY_PREPARANDO,
+        self::DELIVERY_LISTO,
+        self::DELIVERY_EN_CAMINO,
+        self::DELIVERY_ENTREGADO,
+    ];
+
     protected $table = 'ope_pedidos';
 
     protected $fillable = [
         'sede_id',
         'mesa_id',
+        'cliente_id',
         'numero',
         'estado',
         'comensales',
         'canal',
         'notas',
+        'delivery_nombre',
+        'delivery_telefono',
+        'delivery_direccion',
+        'delivery_zona_id',
+        'delivery_tarifa',
+        'delivery_estado',
         'subtotal',
         'descuento',
         'motivo_descuento',
         'descuento_autorizado_por',
+        'oferta_id',
+        'oferta_codigo',
         'total',
         'opened_by',
         'enviado_at',
@@ -69,6 +96,7 @@ class Pedido extends Model
             'comensales' => 'integer',
             'subtotal' => 'decimal:2',
             'descuento' => 'decimal:2',
+            'delivery_tarifa' => 'decimal:2',
             'total' => 'decimal:2',
             'enviado_at' => 'datetime',
             'cerrado_at' => 'datetime',
@@ -94,6 +122,16 @@ class Pedido extends Model
     public function mesa(): BelongsTo
     {
         return $this->belongsTo(Mesa::class, 'mesa_id');
+    }
+
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    public function deliveryZona(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryZona::class, 'delivery_zona_id');
     }
 
     /**

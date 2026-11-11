@@ -13,6 +13,7 @@ const carta = {
         store: () => ({ url: `${base}/armar` }),
         edit: (id: string | number) => ({ url: `${base}/armar/${id}` }),
         preview: (id: string | number) => ({ url: `${base}/armar/${id}/vista` }),
+        pdf: (id: string | number) => ({ url: `${base}/armar/${id}/pdf` }),
         update: (id: string | number) => ({ url: `${base}/armar/${id}` }),
         syncItems: (id: string | number) => ({ url: `${base}/armar/${id}/items` }),
         destroy: (id: string | number) => ({ url: `${base}/armar/${id}` }),

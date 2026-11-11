@@ -7,6 +7,7 @@ import {
     ScreenShare,
     Trash2,
     Users,
+    Wallet,
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,12 +27,14 @@ import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
 import { formatPeruDateTime } from '@/lib/format-peru-datetime';
 import type { Paginated } from '@/types';
+import { ClienteCreditoModal } from './components/cliente-credito-modal';
 import {
     ClienteFormModal,
     type ClienteFormRow,
 } from './components/cliente-form-modal';
 
 type ClienteRow = ClienteFormRow & {
+    saldo_credito: number;
     total_compras: number;
     ultima_venta: string | null;
 };
@@ -56,6 +59,7 @@ type ModalState =
     | { type: 'idle' }
     | { type: 'create' }
     | { type: 'edit'; cliente: ClienteRow }
+    | { type: 'credito'; cliente: ClienteRow }
     | { type: 'delete'; cliente: ClienteRow };
 
 function money(value: number): string {
@@ -121,6 +125,16 @@ export default function ClientesIndex({ clientes, filters, stats }: Props) {
                 className: 'text-right',
             },
             {
+                id: 'credito',
+                header: t('clientes:columns.credito'),
+                cell: (row) => (
+                    <span className="tabular-nums text-sm font-medium">
+                        {money(row.saldo_credito ?? 0)}
+                    </span>
+                ),
+                className: 'text-right',
+            },
+            {
                 id: 'ultima',
                 header: t('clientes:columns.ultima_venta'),
                 cell: (row) => {
@@ -140,6 +154,25 @@ export default function ClientesIndex({ clientes, filters, stats }: Props) {
                 header: '',
                 cell: (row) => (
                     <div className="flex justify-end gap-0.5">
+                        {canUpdate ? (
+                            <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="size-8 shrink-0 cursor-pointer border-0 bg-transparent text-emerald-600 shadow-none hover:bg-emerald-500/10 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                onClick={() =>
+                                    setModal({ type: 'credito', cliente: row })
+                                }
+                                aria-label={t('clientes:credito.title')}
+                                title={t('clientes:credito.title')}
+                            >
+                                <Wallet
+                                    className="size-4"
+                                    strokeWidth={2.25}
+                                    aria-hidden
+                                />
+                            </Button>
+                        ) : null}
                         {canUpdate ? (
                             <Button
                                 type="button"
@@ -292,6 +325,24 @@ export default function ClientesIndex({ clientes, filters, stats }: Props) {
                     }
                 }}
                 cliente={modal.type === 'edit' ? modal.cliente : null}
+            />
+
+            <ClienteCreditoModal
+                open={modal.type === 'credito'}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeModal();
+                    }
+                }}
+                cliente={
+                    modal.type === 'credito'
+                        ? {
+                              id: modal.cliente.id,
+                              nombre: modal.cliente.nombre,
+                              saldo_credito: modal.cliente.saldo_credito ?? 0,
+                          }
+                        : null
+                }
             />
 
             <ConfirmDeleteDialog

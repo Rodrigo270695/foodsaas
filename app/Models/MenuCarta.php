@@ -35,6 +35,7 @@ class MenuCarta extends Model
         'publicada',
         'vigente_desde',
         'vigente_hasta',
+        'dias_semana',
     ];
 
     protected $appends = ['fondo_imagen_url'];
@@ -46,7 +47,37 @@ class MenuCarta extends Model
             'publicada' => 'boolean',
             'vigente_desde' => 'date',
             'vigente_hasta' => 'date',
+            'dias_semana' => 'array',
         ];
+    }
+
+    /**
+     * @param  \Carbon\CarbonInterface|null  $at
+     */
+    public function isVigenteAhora($at = null): bool
+    {
+        $at ??= now();
+        $hoy = $at->toDateString();
+
+        if ($this->vigente_desde !== null && $hoy < $this->vigente_desde->toDateString()) {
+            return false;
+        }
+
+        if ($this->vigente_hasta !== null && $hoy > $this->vigente_hasta->toDateString()) {
+            return false;
+        }
+
+        $dias = $this->dias_semana;
+        if (is_array($dias) && $dias !== []) {
+            // ISO: 1=lunes … 7=domingo
+            $dow = (int) $at->dayOfWeekIso;
+            $normalized = array_map('intval', $dias);
+            if (! in_array($dow, $normalized, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected function fondoImagenUrl(): Attribute

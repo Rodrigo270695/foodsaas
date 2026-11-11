@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, FileDown, Printer } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,16 @@ type PreviewProps = {
     carta: MenuCartaDetail;
     logo_url: string | null;
     auto_print?: boolean;
+    pdf_url?: string | null;
+    vigente_hoy?: boolean;
 };
 
 export default function Preview({
     carta: menu,
     logo_url,
     auto_print = false,
+    pdf_url = null,
+    vigente_hoy = true,
 }: PreviewProps) {
     const { t } = useTranslation('carta');
 
@@ -57,20 +61,41 @@ export default function Preview({
                             {t('builder.back_canvas')}
                         </Link>
                     </Button>
-                    <Button
-                        type="button"
-                        className="cursor-pointer gap-2"
-                        onClick={() => window.print()}
-                    >
-                        <Printer className="size-4" />
-                        {t('builder.pdf')}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        {pdf_url ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="cursor-pointer gap-2"
+                                asChild
+                            >
+                                <a href={pdf_url}>
+                                    <FileDown className="size-4" />
+                                    {t('builder.pdf_download')}
+                                </a>
+                            </Button>
+                        ) : null}
+                        <Button
+                            type="button"
+                            className="cursor-pointer gap-2"
+                            onClick={() => window.print()}
+                        >
+                            <Printer className="size-4" />
+                            {t('builder.pdf')}
+                        </Button>
+                    </div>
                 </div>
+
+                {!vigente_hoy ? (
+                    <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-800 print:hidden dark:text-amber-200">
+                        {t('builder.fuera_vigencia')}
+                    </p>
+                ) : null}
 
                 <p className="text-center text-xs text-muted-foreground print:hidden">
                     {t('builder.print_hint', {
                         defaultValue:
-                            'Usa «PDF / Imprimir» y elige «Guardar como PDF». Solo se imprime la hoja de la carta.',
+                            'Descarga el PDF del servidor o usa «Imprimir» → Guardar como PDF.',
                     })}
                 </p>
 

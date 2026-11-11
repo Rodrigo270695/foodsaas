@@ -57,18 +57,17 @@ export default function Cobrar({ pedido, sesion_abierta, medios }: Props) {
     const canApplyDescuento = can('descuentos.apply');
     const [medio, setMedio] = useState(medios[0] ?? 'efectivo');
     const [descuento, setDescuento] = useState(
-        canApplyDescuento ? String(pedido.descuento ?? 0) : '0',
+        String(pedido.descuento ?? 0),
     );
     const [motivoDescuento, setMotivoDescuento] = useState('');
+    const [ofertaCodigo, setOfertaCodigo] = useState('');
     const [monto, setMonto] = useState('');
     const [busy, setBusy] = useState(false);
 
-    const descuentoNum = canApplyDescuento
-        ? Math.min(
-              Number(pedido.subtotal) || 0,
-              Math.max(0, Number(descuento) || 0),
-          )
-        : 0;
+    const descuentoNum = Math.min(
+        Number(pedido.subtotal) || 0,
+        Math.max(0, Number(descuento) || 0),
+    );
 
     const totalAPagar = useMemo(() => {
         const base = Number(pedido.subtotal) - descuentoNum;
@@ -86,9 +85,10 @@ export default function Cobrar({ pedido, sesion_abierta, medios }: Props) {
         router.post(
             ventas.cobrar(pedido.id).url,
             {
-                descuento: descuentoNum,
+                descuento: ofertaCodigo.trim() ? null : descuentoNum,
                 motivo_descuento:
                     descuentoNum > 0 ? motivoDescuento.trim() || null : null,
+                oferta_codigo: ofertaCodigo.trim() || null,
                 pagos: [{ medio, monto: montoPago }],
             },
             { onFinish: () => setBusy(false) },
@@ -169,6 +169,18 @@ export default function Cobrar({ pedido, sesion_abierta, medios }: Props) {
                         </div>
 
                         <div className="grid gap-2">
+                            <Label>{t('nueva.oferta_codigo')}</Label>
+                            <Input
+                                value={ofertaCodigo}
+                                onChange={(e) =>
+                                    setOfertaCodigo(e.target.value.toUpperCase())
+                                }
+                                placeholder={t('nueva.oferta_placeholder')}
+                                className="uppercase"
+                                maxLength={40}
+                            />
+                        </div>
+                        <div className="grid gap-2">
                             <Label>{t('cobrar.descuento')}</Label>
                             {canApplyDescuento ? (
                                 <>
@@ -178,9 +190,10 @@ export default function Cobrar({ pedido, sesion_abierta, medios }: Props) {
                                         max={Number(pedido.subtotal) || undefined}
                                         step="0.01"
                                         value={descuento}
-                                        onChange={(e) =>
-                                            setDescuento(e.target.value)
-                                        }
+                                        onChange={(e) => {
+                                            setOfertaCodigo('');
+                                            setDescuento(e.target.value);
+                                        }}
                                     />
                                     {descuentoNum > 0 ? (
                                         <Input

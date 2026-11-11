@@ -38,6 +38,8 @@ export type MenuCartaRow = {
     publicada: boolean;
     vigente_desde: string | null;
     vigente_hasta: string | null;
+    /** ISO weekday 1=lun … 7=dom; null/[] = todos los días */
+    dias_semana?: number[] | null;
     items_count?: number;
     updated_at?: string;
 };

@@ -1,6 +1,6 @@
 {
     "title": "Delivery",
-    "description": "Pedidos a domicilio activos y recientes.",
+    "description": "Pedidos a domicilio con zonas, tarifas y estados de reparto.",
     "search_placeholder": "Buscar por número, cliente o dirección…",
     "toast": {
         "load_error": "No pudimos cargar los pedidos delivery."
@@ -14,6 +14,7 @@
     "stats": {
         "activos": "Activos",
         "hoy": "Hoy",
+        "en_camino": "En camino",
         "filtros": "Filtros",
         "coincidencias": "Coincidencias"
     },
@@ -25,14 +26,28 @@
     },
     "columns": {
         "pedido": "Pedido",
+        "cliente": "Cliente",
         "detalle": "Detalle",
+        "estado_delivery": "Reparto",
         "cocina": "Cocina",
         "total": "Total",
         "hora": "Hora"
     },
+    "estados": {
+        "recibido": "Recibido",
+        "preparando": "Preparando",
+        "listo": "Listo",
+        "en_camino": "En camino",
+        "entregado": "Entregado"
+    },
     "empty": {
         "title": "Sin pedidos delivery",
         "description": "Abre un pedido delivery para tomar la comanda."
+    },
+    "zonas": {
+        "create": "Nueva zona",
+        "nombre": "Nombre de zona",
+        "tarifa": "Tarifa (S/)"
     },
     "form": {
         "title": "Nuevo pedido delivery",
@@ -44,6 +59,11 @@
         "telefono_placeholder": "Ej. +51 999 888 777",
         "direccion": "Dirección",
         "direccion_placeholder": "Calle, número, distrito o referencia",
+        "zona": "Zona / tarifa",
+        "zona_placeholder": "Selecciona zona",
+        "zona_none": "Sin zona (tarifa 0)",
+        "zona_hint": "Opcional. La tarifa se suma al total del pedido.",
+        "zona_tarifa": "Tarifa de envío: S/ {{tarifa}}",
         "comensales": "Personas",
         "notas": "Indicaciones",
         "notas_hint": "Opcional: timbre, piso, color de fachada…",

@@ -5,28 +5,53 @@ import { useTranslation } from 'react-i18next';
 import { FormField, FormModal, FormSection } from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+
+export type DeliveryZonaOption = {
+    id: string;
+    nombre: string;
+    tarifa: string | number;
+    activa: boolean;
+};
 
 type DeliveryFormModalProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    zonas: DeliveryZonaOption[];
 };
 
 type FormData = {
     cliente_nombre: string;
     telefono: string;
     direccion: string;
+    zona_id: string;
     comensales: number;
     notas: string;
 };
 
-export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps) {
+export function DeliveryFormModal({
+    open,
+    onOpenChange,
+    zonas,
+}: DeliveryFormModalProps) {
     const { t } = useTranslation(['delivery', 'common']);
+    const activas = useMemo(
+        () => zonas.filter((z) => z.activa),
+        [zonas],
+    );
     const { data, setData, post, processing, errors, reset, clearErrors } =
         useForm<FormData>({
             cliente_nombre: '',
             telefono: '',
             direccion: '',
+            zona_id: '',
             comensales: 1,
             notas: '',
         });
@@ -41,11 +66,17 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
             cliente_nombre: '',
             telefono: '',
             direccion: '',
+            zona_id: '',
             comensales: 1,
             notas: '',
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
+
+    const tarifaZona = useMemo(() => {
+        const z = activas.find((x) => x.id === data.zona_id);
+        return z ? Number(z.tarifa) : 0;
+    }, [activas, data.zona_id]);
 
     const canSubmit = useMemo(() => {
         if (processing) {
@@ -154,6 +185,43 @@ export function DeliveryFormModal({ open, onOpenChange }: DeliveryFormModalProps
                         onChange={(e) => setData('direccion', e.target.value)}
                         placeholder={t('delivery:form.direccion_placeholder')}
                     />
+                </FormField>
+                <FormField
+                    id="delivery-zona"
+                    label={t('delivery:form.zona')}
+                    error={errors.zona_id}
+                    hint={
+                        tarifaZona > 0
+                            ? t('delivery:form.zona_tarifa', {
+                                  tarifa: tarifaZona.toFixed(2),
+                              })
+                            : t('delivery:form.zona_hint')
+                    }
+                    className="sm:col-span-2"
+                >
+                    <Select
+                        value={data.zona_id || '__none__'}
+                        onValueChange={(v) =>
+                            setData('zona_id', v === '__none__' ? '' : v)
+                        }
+                    >
+                        <SelectTrigger id="delivery-zona">
+                            <SelectValue
+                                placeholder={t('delivery:form.zona_placeholder')}
+                            />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="__none__">
+                                {t('delivery:form.zona_none')}
+                            </SelectItem>
+                            {activas.map((z) => (
+                                <SelectItem key={z.id} value={z.id}>
+                                    {z.nombre} · S/{' '}
+                                    {Number(z.tarifa).toFixed(2)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </FormField>
                 <FormField
                     id="delivery-comensales"

@@ -1,10 +1,10 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     Bike,
     CheckCircle2,
     ClipboardList,
     ExternalLink,
-    Filter,
+    MapPin,
     Plus,
     ScreenShare,
 } from 'lucide-react';
@@ -26,6 +26,13 @@ import {
     FilterSelect,
     type FilterSelectOption,
 } from '@/components/ui/filter-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useDataTablePage } from '@/hooks/use-data-table-page';
 import { usePermission } from '@/hooks/use-permission';
 import AppLayout from '@/layouts/app-layout';
@@ -33,11 +40,18 @@ import { formatPeruDateTime } from '@/lib/format-peru-datetime';
 import type { Paginated } from '@/types';
 import { todayIso } from '../pedidos/types';
 import { DeliveryFormModal } from './components/delivery-form-modal';
+import { DeliveryZonaModal } from './components/delivery-zona-modal';
 
 type PedidoRow = {
     id: string;
     numero: number;
     estado: string;
+    delivery_estado: string | null;
+    delivery_nombre: string | null;
+    delivery_telefono: string | null;
+    delivery_direccion: string | null;
+    delivery_tarifa: number;
+    zona: string | null;
     comensales: number;
     notas: string | null;
     total: string | number;
@@ -47,8 +61,17 @@ type PedidoRow = {
     created_at: string | null;
 };
 
+type ZonaRow = {
+    id: string;
+    nombre: string;
+    tarifa: string | number;
+    activa: boolean;
+    orden: number;
+};
+
 type Props = {
     pedidos: Paginated<PedidoRow>;
+    zonas: ZonaRow[];
     filters: {
         search: string;
         estado: string;
@@ -61,10 +84,19 @@ type Props = {
     stats: {
         activos: number;
         hoy: number;
+        en_camino: number;
         filtros: number;
         coincidencias: number;
     };
 };
+
+const DELIVERY_ESTADOS = [
+    'recibido',
+    'preparando',
+    'listo',
+    'en_camino',
+    'entregado',
+] as const;
 
 function money(value: string | number): string {
     return new Intl.NumberFormat('es-PE', {
@@ -74,10 +106,17 @@ function money(value: string | number): string {
     }).format(Number(value));
 }
 
-export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
+export default function DeliveryIndex({
+    pedidos,
+    zonas,
+    filters,
+    stats,
+}: Props) {
     const { t } = useTranslation(['delivery', 'common']);
     const canCreate = usePermission('delivery.create');
+    const canUpdate = usePermission('delivery.update');
     const [openNew, setOpenNew] = useState(false);
+    const [openZona, setOpenZona] = useState(false);
 
     const { search, setSearch, isLoading, setPerPage, applyFilter } =
         useDataTablePage<{
@@ -87,7 +126,7 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
         }>({
             routeUrl: '/delivery',
             initialFilters: filters,
-            only: ['pedidos', 'filters', 'stats'],
+            only: ['pedidos', 'filters', 'stats', 'zonas'],
             errorMessage: t('delivery:toast.load_error'),
             storageKey: 'foodsaas.delivery.prefs',
             defaults: { per_page: 15 },
@@ -110,6 +149,14 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
         [t],
     );
 
+    const setDeliveryEstado = (pedidoId: string, delivery_estado: string) => {
+        router.patch(
+            `/delivery/${pedidoId}/estado`,
+            { delivery_estado },
+            { preserveScroll: true },
+        );
+    };
+
     const columns = useMemo<DataTableColumn<PedidoRow>[]>(
         () => [
             {
@@ -130,13 +177,56 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                 ),
             },
             {
-                id: 'detalle',
-                header: t('delivery:columns.detalle'),
+                id: 'cliente',
+                header: t('delivery:columns.cliente'),
                 cell: (row) => (
-                    <div className="max-w-xs truncate text-sm">
-                        {row.notas || '—'}
+                    <div className="max-w-xs text-sm">
+                        <p className="font-medium">
+                            {row.delivery_nombre || '—'}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                            {row.delivery_direccion || row.notas || '—'}
+                        </p>
+                        {row.zona ? (
+                            <p className="text-[11px] text-muted-foreground">
+                                {row.zona}
+                                {row.delivery_tarifa > 0
+                                    ? ` · ${money(row.delivery_tarifa)}`
+                                    : ''}
+                            </p>
+                        ) : null}
                     </div>
                 ),
+            },
+            {
+                id: 'delivery_estado',
+                header: t('delivery:columns.estado_delivery'),
+                cell: (row) =>
+                    canUpdate ? (
+                        <Select
+                            value={row.delivery_estado || 'recibido'}
+                            onValueChange={(v) =>
+                                setDeliveryEstado(row.id, v)
+                            }
+                        >
+                            <SelectTrigger className="h-8 w-[8.5rem] text-xs">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {DELIVERY_ESTADOS.map((e) => (
+                                    <SelectItem key={e} value={e}>
+                                        {t(`delivery:estados.${e}`)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    ) : (
+                        <Badge variant="secondary" className="capitalize">
+                            {row.delivery_estado
+                                ? t(`delivery:estados.${row.delivery_estado}`)
+                                : '—'}
+                        </Badge>
+                    ),
             },
             {
                 id: 'cocina',
@@ -210,7 +300,7 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                 className: 'text-right',
             },
         ],
-        [t],
+        [t, canUpdate],
     );
 
     return (
@@ -234,6 +324,12 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                                 }),
                         },
                         {
+                            icon: MapPin,
+                            label: t('delivery:stats.en_camino'),
+                            value: stats.en_camino,
+                            variant: 'warning',
+                        },
+                        {
                             icon: CheckCircle2,
                             label: t('delivery:stats.hoy'),
                             value: stats.hoy,
@@ -247,12 +343,6 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                             },
                         },
                         {
-                            icon: Filter,
-                            label: t('delivery:stats.filtros'),
-                            value: stats.filtros,
-                            variant: 'warning',
-                        },
-                        {
                             icon: ScreenShare,
                             label: t('delivery:stats.coincidencias'),
                             value: stats.coincidencias,
@@ -260,23 +350,56 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                         },
                     ]}
                     action={
-                        <Can permission="delivery.create">
-                            <Button
-                                type="button"
-                                className="cursor-pointer gap-2"
-                                onClick={() => setOpenNew(true)}
-                            >
-                                <Plus className="size-4" strokeWidth={2.5} />
-                                <span className="hidden sm:inline">
-                                    {t('delivery:actions.new')}
-                                </span>
-                                <span className="sm:hidden">
-                                    {t('delivery:actions.new_short')}
-                                </span>
-                            </Button>
-                        </Can>
+                        <div className="flex flex-wrap gap-2">
+                            <Can permission="delivery.update">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="cursor-pointer gap-2"
+                                    onClick={() => setOpenZona(true)}
+                                >
+                                    <MapPin className="size-4" />
+                                    <span className="hidden sm:inline">
+                                        {t('delivery:zonas.create')}
+                                    </span>
+                                </Button>
+                            </Can>
+                            <Can permission="delivery.create">
+                                <Button
+                                    type="button"
+                                    className="cursor-pointer gap-2"
+                                    onClick={() => setOpenNew(true)}
+                                >
+                                    <Plus
+                                        className="size-4"
+                                        strokeWidth={2.5}
+                                    />
+                                    <span className="hidden sm:inline">
+                                        {t('delivery:actions.new')}
+                                    </span>
+                                    <span className="sm:hidden">
+                                        {t('delivery:actions.new_short')}
+                                    </span>
+                                </Button>
+                            </Can>
+                        </div>
                     }
                 />
+
+                {zonas.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {zonas.map((z) => (
+                            <Badge
+                                key={z.id}
+                                variant={z.activa ? 'secondary' : 'outline'}
+                                className="gap-1"
+                            >
+                                <MapPin className="size-3" />
+                                {z.nombre} · {money(z.tarifa)}
+                            </Badge>
+                        ))}
+                    </div>
+                ) : null}
 
                 <DataTable
                     columns={columns}
@@ -348,7 +471,12 @@ export default function DeliveryIndex({ pedidos, filters, stats }: Props) {
                 />
             </div>
 
-            <DeliveryFormModal open={openNew} onOpenChange={setOpenNew} />
+            <DeliveryFormModal
+                open={openNew}
+                onOpenChange={setOpenNew}
+                zonas={zonas}
+            />
+            <DeliveryZonaModal open={openZona} onOpenChange={setOpenZona} />
         </>
     );
 }

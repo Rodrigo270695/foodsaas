@@ -41,6 +41,7 @@ class PermissionsSeeder extends Seeder
         'clientes' => ['view', 'create', 'update', 'delete'],
         'reservas' => ['view', 'create', 'update', 'delete'],
         'delivery' => ['view', 'create', 'update'],
+        'ofertas' => ['view', 'create', 'update', 'delete', 'apply'],
         'config-general' => ['view', 'update'],
         'series' => ['view', 'create', 'update', 'delete'],
         'documentos' => ['view', 'create', 'send', 'cancel'],

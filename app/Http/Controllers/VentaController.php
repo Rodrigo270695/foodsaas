@@ -404,6 +404,7 @@ class VentaController extends Controller
             'cliente_documento' => ['nullable', 'string', 'max:20'],
             'descuento' => ['nullable', 'numeric', 'min:0'],
             'motivo_descuento' => ['nullable', 'string', 'max:200'],
+            'oferta_codigo' => ['nullable', 'string', 'max:40'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.producto_id' => ['required', 'uuid'],
             'items.*.cantidad' => ['required', 'numeric', 'min:0.001'],
@@ -530,6 +531,7 @@ class VentaController extends Controller
         $data = $request->validate([
             'descuento' => ['nullable', 'numeric', 'min:0'],
             'motivo_descuento' => ['nullable', 'string', 'max:200'],
+            'oferta_codigo' => ['nullable', 'string', 'max:40'],
             'pagos' => ['required', 'array', 'min:1'],
             'pagos.*.medio' => ['required', Rule::in(Pago::MEDIOS)],
             'pagos.*.monto' => ['required', 'numeric', 'min:0.01'],
@@ -541,6 +543,7 @@ class VentaController extends Controller
             $data['pagos'],
             isset($data['descuento']) ? (float) $data['descuento'] : null,
             isset($data['motivo_descuento']) ? (string) $data['motivo_descuento'] : null,
+            isset($data['oferta_codigo']) ? (string) $data['oferta_codigo'] : null,
         );
 
         return redirect()

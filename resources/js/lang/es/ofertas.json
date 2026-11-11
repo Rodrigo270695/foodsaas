@@ -1,0 +1,28 @@
+{
+    "title": "Ofertas",
+    "description": "Cupones y promociones aplicables en el cobro.",
+    "actions": {
+        "create": "Nueva oferta",
+        "save": "Guardar"
+    },
+    "fields": {
+        "codigo": "Código",
+        "nombre": "Nombre",
+        "tipo": "Tipo",
+        "valor": "Valor",
+        "tope": "Tope (S/)",
+        "usos_max": "Usos máx.",
+        "desde": "Desde",
+        "hasta": "Hasta",
+        "activa": "Activa"
+    },
+    "tipos": {
+        "monto": "Monto fijo",
+        "porcentaje": "Porcentaje"
+    },
+    "empty": "Aún no hay ofertas. Crea un código para el cobro.",
+    "stats": {
+        "total": "Ofertas",
+        "activas": "Vigentes hoy"
+    }
+}

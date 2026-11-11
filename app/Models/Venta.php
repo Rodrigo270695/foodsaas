@@ -74,6 +74,8 @@ class Venta extends Model
         'descuento',
         'motivo_descuento',
         'descuento_autorizado_por',
+        'oferta_id',
+        'oferta_codigo',
         'total',
         'created_by',
         'anulado_at',

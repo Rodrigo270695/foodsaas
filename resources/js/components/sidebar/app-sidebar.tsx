@@ -31,6 +31,7 @@ import {
     ShieldCheck,
     Sparkles,
     Store,
+    TicketPercent,
     UserCog,
     Users,
     UtensilsCrossed,
@@ -186,6 +187,14 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             permission: 'clientes.view',
                             context: 'tenant',
                             moduleKey: 'clientes',
+                        },
+                        {
+                            title: t('items.ofertas'),
+                            href: '/ofertas',
+                            icon: TicketPercent,
+                            permission: 'ofertas.view',
+                            context: 'tenant',
+                            moduleKey: 'ofertas',
                         },
                         {
                             title: t('items.reportes'),

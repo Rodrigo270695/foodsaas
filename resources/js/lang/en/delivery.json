@@ -1,6 +1,6 @@
 {
     "title": "Delivery",
-    "description": "Active and recent delivery orders.",
+    "description": "Delivery orders with zones, fees and dispatch statuses.",
     "search_placeholder": "Search by number, customer or address…",
     "toast": {
         "load_error": "We could not load delivery orders."
@@ -14,6 +14,7 @@
     "stats": {
         "activos": "Active",
         "hoy": "Today",
+        "en_camino": "On the way",
         "filtros": "Filters",
         "coincidencias": "Matches"
     },
@@ -25,14 +26,28 @@
     },
     "columns": {
         "pedido": "Order",
+        "cliente": "Customer",
         "detalle": "Details",
+        "estado_delivery": "Dispatch",
         "cocina": "Kitchen",
         "total": "Total",
         "hora": "Time"
     },
+    "estados": {
+        "recibido": "Received",
+        "preparando": "Preparing",
+        "listo": "Ready",
+        "en_camino": "On the way",
+        "entregado": "Delivered"
+    },
     "empty": {
         "title": "No delivery orders",
         "description": "Open a delivery order to start taking items."
+    },
+    "zonas": {
+        "create": "New zone",
+        "nombre": "Zone name",
+        "tarifa": "Fee (PEN)"
     },
     "form": {
         "title": "New delivery order",
@@ -44,6 +59,11 @@
         "telefono_placeholder": "E.g. +51 999 888 777",
         "direccion": "Address",
         "direccion_placeholder": "Street, number, district or landmark",
+        "zona": "Zone / fee",
+        "zona_placeholder": "Select zone",
+        "zona_none": "No zone (fee 0)",
+        "zona_hint": "Optional. The fee is added to the order total.",
+        "zona_tarifa": "Delivery fee: PEN {{tarifa}}",
         "comensales": "Guests",
         "notas": "Instructions",
         "notas_hint": "Optional: doorbell, floor, building color…",

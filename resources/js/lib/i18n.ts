@@ -42,6 +42,8 @@ import clientesEn from '@/lang/en/clientes.json';
 import clientesEs from '@/lang/es/clientes.json';
 import deliveryEn from '@/lang/en/delivery.json';
 import deliveryEs from '@/lang/es/delivery.json';
+import ofertasEn from '@/lang/en/ofertas.json';
+import ofertasEs from '@/lang/es/ofertas.json';
 import reservasEn from '@/lang/en/reservas.json';
 import reservasEs from '@/lang/es/reservas.json';
 import facturacionDocumentosEn from '@/lang/en/facturacion-documentos.json';
@@ -97,6 +99,7 @@ const resources = {
         dashboard: dashboardEs,
         clientes: clientesEs,
         delivery: deliveryEs,
+        ofertas: ofertasEs,
         reservas: reservasEs,
         'facturacion-documentos': facturacionDocumentosEs,
         usuarios: usuariosEs,
@@ -130,6 +133,7 @@ const resources = {
         dashboard: dashboardEn,
         clientes: clientesEn,
         delivery: deliveryEn,
+        ofertas: ofertasEn,
         reservas: reservasEn,
         'facturacion-documentos': facturacionDocumentosEn,
         usuarios: usuariosEn,
@@ -150,7 +154,7 @@ void i18n
         fallbackLng: DEFAULT_LOCALE,
         supportedLngs: SUPPORTED_LOCALES as unknown as string[],
         defaultNS: 'common',
-        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'insumos', 'compras', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'reportes', 'dashboard', 'clientes', 'delivery', 'reservas', 'facturacion-documentos', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
+        ns: ['common', 'nav', 'auth', 'settings', 'legal', 'roles', 'demo', 'general', 'sedes', 'carta', 'almacen', 'insumos', 'compras', 'salon', 'pedidos', 'cocina', 'caja', 'ventas', 'reportes', 'dashboard', 'clientes', 'delivery', 'ofertas', 'reservas', 'facturacion-documentos', 'usuarios', 'forms', 'planes', 'tenants', 'suscripciones', 'suscripcion', 'subscription-expiry'],
         interpolation: {
             escapeValue: false,
         },

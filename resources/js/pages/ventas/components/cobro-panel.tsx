@@ -33,6 +33,9 @@ type Props = {
     motivoDescuento?: string;
     onMotivoDescuentoChange?: (value: string) => void;
     canApplyDescuento?: boolean;
+    ofertaCodigo?: string;
+    onOfertaCodigoChange?: (value: string) => void;
+    onOfertaAplicada?: (descuento: number, codigo: string) => void;
     subtotal: number;
     descuentoNum: number;
     total: number;
@@ -51,6 +54,7 @@ const MEDIO_ICONS: Record<string, LucideIcon> = {
     transferencia: Building2,
     agora: Smartphone,
     sip: Smartphone,
+    credito: Wallet,
     otro: CircleDot,
 };
 
@@ -69,6 +73,9 @@ export function CobroPanel({
     motivoDescuento = '',
     onMotivoDescuentoChange,
     canApplyDescuento = false,
+    ofertaCodigo = '',
+    onOfertaCodigoChange,
+    onOfertaAplicada,
     subtotal,
     descuentoNum,
     total,
@@ -81,9 +88,59 @@ export function CobroPanel({
     const defaultMedio = medios[0] ?? 'efectivo';
 
     const [pagoMixtoModo, setPagoMixtoModo] = useState(false);
+    const [ofertaBusy, setOfertaBusy] = useState(false);
+    const [ofertaError, setOfertaError] = useState<string | null>(null);
     const [pagos, setPagos] = useState<PagoLine[]>([
         { medio: defaultMedio, monto: '', monto_recibido: '' },
     ]);
+
+    const aplicarOferta = async () => {
+        const codigo = ofertaCodigo.trim();
+        if (!codigo || !onOfertaAplicada) {
+            return;
+        }
+        setOfertaBusy(true);
+        setOfertaError(null);
+        try {
+            const csrf = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content');
+            const res = await fetch('/ofertas/preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ codigo, subtotal }),
+            });
+            const json = (await res.json()) as {
+                descuento?: number;
+                codigo?: string;
+                message?: string;
+                errors?: Record<string, string[]>;
+            };
+            if (!res.ok) {
+                const msg =
+                    json.errors?.oferta_codigo?.[0] ||
+                    json.errors?.codigo?.[0] ||
+                    json.message ||
+                    t('nueva.oferta_invalida');
+                setOfertaError(msg);
+                return;
+            }
+            onOfertaAplicada(
+                Number(json.descuento ?? 0),
+                String(json.codigo ?? codigo),
+            );
+        } catch {
+            setOfertaError(t('nueva.oferta_invalida'));
+        } finally {
+            setOfertaBusy(false);
+        }
+    };
 
     useEffect(() => {
         setPagos((prev) => {
@@ -363,6 +420,46 @@ export function CobroPanel({
                     </p>
                 ) : null}
             </div>
+
+            {onOfertaCodigoChange ? (
+                <div className="space-y-1">
+                    <Label htmlFor="oferta-codigo" className="text-xs">
+                        {t('nueva.oferta_codigo')}
+                    </Label>
+                    <div className="flex gap-1.5">
+                        <Input
+                            id="oferta-codigo"
+                            value={ofertaCodigo}
+                            onChange={(e) => {
+                                setOfertaError(null);
+                                onOfertaCodigoChange(
+                                    e.target.value.toUpperCase(),
+                                );
+                            }}
+                            placeholder={t('nueva.oferta_placeholder')}
+                            className="h-9 uppercase"
+                            maxLength={40}
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 shrink-0 cursor-pointer"
+                            disabled={
+                                ofertaBusy || ofertaCodigo.trim().length < 2
+                            }
+                            onClick={() => void aplicarOferta()}
+                        >
+                            {t('nueva.oferta_aplicar')}
+                        </Button>
+                    </div>
+                    {ofertaError ? (
+                        <p className="text-[11px] text-destructive">
+                            {ofertaError}
+                        </p>
+                    ) : null}
+                </div>
+            ) : null}
 
             <div className="space-y-1">
                 <Label htmlFor="descuento" className="text-xs">

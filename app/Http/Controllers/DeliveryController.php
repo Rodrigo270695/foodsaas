@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesActiveSede;
 use App\Http\Controllers\Concerns\ResolvesTenantId;
+use App\Models\DeliveryZona;
 use App\Models\Pedido;
 use App\Models\PedidoLinea;
 use App\Services\Operacion\PedidoService;
 use App\Support\Sedes\ActiveSedeContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,7 +44,7 @@ class DeliveryController extends Controller
             ->when($sedeId !== '', fn ($q) => $q->where('sede_id', $sedeId), fn ($q) => $q->whereRaw('1 = 0'));
 
         $query = (clone $base)
-            ->with(['openedBy:id,name'])
+            ->with(['openedBy:id,name', 'deliveryZona:id,nombre,tarifa'])
             ->withCount([
                 'lineas as lineas_pendientes_count' => fn ($q) => $q->where('estado', PedidoLinea::ESTADO_PENDIENTE),
                 'lineas as lineas_cola_count' => fn ($q) => $q->where('estado', PedidoLinea::ESTADO_EN_COLA),
@@ -67,7 +69,10 @@ class DeliveryController extends Controller
                 if (ctype_digit($search)) {
                     $q->orWhere('numero', (int) $search);
                 }
-                $q->orWhere('notas', 'ilike', "%{$search}%");
+                $q->orWhere('notas', 'ilike', "%{$search}%")
+                    ->orWhere('delivery_nombre', 'ilike', "%{$search}%")
+                    ->orWhere('delivery_telefono', 'ilike', "%{$search}%")
+                    ->orWhere('delivery_direccion', 'ilike', "%{$search}%");
             });
         }
 
@@ -78,6 +83,12 @@ class DeliveryController extends Controller
                 'id' => $p->id,
                 'numero' => $p->numero,
                 'estado' => $p->estado,
+                'delivery_estado' => $p->delivery_estado,
+                'delivery_nombre' => $p->delivery_nombre,
+                'delivery_telefono' => $p->delivery_telefono,
+                'delivery_direccion' => $p->delivery_direccion,
+                'delivery_tarifa' => (float) $p->delivery_tarifa,
+                'zona' => $p->deliveryZona?->nombre,
                 'comensales' => $p->comensales,
                 'notas' => $p->notas,
                 'total' => $p->total,
@@ -91,20 +102,22 @@ class DeliveryController extends Controller
         $hoy = now()->toDateString();
         $activosCount = (clone $base)->whereIn('estado', Pedido::ESTADOS_ACTIVOS)->count();
         $hoyCount = (clone $base)->whereDate('created_at', $hoy)->count();
+        $enCamino = (clone $base)
+            ->whereIn('estado', Pedido::ESTADOS_ACTIVOS)
+            ->where('delivery_estado', Pedido::DELIVERY_EN_CAMINO)
+            ->count();
 
-        $activeFilters = 0;
-        if ($estado !== 'activos') {
-            $activeFilters++;
-        }
-        if ($search !== '') {
-            $activeFilters++;
-        }
-        if ($desde !== $hoy || $hasta !== $hoy) {
-            $activeFilters++;
-        }
+        $zonas = $sedeId === ''
+            ? []
+            : DeliveryZona::query()
+                ->where('sede_id', $sedeId)
+                ->orderBy('orden')
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'tarifa', 'activa', 'orden']);
 
         return Inertia::render('delivery/index', [
             'pedidos' => $pedidos,
+            'zonas' => $zonas,
             'filters' => [
                 'search' => $search,
                 'estado' => $estado,
@@ -117,7 +130,8 @@ class DeliveryController extends Controller
             'stats' => [
                 'activos' => $activosCount,
                 'hoy' => $hoyCount,
-                'filtros' => $activeFilters,
+                'en_camino' => $enCamino,
+                'filtros' => ($estado !== 'activos' ? 1 : 0) + ($search !== '' ? 1 : 0),
                 'coincidencias' => $pedidos->total(),
             ],
         ]);
@@ -132,33 +146,91 @@ class DeliveryController extends Controller
             'cliente_nombre' => ['required', 'string', 'max:180'],
             'telefono' => ['nullable', 'string', 'max:40'],
             'direccion' => ['required', 'string', 'max:255'],
+            'zona_id' => ['nullable', 'uuid', Rule::exists('cfg_delivery_zonas', 'id')],
             'comensales' => ['nullable', 'integer', 'min:1', 'max:99'],
             'notas' => ['nullable', 'string', 'max:500'],
         ]);
+
+        $tarifa = 0.0;
+        $zonaId = $data['zona_id'] ?? null;
+        if (is_string($zonaId) && $zonaId !== '') {
+            $zona = DeliveryZona::query()
+                ->whereKey($zonaId)
+                ->where('sede_id', $sedeId)
+                ->where('activa', true)
+                ->first();
+            if ($zona === null) {
+                return back()->withErrors(['zona_id' => 'Zona no válida.']);
+            }
+            $tarifa = (float) $zona->tarifa;
+        }
 
         $cliente = trim((string) $data['cliente_nombre']);
         $telefono = trim((string) ($data['telefono'] ?? ''));
         $direccion = trim((string) $data['direccion']);
         $notasExtra = trim((string) ($data['notas'] ?? ''));
 
-        $parts = ["Cliente: {$cliente}", "Dir: {$direccion}"];
-        if ($telefono !== '') {
-            $parts[] = "Tel: {$telefono}";
-        }
-        if ($notasExtra !== '') {
-            $parts[] = $notasExtra;
-        }
-        $notas = implode(' · ', $parts);
-
         $pedido = $service->abrir($sedeId, [
             'canal' => Pedido::CANAL_DELIVERY,
             'comensales' => max(1, (int) ($data['comensales'] ?? 1)),
-            'notas' => mb_substr($notas, 0, 500),
+            'notas' => $notasExtra !== '' ? mb_substr($notasExtra, 0, 500) : null,
+            'delivery_nombre' => $cliente,
+            'delivery_telefono' => $telefono,
+            'delivery_direccion' => $direccion,
+            'delivery_zona_id' => $zonaId,
+            'delivery_tarifa' => $tarifa,
         ]);
 
         return redirect()
             ->route('pedidos.show', $pedido)
             ->with('success', 'Pedido delivery #'.$pedido->numero.' abierto.');
+    }
+
+    public function updateEstado(Request $request, Pedido $pedido): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        abort_unless($pedido->canal === Pedido::CANAL_DELIVERY, 404);
+        ActiveSedeContext::assertAccessible((string) $pedido->sede_id);
+
+        $data = $request->validate([
+            'delivery_estado' => ['required', 'string', Rule::in(Pedido::DELIVERY_ESTADOS)],
+        ]);
+
+        $pedido->delivery_estado = $data['delivery_estado'];
+        $pedido->save();
+
+        return back()->with('success', 'Estado delivery actualizado.');
+    }
+
+    public function storeZona(Request $request): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        $sedeId = $this->activeSedeIdOrAbort();
+
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:120'],
+            'tarifa' => ['required', 'numeric', 'min:0'],
+            'activa' => ['sometimes', 'boolean'],
+        ]);
+
+        DeliveryZona::query()->create([
+            'sede_id' => $sedeId,
+            'nombre' => trim((string) $data['nombre']),
+            'tarifa' => round((float) $data['tarifa'], 2),
+            'activa' => $request->boolean('activa', true),
+            'orden' => ((int) DeliveryZona::query()->where('sede_id', $sedeId)->max('orden')) + 1,
+        ]);
+
+        return back()->with('success', 'Zona de delivery creada.');
+    }
+
+    public function destroyZona(DeliveryZona $zona): RedirectResponse
+    {
+        $this->tenantIdOrAbort();
+        ActiveSedeContext::assertAccessible((string) $zona->sede_id);
+        $zona->delete();
+
+        return back()->with('success', 'Zona eliminada.');
     }
 
     /**

@@ -130,8 +130,22 @@
             "descripcion": "Description",
             "descripcion_placeholder": "Optional",
             "paginas": "Pages",
-            "paginas_hint": "Up to 8. You can add more on the canvas."
+            "paginas_hint": "Up to 8. You can add more on the canvas.",
+            "vigente_desde": "From",
+            "vigente_hasta": "Until"
         },
+        "vigencia_title": "Schedule & days",
+        "dias_hint": "Empty = every day. ISO: Mon=1 … Sun=7.",
+        "dias": {
+            "lun": "Mon",
+            "mar": "Tue",
+            "mie": "Wed",
+            "jue": "Thu",
+            "vie": "Fri",
+            "sab": "Sat",
+            "dom": "Sun"
+        },
+        "fuera_vigencia": "This menu is outside its schedule today (date or weekday).",
         "catalog_title": "Catalog",
         "catalog_hint": "Drag or tap to add.",
         "catalog_search": "Search dish…",
@@ -169,7 +183,8 @@
         "save": "Save",
         "saved": "Canvas saved",
         "preview": "Preview",
-        "pdf": "PDF / Print"
+        "pdf": "Print",
+        "pdf_download": "Download PDF"
     },
     "categoria_form": {
         "title_create": "New category",

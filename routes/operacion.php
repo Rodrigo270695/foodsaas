@@ -10,6 +10,7 @@ use App\Http\Controllers\CocinaController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\InsumoController;
+use App\Http\Controllers\OfertaController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PushSubscriptionController;
@@ -62,6 +63,9 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:carta.view')
                     ->get('armar/{menuCarta}/vista', [CartaMenuController::class, 'preview'])
                     ->name('menus.preview');
+                Route::middleware('permission:carta.export')
+                    ->get('armar/{menuCarta}/pdf', [CartaMenuController::class, 'pdf'])
+                    ->name('menus.pdf');
                 Route::middleware('permission:carta.armar')
                     ->patch('armar/{menuCarta}', [CartaMenuController::class, 'update'])
                     ->name('menus.update');
@@ -358,6 +362,10 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 ->delete('clientes/{cliente}', [ClienteController::class, 'destroy'])
                 ->whereUuid('cliente')
                 ->name('clientes.destroy');
+            Route::middleware('permission:clientes.update')
+                ->post('clientes/{cliente}/credito', [ClienteController::class, 'abonarCredito'])
+                ->whereUuid('cliente')
+                ->name('clientes.credito');
         });
 
         Route::prefix('reservas')
@@ -390,6 +398,40 @@ Route::middleware(['auth', 'verified', 'tenant.required', 'tenant.match-user', '
                 Route::middleware('permission:delivery.create')
                     ->post('/', [DeliveryController::class, 'store'])
                     ->name('store');
+                Route::middleware('permission:delivery.update')
+                    ->patch('{pedido}/estado', [DeliveryController::class, 'updateEstado'])
+                    ->whereUuid('pedido')
+                    ->name('estado');
+                Route::middleware('permission:delivery.update')
+                    ->post('zonas', [DeliveryController::class, 'storeZona'])
+                    ->name('zonas.store');
+                Route::middleware('permission:delivery.update')
+                    ->delete('zonas/{zona}', [DeliveryController::class, 'destroyZona'])
+                    ->whereUuid('zona')
+                    ->name('zonas.destroy');
+            });
+
+        Route::prefix('ofertas')
+            ->name('ofertas.')
+            ->middleware('tenant.module:ofertas')
+            ->group(function (): void {
+                Route::middleware('permission:ofertas.view')
+                    ->get('/', [OfertaController::class, 'index'])
+                    ->name('index');
+                Route::middleware('permission:ofertas.create')
+                    ->post('/', [OfertaController::class, 'store'])
+                    ->name('store');
+                Route::middleware('permission:ofertas.update')
+                    ->patch('{oferta}', [OfertaController::class, 'update'])
+                    ->whereUuid('oferta')
+                    ->name('update');
+                Route::middleware('permission:ofertas.delete')
+                    ->delete('{oferta}', [OfertaController::class, 'destroy'])
+                    ->whereUuid('oferta')
+                    ->name('destroy');
+                Route::middleware('permission:ofertas.apply|pedidos.cobrar|caja.cobrar|ventas.create')
+                    ->post('preview', [OfertaController::class, 'preview'])
+                    ->name('preview');
             });
 
         Route::prefix('ventas')

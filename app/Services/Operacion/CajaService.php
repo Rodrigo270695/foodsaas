@@ -259,6 +259,7 @@ class CajaService
         array $pagos,
         ?float $descuento = null,
         ?string $motivoDescuento = null,
+        ?string $ofertaCodigo = null,
     ): Venta
     {
         if (! $pedido->isActivo()) {
@@ -294,7 +295,7 @@ class CajaService
             ]);
         }
 
-        return DB::transaction(function () use ($pedido, $pagos, $descuento, $motivoDescuento, $sesion, $lineasCobrables): Venta {
+        return DB::transaction(function () use ($pedido, $pagos, $descuento, $motivoDescuento, $ofertaCodigo, $sesion, $lineasCobrables): Venta {
             /** @var Pedido $locked */
             $locked = Pedido::query()->whereKey($pedido->id)->lockForUpdate()->firstOrFail();
 
@@ -304,16 +305,34 @@ class CajaService
                 ]);
             }
 
-            if ($descuento !== null) {
+            $oferta = null;
+            $codigo = is_string($ofertaCodigo) ? trim($ofertaCodigo) : '';
+            if ($codigo !== '') {
+                $subtotalBase = (float) $locked->lineas()
+                    ->where('estado', '!=', PedidoLinea::ESTADO_ANULADO)
+                    ->sum('importe');
+                $resolved = app(\App\Services\Marketing\OfertaService::class)
+                    ->resolver($codigo, $subtotalBase, (string) $locked->sede_id);
+                $oferta = $resolved['oferta'];
+                $locked->descuento = $resolved['descuento'];
+                $locked->oferta_id = $oferta->id;
+                $locked->oferta_codigo = $oferta->codigo;
+                $motivoDescuento = $motivoDescuento ?: ('Oferta '.$oferta->codigo);
+            } elseif ($descuento !== null) {
                 $locked->descuento = round(max(0, $descuento), 2);
+                $locked->oferta_id = null;
+                $locked->oferta_codigo = null;
             }
+
             $this->pedidos->recalcularTotales($locked);
             $locked->refresh();
 
             $descuentoFinal = round((float) $locked->descuento, 2);
             /** @var \App\Models\User|null $actor */
             $actor = Auth::user();
-            DescuentoCobro::assertPuedeAplicar($actor, $descuentoFinal);
+            if ($oferta === null) {
+                DescuentoCobro::assertPuedeAplicar($actor, $descuentoFinal);
+            }
 
             $motivo = DescuentoCobro::normalizarMotivo($motivoDescuento, $descuentoFinal);
             $locked->forceFill([
@@ -350,6 +369,18 @@ class CajaService
                 }
             }
 
+            $creditoTotal = round(collect($pagos)
+                ->filter(fn ($p) => ($p['medio'] ?? '') === Pago::MEDIO_CREDITO)
+                ->sum(fn ($p) => (float) ($p['monto'] ?? 0)), 2);
+
+            if ($creditoTotal > 0) {
+                if ($locked->cliente_id === null || $locked->cliente_id === '') {
+                    throw ValidationException::withMessages([
+                        'pagos' => 'Para pagar con crédito vincula un cliente al pedido.',
+                    ]);
+                }
+            }
+
             $venta = Venta::query()->create([
                 'sede_id' => $locked->sede_id,
                 'pedido_id' => $locked->id,
@@ -358,13 +389,15 @@ class CajaService
                 'origen' => Venta::ORIGEN_PEDIDO,
                 'tipo_comprobante' => Venta::TIPO_TICKET,
                 'fel_estado' => Venta::FEL_SIN_CPE,
-                'cliente_nombre' => 'Varios',
+                'cliente_nombre' => $locked->delivery_nombre ?: 'Varios',
                 'cliente_documento' => null,
                 'estado' => Venta::ESTADO_PAGADA,
                 'subtotal' => $locked->subtotal,
                 'descuento' => $locked->descuento,
                 'motivo_descuento' => $locked->motivo_descuento,
                 'descuento_autorizado_por' => $locked->descuento_autorizado_por,
+                'oferta_id' => $locked->oferta_id,
+                'oferta_codigo' => $locked->oferta_codigo,
                 'total' => $locked->total,
                 'created_by' => Auth::id(),
             ]);
@@ -393,6 +426,26 @@ class CajaService
                         : null,
                 ]);
                 $restante = round($restante - $monto, 2);
+            }
+
+            if ($creditoTotal > 0 && $locked->cliente_id) {
+                $cliente = \App\Models\Cliente::query()->whereKey($locked->cliente_id)->first();
+                if ($cliente === null) {
+                    throw ValidationException::withMessages([
+                        'pagos' => 'Cliente de crédito no encontrado.',
+                    ]);
+                }
+                app(\App\Services\Crm\ClienteCreditoService::class)->cargar(
+                    $cliente,
+                    $creditoTotal,
+                    'Cobro pedido #'.$locked->numero,
+                    'venta',
+                    (string) $venta->id,
+                );
+            }
+
+            if ($oferta !== null) {
+                app(\App\Services\Marketing\OfertaService::class)->registrarUso($oferta);
             }
 
             foreach ($lineasCobrables as $linea) {
@@ -540,6 +593,12 @@ class CajaService
         $motivoDescuento = isset($data['motivo_descuento']) && is_string($data['motivo_descuento'])
             ? $data['motivo_descuento']
             : null;
+        $ofertaCodigo = isset($data['oferta_codigo']) && is_string($data['oferta_codigo'])
+            ? trim($data['oferta_codigo'])
+            : null;
+        if ($ofertaCodigo === '') {
+            $ofertaCodigo = null;
+        }
 
         return DB::transaction(function () use (
             $sedeId,
@@ -547,6 +606,7 @@ class CajaService
             $pagos,
             $descuento,
             $motivoDescuento,
+            $ofertaCodigo,
             $tipo,
             $clienteNombre,
             $clienteDoc,
@@ -608,7 +668,13 @@ class CajaService
             $this->pedidos->recalcularTotales($pedido);
             $pedido->refresh();
 
-            $venta = $this->cobrarPedido($pedido, $pagos, $descuento, $motivoDescuento);
+            $venta = $this->cobrarPedido(
+                $pedido,
+                $pagos,
+                $ofertaCodigo !== null ? null : $descuento,
+                $motivoDescuento,
+                $ofertaCodigo,
+            );
 
             $venta->forceFill([
                 'origen' => Venta::ORIGEN_RAPIDA,

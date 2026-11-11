@@ -20,7 +20,15 @@
         "nombre": "Cliente",
         "contacto": "Contacto",
         "compras": "Compras",
+        "credito": "Crédito",
         "ultima_venta": "Última venta"
+    },
+    "credito": {
+        "title": "Abonar crédito",
+        "description": "{{name}} · saldo actual S/ {{saldo}}",
+        "monto": "Monto a abonar",
+        "motivo": "Motivo (opcional)",
+        "submit": "Abonar"
     },
     "empty": {
         "title": "Sin clientes",

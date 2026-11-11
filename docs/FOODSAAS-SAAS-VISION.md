@@ -26,7 +26,7 @@ tenancy (subdominio + schema), panel `/plataforma/*`, API de provisioning Orvae,
 
 **Diferenciador frente a Restaurant.pe:** Orvae checkout nativo, permisos granulares, FEL Lucode integrado al cobro, PWA mesero/cocina, multi-tenant schema, overrides de módulos por tenant + middleware `tenant.module`.
 
-**Próximo hito de producto (mercado, no arquitectura):** Fase B restante — carta avanzada / delivery avanzado / créditos-ofertas; Cortes 1–2 + descuentos gerente + realtime Reverb ya entregados; luego cadenas / franquicia.
+**Próximo hito de producto (mercado, no arquitectura):** Fase B operativa cerrada en MVP (carta avanzada, delivery zonas/estados, ofertas + crédito cliente); siguiente: Fase C cadenas / franquicia.
 
 ---
 
@@ -426,10 +426,12 @@ Lo que el cliente paga en Starter/Pro ya tiene superficie usable:
 
 - [x] **Corte 1:** Recetas / BOM + consumo al cobrar → foodcost básico (`modulo_recetas` / módulo `insumos`: CRUD insumos, BOM en carta recipe, baja/reverso al cobrar/anular, sección foodcost en reportes)
 - [x] **Corte 2:** Compras OC → recepción (parcial/total) → stock (`modulo_compras`: proveedores, OC de insumos + productos SKU, kardex entrada y costo)
-- [x] **Descuentos gerente (MVP):** permiso `descuentos.apply` (gerente/admin), tope ≤ subtotal, motivo opcional + auditoría `descuento_autorizado_por` en pedido/venta; cajero no edita descuento en cobro. Créditos a cuenta y catálogo de ofertas = pendiente.
+- [x] **Descuentos gerente (MVP):** permiso `descuentos.apply` (gerente/admin), tope ≤ subtotal, motivo opcional + auditoría `descuento_autorizado_por` en pedido/venta; cajero no edita descuento en cobro.
 - [x] **Realtime cocina/mesero (Reverb):** canal privado `tenant.{id}.sede.{sede}.servicio`, evento `servicio.updated` al enviar/listo/entregar; Echo en feed + tablero cocina/comanda; polling lento (45s) como respaldo si Reverb no corre.
-- [ ] Carta avanzada: PDF server-side, horarios vigentes, deep link mesero
-- [ ] Delivery avanzado: zonas/tarifas e integraciones apps
+- [x] **Carta avanzada (MVP):** vigencia `vigente_desde/hasta` + `dias_semana`, PDF Dompdf (`/carta/armar/{id}/pdf`), deep link público `/m/{slug}?mesa={uuid}` con CTA mesero.
+- [x] **Delivery avanzado (MVP):** zonas/tarifas (`cfg_delivery_zonas`), estados de reparto (`recibido→entregado`), UI listado + alta con zona.
+- [x] **Ofertas + crédito cliente (MVP):** catálogo `mkt_ofertas` + preview/aplicar en cobro; `saldo_credito` + abono en clientes; medio de pago `credito` en cobro de pedido vinculado.
+- [ ] Integraciones apps delivery (Rappi/PedidosYa) — post-MVP
 
 ### Fase C — Cadenas / franquicia (6–8 semanas)
 

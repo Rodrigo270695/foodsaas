@@ -20,7 +20,15 @@
         "nombre": "Customer",
         "contacto": "Contact",
         "compras": "Purchases",
+        "credito": "Credit",
         "ultima_venta": "Last sale"
+    },
+    "credito": {
+        "title": "Add credit",
+        "description": "{{name}} · current balance PEN {{saldo}}",
+        "monto": "Amount to add",
+        "motivo": "Reason (optional)",
+        "submit": "Add credit"
     },
     "empty": {
         "title": "No customers",

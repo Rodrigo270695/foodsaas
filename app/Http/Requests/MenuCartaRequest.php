@@ -44,6 +44,8 @@ class MenuCartaRequest extends FormRequest
             'publicada' => ['sometimes', 'boolean'],
             'vigente_desde' => ['nullable', 'date'],
             'vigente_hasta' => ['nullable', 'date', 'after_or_equal:vigente_desde'],
+            'dias_semana' => ['nullable', 'array'],
+            'dias_semana.*' => ['integer', 'min:1', 'max:7'],
         ];
     }
 
@@ -85,6 +87,18 @@ class MenuCartaRequest extends FormRequest
         $color = trim((string) $this->input('color_texto', ''));
         $tipografia = trim((string) $this->input('tipografia', ''));
 
+        $dias = $this->input('dias_semana');
+        $diasNorm = null;
+        if (is_array($dias)) {
+            $diasNorm = array_values(array_unique(array_map(
+                static fn ($d) => (int) $d,
+                array_filter($dias, static fn ($d) => $d !== null && $d !== ''),
+            )));
+            if ($diasNorm === []) {
+                $diasNorm = null;
+            }
+        }
+
         $this->merge([
             'nombre' => trim((string) $this->input('nombre', '')),
             'descripcion' => trim((string) $this->input('descripcion', '')) ?: null,
@@ -93,6 +107,9 @@ class MenuCartaRequest extends FormRequest
             'color_texto' => $color !== '' ? $color : null,
             'paginas' => $this->filled('paginas') ? (int) $this->input('paginas') : 1,
             'publicada' => $this->boolean('publicada'),
+            'vigente_desde' => $this->filled('vigente_desde') ? $this->input('vigente_desde') : null,
+            'vigente_hasta' => $this->filled('vigente_hasta') ? $this->input('vigente_hasta') : null,
+            'dias_semana' => $diasNorm,
         ]);
     }
 }

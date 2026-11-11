@@ -1,0 +1,28 @@
+{
+    "title": "Offers",
+    "description": "Coupons and promos you can apply at checkout.",
+    "actions": {
+        "create": "New offer",
+        "save": "Save"
+    },
+    "fields": {
+        "codigo": "Code",
+        "nombre": "Name",
+        "tipo": "Type",
+        "valor": "Value",
+        "tope": "Cap (PEN)",
+        "usos_max": "Max uses",
+        "desde": "From",
+        "hasta": "Until",
+        "activa": "Active"
+    },
+    "tipos": {
+        "monto": "Fixed amount",
+        "porcentaje": "Percentage"
+    },
+    "empty": "No offers yet. Create a code for checkout.",
+    "stats": {
+        "total": "Offers",
+        "activas": "Valid today"
+    }
+}

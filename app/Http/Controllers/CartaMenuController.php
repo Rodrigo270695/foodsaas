@@ -9,9 +9,12 @@ use App\Models\MenuCarta;
 use App\Models\MenuCartaItem;
 use App\Models\ProductoCarta;
 use App\Models\RestaurantSetting;
+use App\Support\Restaurante\RestaurantBrandingUrls;
 use App\Support\Sedes\ActiveSedeContext;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -192,13 +195,43 @@ class CartaMenuController extends Controller
         ]);
 
         $logo = RestaurantSetting::current()->logo_url
-            ?: \App\Support\Restaurante\RestaurantBrandingUrls::default();
+            ?: RestaurantBrandingUrls::default();
 
         return Inertia::render('carta/builder/preview', [
             'carta' => $menuCarta,
             'logo_url' => $logo,
             'auto_print' => $request->boolean('print'),
+            'vigente_hoy' => $menuCarta->isVigenteAhora(),
+            'pdf_url' => route('carta.menus.pdf', $menuCarta),
         ]);
+    }
+
+    public function pdf(MenuCarta $menuCarta): HttpResponse
+    {
+        $this->tenantIdOrAbort();
+        $this->assertMenuSede($menuCarta);
+
+        $menuCarta->load([
+            'items.producto:id,nombre,precio,descripcion,categoria_id',
+            'items.producto.categoria:id,nombre',
+        ]);
+
+        $logo = RestaurantSetting::current()->logo_url
+            ?: RestaurantBrandingUrls::default();
+
+        $byPage = $menuCarta->items
+            ->groupBy(fn ($item) => (int) $item->pagina)
+            ->sortKeys();
+
+        $pdf = Pdf::loadView('pdf.carta-menu', [
+            'carta' => $menuCarta,
+            'logo_url' => $logo,
+            'pages' => $byPage,
+        ])->setPaper('a4');
+
+        $filename = 'carta-'.$menuCarta->slug.'.pdf';
+
+        return $pdf->download($filename);
     }
 
     private function assertMenuSede(MenuCarta $menuCarta): void

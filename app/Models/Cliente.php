@@ -31,7 +31,15 @@ class Cliente extends Model
         'telefono',
         'email',
         'notas',
+        'saldo_credito',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'saldo_credito' => 'decimal:2',
+        ];
+    }
 
     /**
      * @return BelongsTo<Sede, $this>
@@ -47,5 +55,13 @@ class Cliente extends Model
     public function reservas(): HasMany
     {
         return $this->hasMany(Reserva::class, 'cliente_id');
+    }
+
+    /**
+     * @return HasMany<CreditoMovimiento, $this>
+     */
+    public function creditoMovimientos(): HasMany
+    {
+        return $this->hasMany(CreditoMovimiento::class, 'cliente_id')->orderByDesc('created_at');
     }
 }

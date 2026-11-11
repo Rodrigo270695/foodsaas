@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ResolvesTenantId;
 use App\Models\MenuCarta;
+use App\Models\Mesa;
 use App\Models\RestaurantSetting;
 use App\Support\Restaurante\RestaurantBrandingUrls;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class PublicMenuController extends Controller
 
     /**
      * Carta pública por slug (QR / link compartido).
-     * Anónimos: solo publicada. Staff con carta.view: puede ver borrador.
+     * Anónimos: solo publicada y vigente. Staff con carta.view: puede ver borrador/fuera de vigencia.
      */
     public function show(Request $request, string $slug): Response
     {
@@ -40,14 +41,38 @@ class PublicMenuController extends Controller
             abort(404);
         }
 
+        $vigente = $menu->isVigenteAhora();
+        if ($menu->publicada && ! $vigente && ! $canPreviewDraft) {
+            abort(404);
+        }
+
         $logo = RestaurantSetting::current()->logo_url
             ?: RestaurantBrandingUrls::default();
+
+        $mesaId = trim((string) $request->string('mesa', ''));
+        $mesaPayload = null;
+        $canPedir = false;
+
+        if ($mesaId !== '') {
+            $mesa = Mesa::query()->whereKey($mesaId)->where('activa', true)->first();
+            if ($mesa !== null) {
+                $mesaPayload = [
+                    'id' => $mesa->id,
+                    'codigo' => $mesa->codigo,
+                    'nombre' => $mesa->nombre,
+                ];
+                $canPedir = $request->user()?->can('pedidos.create') === true;
+            }
+        }
 
         return Inertia::render('carta/public-menu', [
             'carta' => $menu,
             'logo_url' => $logo,
             'unpublished' => ! $menu->publicada,
+            'fuera_vigencia' => ! $vigente,
             'nombre' => $menu->nombre,
+            'mesa' => $mesaPayload,
+            'can_pedir' => $canPedir,
         ]);
     }
 }

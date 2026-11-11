@@ -20,6 +20,7 @@ const clientes = {
     store: () => ({ url: base }),
     update: (id: string) => ({ url: `${base}/${id}` }),
     destroy: (id: string) => ({ url: `${base}/${id}` }),
+    credito: (id: string) => ({ url: `${base}/${id}/credito` }),
     /** Igual que `/configuracion/usuarios/consulta-dni` */
     consultaDni: (dni: string) => ({
         url: `${consultaBase}/consulta-dni?dni=${encodeURIComponent(dni)}`,

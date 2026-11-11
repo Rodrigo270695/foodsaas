@@ -69,7 +69,30 @@ export default function BuilderEdit({
     const [nombre, setNombre] = useState(initial.nombre);
     const [publicada, setPublicada] = useState(initial.publicada);
     const [paginas, setPaginas] = useState(initial.paginas);
+    const [vigenteDesde, setVigenteDesde] = useState(
+        initial.vigente_desde ?? '',
+    );
+    const [vigenteHasta, setVigenteHasta] = useState(
+        initial.vigente_hasta ?? '',
+    );
+    const [diasSemana, setDiasSemana] = useState<number[]>(
+        Array.isArray(initial.dias_semana) ? initial.dias_semana : [],
+    );
     const [saving, setSaving] = useState(false);
+
+    const DIAS = useMemo(
+        () =>
+            [
+                { id: 1, label: t('builder.dias.lun') },
+                { id: 2, label: t('builder.dias.mar') },
+                { id: 3, label: t('builder.dias.mie') },
+                { id: 4, label: t('builder.dias.jue') },
+                { id: 5, label: t('builder.dias.vie') },
+                { id: 6, label: t('builder.dias.sab') },
+                { id: 7, label: t('builder.dias.dom') },
+            ] as const,
+        [t],
+    );
 
     const [pageItems, setPageItems] = useState<Record<number, string[]>>(() => {
         const map: Record<number, string[]> = {};
@@ -164,8 +187,9 @@ export default function BuilderEdit({
                 color_texto: colorTexto.trim() || null,
                 paginas,
                 publicada,
-                vigente_desde: initial.vigente_desde,
-                vigente_hasta: initial.vigente_hasta,
+                vigente_desde: vigenteDesde || null,
+                vigente_hasta: vigenteHasta || null,
+                dias_semana: diasSemana.length > 0 ? diasSemana : null,
             },
             {
                 preserveScroll: true,
@@ -186,8 +210,7 @@ export default function BuilderEdit({
     };
 
     const printPdf = () => {
-        // Misma vista limpia (sin sidebar) + diálogo de impresión.
-        router.visit(`${carta.menus.preview(initial.id).url}?print=1`);
+        window.open(carta.menus.pdf(initial.id).url, '_blank', 'noopener');
     };
 
     useEffect(() => {
@@ -401,6 +424,82 @@ export default function BuilderEdit({
                                 </span>
                             </span>
                         </label>
+
+                        <div className="space-y-2 rounded-xl border border-border/60 p-3">
+                            <p className="text-xs font-medium text-muted-foreground">
+                                {t('builder.vigencia_title')}
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                    <label
+                                        htmlFor="carta-desde"
+                                        className="text-[11px] text-muted-foreground"
+                                    >
+                                        {t('builder.fields.vigente_desde')}
+                                    </label>
+                                    <Input
+                                        id="carta-desde"
+                                        type="date"
+                                        value={vigenteDesde}
+                                        onChange={(e) =>
+                                            setVigenteDesde(e.target.value)
+                                        }
+                                        className="h-8"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label
+                                        htmlFor="carta-hasta"
+                                        className="text-[11px] text-muted-foreground"
+                                    >
+                                        {t('builder.fields.vigente_hasta')}
+                                    </label>
+                                    <Input
+                                        id="carta-hasta"
+                                        type="date"
+                                        value={vigenteHasta}
+                                        onChange={(e) =>
+                                            setVigenteHasta(e.target.value)
+                                        }
+                                        className="h-8"
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                                {t('builder.dias_hint')}
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {DIAS.map((d) => {
+                                    const on = diasSemana.includes(d.id);
+
+                                    return (
+                                        <button
+                                            key={d.id}
+                                            type="button"
+                                            onClick={() =>
+                                                setDiasSemana((prev) =>
+                                                    on
+                                                        ? prev.filter(
+                                                              (x) => x !== d.id,
+                                                          )
+                                                        : [...prev, d.id].sort(
+                                                              (a, b) => a - b,
+                                                          ),
+                                                )
+                                            }
+                                            className={cn(
+                                                'h-7 cursor-pointer rounded-md border px-2 text-[11px] font-medium transition-colors',
+                                                on
+                                                    ? 'border-brand-600 bg-brand-600/10 text-brand-800'
+                                                    : 'border-border/70 text-muted-foreground hover:bg-muted/50',
+                                            )}
+                                        >
+                                            {d.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
                         <MenuQrPanel
                             publicPath={public_path}
