@@ -134,51 +134,71 @@ return new class extends TenantMigration
                 });
             }
 
+            // PostgreSQL: no usar try/catch alrededor de DDL fallido sin ROLLBACK
+            // (deja la transacción en 25P02 y el siguiente Schema::* explota).
             if (Schema::hasTable('fel_documents')) {
-                if (! Schema::hasColumn('fel_documents', 'documento_afectado_id')) {
-                    Schema::table('fel_documents', function (Blueprint $table): void {
-                        $table->uuid('documento_afectado_id')->nullable()->after('venta_id');
-                        $table->string('nota_motivo_codigo', 10)->nullable()->after('documento_afectado_id');
-                        $table->string('nota_motivo_descripcion', 250)->nullable()->after('nota_motivo_codigo');
-                        $table->json('guia_datos')->nullable()->after('nota_motivo_descripcion');
-                    });
+                DB::statement('ALTER TABLE fel_documents ADD COLUMN IF NOT EXISTS documento_afectado_id uuid NULL');
+                DB::statement('ALTER TABLE fel_documents ADD COLUMN IF NOT EXISTS nota_motivo_codigo varchar(10) NULL');
+                DB::statement('ALTER TABLE fel_documents ADD COLUMN IF NOT EXISTS nota_motivo_descripcion varchar(250) NULL');
+                DB::statement('ALTER TABLE fel_documents ADD COLUMN IF NOT EXISTS guia_datos json NULL');
 
-                    try {
-                        Schema::table('fel_documents', function (Blueprint $table): void {
-                            $table->foreign('documento_afectado_id')
-                                ->references('id')
-                                ->on('fel_documents')
-                                ->nullOnDelete();
-                        });
-                    } catch (Throwable) {
+                if (! $this->hasConstraint('fel_documents', 'fel_documents_documento_afectado_id_foreign')) {
+                    DB::statement(
+                        'ALTER TABLE fel_documents
+                         ADD CONSTRAINT fel_documents_documento_afectado_id_foreign
+                         FOREIGN KEY (documento_afectado_id) REFERENCES fel_documents (id) ON DELETE SET NULL',
+                    );
+                }
+
+                // Quitar UNIQUE de venta_id (NC/ND pueden compartir venta).
+                $uniqueNames = DB::select(
+                    "SELECT c.conname
+                     FROM pg_constraint c
+                     JOIN pg_class t ON t.oid = c.conrelid
+                     JOIN pg_namespace n ON n.oid = t.relnamespace
+                     WHERE n.nspname = current_schema()
+                       AND t.relname = 'fel_documents'
+                       AND c.contype = 'u'
+                       AND pg_get_constraintdef(c.oid) ILIKE '%(venta_id)%'",
+                );
+                foreach ($uniqueNames as $row) {
+                    $name = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $row->conname);
+                    if ($name !== '') {
+                        DB::statement("ALTER TABLE fel_documents DROP CONSTRAINT IF EXISTS {$name}");
                     }
                 }
 
-                try {
-                    DB::statement('ALTER TABLE fel_documents DROP CONSTRAINT IF EXISTS fel_documents_venta_id_unique');
-                } catch (Throwable) {
-                }
-
-                try {
-                    Schema::table('fel_documents', function (Blueprint $table): void {
-                        $table->dropUnique(['venta_id']);
-                    });
-                } catch (Throwable) {
-                }
-
-                if (Schema::hasColumn('fel_documents', 'venta_id')) {
-                    try {
-                        DB::statement('ALTER TABLE fel_documents ALTER COLUMN venta_id DROP NOT NULL');
-                    } catch (Throwable) {
+                // También índices unique huérfanos (Laravel a veces crea índice aparte).
+                $uniqueIndexes = DB::select(
+                    "SELECT i.relname AS index_name
+                     FROM pg_index x
+                     JOIN pg_class t ON t.oid = x.indrelid
+                     JOIN pg_class i ON i.oid = x.indexrelid
+                     JOIN pg_namespace n ON n.oid = t.relnamespace
+                     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY (x.indkey)
+                     WHERE n.nspname = current_schema()
+                       AND t.relname = 'fel_documents'
+                       AND x.indisunique = true
+                       AND x.indisprimary = false
+                       AND a.attname = 'venta_id'
+                       AND NOT EXISTS (
+                           SELECT 1 FROM pg_constraint c
+                           WHERE c.conindid = x.indexrelid
+                       )",
+                );
+                foreach ($uniqueIndexes as $row) {
+                    $name = preg_replace('/[^a-zA-Z0-9_]/', '', (string) $row->index_name);
+                    if ($name !== '') {
+                        DB::statement("DROP INDEX IF EXISTS {$name}");
                     }
                 }
+
+                DB::statement('ALTER TABLE fel_documents ALTER COLUMN venta_id DROP NOT NULL');
             }
 
-            if (Schema::hasTable('ope_pedidos') && ! Schema::hasColumn('ope_pedidos', 'origen_externo')) {
-                Schema::table('ope_pedidos', function (Blueprint $table): void {
-                    $table->string('origen_externo', 40)->nullable()->after('canal');
-                    $table->string('external_order_id', 120)->nullable()->after('origen_externo');
-                });
+            if (Schema::hasTable('ope_pedidos')) {
+                DB::statement('ALTER TABLE ope_pedidos ADD COLUMN IF NOT EXISTS origen_externo varchar(40) NULL');
+                DB::statement('ALTER TABLE ope_pedidos ADD COLUMN IF NOT EXISTS external_order_id varchar(120) NULL');
             }
         });
     }
