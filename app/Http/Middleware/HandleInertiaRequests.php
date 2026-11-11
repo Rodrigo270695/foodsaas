@@ -8,6 +8,7 @@ use App\Support\Operacion\ServicioRealtimeFeed;
 use App\Support\Plan\PlanLimits;
 use App\Support\Restaurante\RestaurantBrandingUrls;
 use App\Support\Sedes\ActiveSedeContext;
+use App\Support\Tenancy\ClinicAdminScope;
 use App\Support\Tenancy\TenantModuleRegistry;
 use App\Support\Tenancy\TenantSubdomainUrl;
 use Illuminate\Http\Request;
@@ -248,6 +249,13 @@ class HandleInertiaRequests extends Middleware
 
         try {
             if ($user->isPlatformSuperadmin()) {
+                // En impersonación el UI debe ver el catálogo operativo del tenant
+                // (Gate::before ya autoriza al superadmin en backend).
+                $imp = request()->session()->get('tenant_impersonation');
+                if (is_array($imp) && ! empty($imp['tenant_id']) && tenant_id()) {
+                    return ClinicAdminScope::assignablePermissionNamesFor($user);
+                }
+
                 $previousTeam = getPermissionsTeamId();
                 setPermissionsTeamId(null);
 

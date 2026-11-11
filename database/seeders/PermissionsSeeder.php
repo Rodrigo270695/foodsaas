@@ -91,6 +91,11 @@ class PermissionsSeeder extends Seeder
             ->delete();
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // Propaga permisos nuevos a roles base de cada tenant (aditivo, sin quitar customs).
+        if (class_exists(TenantRolesSeeder::class)) {
+            (new TenantRolesSeeder)->seedAll(forceSync: false);
+        }
     }
 
     /**

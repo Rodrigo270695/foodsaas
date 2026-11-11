@@ -146,6 +146,7 @@ class TenantRolesSeeder extends Seeder
                 'ventas.create',
                 'ventas.export',
                 'ventas.delete',
+                'ofertas.apply',
                 'reportes.view',
                 'clientes.view',
                 'delivery.view',
