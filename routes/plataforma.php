@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\PlanController;
+use App\Http\Controllers\PlatformWhatsAppController;
 use App\Http\Controllers\PlataformaCobrosController;
 use App\Http\Controllers\PlataformaOperacionesController;
 use App\Http\Controllers\PlataformaReportesController;
@@ -134,4 +135,12 @@ Route::middleware(['auth', 'verified', 'tenant.none'])->prefix('plataforma')->na
     Route::middleware('permission:plataforma-suscripciones.view')
         ->get('uso-planes', [PlataformaUsoPlanesController::class, 'index'])
         ->name('uso-planes.index');
+
+    Route::middleware('role:superadmin')->group(function (): void {
+        Route::get('whatsapp', [PlatformWhatsAppController::class, 'index'])->name('whatsapp.index');
+        Route::post('whatsapp/sync', [PlatformWhatsAppController::class, 'sync'])->name('whatsapp.sync');
+        Route::get('whatsapp/qr', [PlatformWhatsAppController::class, 'qr'])->name('whatsapp.qr');
+        Route::post('whatsapp/logout', [PlatformWhatsAppController::class, 'logout'])->name('whatsapp.logout');
+        Route::post('whatsapp/test', [PlatformWhatsAppController::class, 'test'])->name('whatsapp.test');
+    });
 });

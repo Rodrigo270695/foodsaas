@@ -25,6 +25,7 @@ import {
     MapPin,
     Megaphone,
     MessageCircle,
+    Phone,
     Receipt,
     Repeat,
     Server,
@@ -356,6 +357,12 @@ export function useNavConfig(): { singles: NavItem[]; groups: NavGroup[] } {
                             href: '/plataforma/operaciones',
                             icon: Activity,
                             permission: 'plataforma-operaciones.view',
+                        },
+                        {
+                            title: t('items.whatsapp_plataforma'),
+                            href: '/plataforma/whatsapp',
+                            icon: Phone,
+                            permission: 'plataforma-whatsapp.view',
                         },
                         {
                             title: t('items.esquema_bd'),

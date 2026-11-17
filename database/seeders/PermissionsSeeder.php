@@ -57,6 +57,7 @@ class PermissionsSeeder extends Seeder
         'plataforma-tenants' => ['view', 'create', 'update', 'suspend', 'resume', 'delete', 'export', 'bulk-delete', 'impersonate'],
         'plataforma-suscripciones' => ['view', 'create', 'update', 'delete', 'export', 'bulk-delete', 'extend-trial', 'change-plan', 'cancel'],
         'plataforma-operaciones' => ['view'],
+        'plataforma-whatsapp' => ['view'],
         'plataforma-reportes' => ['view', 'export'],
         'plataforma-cobros' => ['view', 'export'],
     ];
