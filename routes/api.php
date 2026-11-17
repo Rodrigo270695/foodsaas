@@ -2,8 +2,13 @@
 
 use App\Http\Controllers\Api\Internal\SaasProvisionController;
 use App\Http\Controllers\Api\Internal\SalesKnowledgeController;
+use App\Http\Controllers\Api\PublicMarketing\PlansController;
 use App\Http\Middleware\VerifyOrvaeProvisionSignature;
 use Illuminate\Support\Facades\Route;
+
+Route::get('public/foodsaas/plans', PlansController::class)
+    ->middleware('throttle:60,1')
+    ->name('api.public.foodsaas.plans');
 
 Route::prefix('internal/saas')
     ->middleware(VerifyOrvaeProvisionSignature::class)
